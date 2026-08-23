@@ -93,7 +93,7 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 | Versi | Isi |
 |---|---|
-| v1.2.2 | Fix auto-scroll (model sentuhan pengguna), streaming ringan, cancel ganda (interrupt+abort+putus koneksi), adopsi server yatim, anti white-flash saat buka app |
+| v1.2.3 | Fix tombol cancel stuck merah (onError kini mereset UI + watchdog tanpa syarat), welcome screen kosong saat buka pertama, auto-scroll, streaming ringan, anti white-flash |
 
 ## 📄 Lisensi
 

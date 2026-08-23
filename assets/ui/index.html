@@ -303,6 +303,8 @@
 <script>
 var chat = document.getElementById('chat');
 window._helloHTML = document.getElementById('hello').outerHTML;
+chat.innerHTML = window._helloHTML;
+bindChips();
 var wrap = document.getElementById('chatwrap');
 var inp = document.getElementById('inp');
 var go = document.getElementById('go');
@@ -434,6 +436,14 @@ window.appendOut = function(t) {
   window._cur.textContent = window._plain;
   follow();
 };
+function finishUI(code) {
+  busy = false;
+  go.innerHTML = '\u2191';
+  go.classList.remove('stop');
+  dot.className = code === 0 ? 'ok' : 'bad';
+  document.getElementById('hint').textContent = '';
+}
+
 window.onDone = function(code) {
   if (window._done) return;
   window._done = true;
@@ -471,8 +481,14 @@ window.onError = function(m) {
   dot.className = 'bad';
 };
 window.onReady = function(ok, free) {
-  if (ok) { ov.classList.remove('show'); dot.className = 'ok'; }
-  else window.onError('payload tidak lengkap - uninstall lalu install ulang');
+  if (ok) {
+    ov.classList.remove('show');
+    if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
+      chat.innerHTML = window._helloHTML;
+      bindChips();
+    }
+    dot.className = 'ok';
+  } else window.onError('payload tidak lengkap - uninstall lalu install ulang');
 };
 window.setProgress = function(n) {
   document.getElementById('pfill').style.width = Math.min(95, n / 22) + '%';
@@ -525,7 +541,6 @@ function bindChips() {
     c.onclick = function() { send(c.getAttribute('data-q')); };
   });
 }
-bindChips();
 inp.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go.onclick(); }
 });

@@ -399,10 +399,8 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try { Thread.sleep(6000); } catch (InterruptedException ignored) {}
-                    if (busy) {
-                        busy = false;
-                        push("window.onDone(-2)");
-                    }
+                    busy = false;
+                    push("window.onDone(-2)");
                 }
             }).start();
         }

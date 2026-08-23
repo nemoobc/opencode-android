@@ -92,9 +92,21 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: true
           script: |
-            echo "=== KVM check ==="
-            egrep -c '(vmx|svm)' /proc/cpuinfo || true
-            adb install app-x86.apk
+            echo "=== menunggu boot tuntas ==="
+            for i in $(seq 1 60); do
+              B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              [ "$B" = "1" ] && echo "boot completed" && break
+              sleep 5
+            done
+            echo "system settle 20s..."
+            sleep 20
+            echo "=== install (retry 5x) ==="
+            OK=false
+            for i in 1 2 3 4 5; do
+              if adb install -r app-x86.apk; then OK=true; break; fi
+              echo "install gagal ($i), retry 15s"; sleep 15
+            done
+            [ "$OK" = "true" ] || { echo "INSTALL TETAP GAGAL"; exit 1; }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
             sleep 10
             adb exec-out screencap -p > shot-1-launch.png

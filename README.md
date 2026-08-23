@@ -35,9 +35,8 @@ Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 Model default **`opencode/x-preview-f-free`** berjalan tanpa kunci apa pun —
 pasang aplikasi, buka, langsung pakai.
 
-> Catatan jujur: relay model gratis memproses di server, balasan pertama
-> bisa memakan **30–60 detik** (ada timer berjalan di layar). Mau lebih cepat?
-> Tempel API key provider lain lewat menu **config**.
+> Relay model gratis tetap menjadi penentu kecepatan utama, tapi kini
+> tanpa startup ulang di setiap pesan dan teks mengalim seiring generasi.
 
 ## 🚀 Pasang
 
@@ -89,7 +88,7 @@ menghasilkan artefak APK di tab Actions.
 
 | Versi | Isi |
 |---|---|
-| v1.1.2 | Perapian teks antarmuka, perbaikan build |
+| v1.2.0 | Arsitektur baru `opencode serve`: respons **5 detik-an** (sebelumnya 47s), teks mengalir kata-per-kata, tombol berhenti benar-benar berhenti — plus watchdog stop, nama model rapi, auto-scroll |
 
 ## 📄 Lisensi
 

@@ -311,6 +311,7 @@ var dot = document.getElementById('dot');
 var ov = document.getElementById('ov');
 var busy = false;
 var curModel = 'opencode/x-preview-f-free';
+document.getElementById('mname').textContent = 'X Preview Free';
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(t) {
@@ -319,9 +320,14 @@ function toast(t) {
   clearTimeout(window._tt); window._tt = setTimeout(function(){ el.classList.remove('show'); }, 2200);
 }
 function scrollEnd() {
+  var last = chat.lastElementChild;
+  if (last && last.scrollIntoView) {
+    try { last.scrollIntoView({ block: 'end' }); } catch (e) { last.scrollIntoView(); }
+  }
   wrap.scrollTop = wrap.scrollHeight;
   requestAnimationFrame(function() { wrap.scrollTop = wrap.scrollHeight; });
   setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 80);
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 250);
 }
 window.addEventListener('resize', function() {
   var d = document.getElementById('down');
@@ -536,10 +542,11 @@ document.getElementById('scrim').onclick = closeDrawer;
 
 /* ===== model switcher ===== */
 var MODELS = [
-  {id:'opencode/x-preview-f-free', ds:'gratis tanpa batas - default', tag:'GRATIS'},
-  {id:'opencode/grok-code', ds:'ceat untuk coding', tag:'GRATIS'},
-  {id:'anthropic/claude-sonnet-4', ds:'butuh api key anthropic', tag:'PRO'},
-  {id:'openai/gpt-4.1', ds:'butuh api key openai', tag:'PRO'}
+  {id:'opencode/x-preview-f-free', nm:'X Preview Free',  ds:'gratis tanpa batas — default toko', tag:'GRATIS'},
+  {id:'opencode/grok-code',        nm:'Grok Code',        ds:'ringan dan fokus ngoding', tag:'GRATIS'},
+  {id:'opencode/qwen3-coder',      nm:'Qwen3 Coder',      ds:'spesialis kode multibahasa', tag:'GRATIS'},
+  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4',  ds:'butuh api key anthropic', tag:'PRO'},
+  {id:'openai/gpt-4.1',            nm:'GPT-4.1',          ds:'butuh api key openai', tag:'PRO'}
 ];
 function openModels() {
   var l = document.getElementById('mlist');
@@ -547,16 +554,20 @@ function openModels() {
   MODELS.forEach(function(m) {
     var b = document.createElement('button');
     b.className = 'mopt' + (m.id === curModel ? ' sel' : '');
-    b.innerHTML = '<div><div class="nm">' + m.id.split('/')[1] + '</div><div class="ds">' + m.ds + '</div></div>' +
+    b.innerHTML = '<div><div class="nm">' + m.nm + '</div><div class="ds">' + m.id + ' \u2022 ' + m.ds + '</div></div>' +
       (m.tag === 'GRATIS' ? '<span class="tag">GRATIS</span>' : '');
     b.onclick = function() { setModel(m.id); };
     l.appendChild(b);
   });
   document.getElementById('mmodel').classList.add('show');
 }
+function modelName(id) {
+  for (var i = 0; i < MODELS.length; i++) if (MODELS[i].id === id) return MODELS[i].nm;
+  return id.split('/')[1] || id;
+}
 function setModel(id) {
   curModel = id;
-  document.getElementById('mname').textContent = id.split('/')[1];
+  document.getElementById('mname').textContent = modelName(id);
   Android.saveConfig('opencode', '', id);
   document.getElementById('mmodel').classList.remove('show');
 }
@@ -594,7 +605,7 @@ document.getElementById('closem').onclick = function() { document.getElementById
 document.getElementById('save').onclick = function() {
   var m = document.getElementById('cmodel').value.trim() || 'opencode/x-preview-f-free';
   curModel = m;
-  document.getElementById('mname').textContent = m.split('/')[1];
+  document.getElementById('mname').textContent = modelName(m);
   Android.saveConfig(
     document.getElementById('cprov').value,
     document.getElementById('ckey').value,

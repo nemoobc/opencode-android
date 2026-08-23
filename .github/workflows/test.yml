@@ -34,10 +34,11 @@ jobs:
             curl -sL -O "https://packages.termux.dev/apt/termux-main/${url}"
           done
           for d in *.deb; do dpkg-deb -x "$d" ex; done
-          find ex -name "proot" -type f -exec cp {} ../../proot.bin \;
-          find ex -path "*libexec/proot/loader" -exec cp {} ../../loader.bin \;
-          find ex -name "libtalloc.so*" -exec cp {} ../../libtalloc.so \;
-          find ex -name "libandroid-shmem.so*" -exec cp {} ../../libshmem.so \;
+          find ex -name "proot" -type f -exec cp {} ./proot.bin \;
+          find ex -path "*libexec/proot/loader" -exec cp {} ./loader.bin \;
+          find ex -name "libtalloc.so*" -exec cp {} ./libtalloc.so \;
+          find ex -name "libandroid-shmem.so*" -exec cp {} ./libshmem.so \;
+          ls -la
       - name: rakit payload + jniLibs x86_64
         run: |
           mkdir -p staging/rootfs staging/apks assets/payload jniLibs/x86_64

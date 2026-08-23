@@ -196,16 +196,13 @@
       <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
       <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#gd1)" transform="rotate(8 297 297)"/>
     </svg>
-    <div><b>OpenCode</b><span>agent AI di HP-mu</span></div>
+    <div><b>OpenCode</b></div>
   </div>
   <div class="d-body">
     <button class="d-item primary" id="dnew"><span class="ic">&#10010;</span> Obrolan baru</button>
     <button class="d-item" id="dconfig"><span class="ic">&#9881;</span> Konfigurasi</button>
     <button class="d-item" id="dmodel"><span class="ic">&#9889;</span> Ganti model</button>
     <button class="d-item" id="dupdate"><span class="ic">&#8595;</span> Cek update</button>
-    <div class="d-sec">INFO</div>
-    <button class="d-item" id="dwork"><span class="ic">&#128193;</span> Folder kerja agent</button>
-    <button class="d-item" id="drepo"><span class="ic">&#9741;</span> Repo GitHub</button>
   </div>
   <div class="d-foot">opencode android <span id="dver">v?</span></div>
 </div>
@@ -304,6 +301,7 @@
 <div id="toast"></div>
 <script>
 var chat = document.getElementById('chat');
+window._helloHTML = document.getElementById('hello').outerHTML;
 var wrap = document.getElementById('chatwrap');
 var inp = document.getElementById('inp');
 var go = document.getElementById('go');
@@ -319,16 +317,17 @@ function toast(t) {
   el.textContent = t; el.classList.add('show');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ el.classList.remove('show'); }, 2200);
 }
+var autoScroll = true;
 function scrollEnd() {
-  var last = chat.lastElementChild;
-  if (last && last.scrollIntoView) {
-    try { last.scrollIntoView({ block: 'end' }); } catch (e) { last.scrollIntoView(); }
-  }
+  autoScroll = true;
   wrap.scrollTop = wrap.scrollHeight;
   requestAnimationFrame(function() { wrap.scrollTop = wrap.scrollHeight; });
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 80);
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 250);
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 60);
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 220);
 }
+new MutationObserver(function() {
+  if (autoScroll) wrap.scrollTop = wrap.scrollHeight;
+}).observe(chat, { childList: true, subtree: true, characterData: true });
 window.addEventListener('resize', function() {
   var d = document.getElementById('down');
   if (!d.classList.contains('show')) scrollEnd();
@@ -336,8 +335,9 @@ window.addEventListener('resize', function() {
 wrap = document.getElementById('chatwrap');
 document.getElementById('chatwrap').addEventListener('scroll', function() {
   var d = document.getElementById('down');
-  if (this.scrollHeight - this.scrollTop - this.clientHeight > 300) d.classList.add('show');
-  else d.classList.remove('show');
+  var far = this.scrollHeight - this.scrollTop - this.clientHeight > 300;
+  if (far) { d.classList.add('show'); autoScroll = false; }
+  else { d.classList.remove('show'); autoScroll = true; }
 });
 document.getElementById('down').onclick = function() { scrollEnd(); };
 function killHello() { var h = document.getElementById('hello'); if (h) h.remove(); }
@@ -411,6 +411,7 @@ function addActions(body, plain) {
 }
 
 window.appendOut = function(t) {
+  if (window._aborted) return;
   if (!window._cur) {
     window._plain = '';
     var body = addMsg('ai');
@@ -483,7 +484,7 @@ function send(t) {
   if (busy || !t) return;
   window._lastPrompt = t;
   addMsg('user').textContent = t;
-  window._cur = null; window._plain = ''; window._canceling = false; window._done = false;
+  window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
   var body = addMsg('ai');
   body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
     '<span class="elapsed">mengetik...</span>';
@@ -492,7 +493,8 @@ function send(t) {
   clearInterval(window._tm);
   window._tm = setInterval(function() {
     var el = window._cur ? window._cur.querySelector('.elapsed') : null;
-    if (el) el.textContent = 'mengetik... ' + Math.round((Date.now() - t0) / 1000) + 's (model gratis bisa 30-60 detik)';
+    var sec = Math.round((Date.now() - t0) / 1000);
+    if (el) el.textContent = 'mengetik... ' + sec + 's' + (sec > 40 ? ' - relay lambat, coba ganti model di header' : ' (model gratis)');
   }, 1000);
   busy = true;
   dot.className = 'work';
@@ -502,15 +504,18 @@ function send(t) {
   Android.send(t);
 }
 go.onclick = function() {
-  if (busy) { window._canceling = true; Android.cancel(); return; }
+  if (busy) { window._canceling = true; window._aborted = true; Android.cancel(); toast('menghentikan...'); return; }
   var t = inp.value.trim();
   if (!t) return;
   inp.value = ''; inp.style.height = 'auto';
   send(t);
 };
-document.querySelectorAll('.chip').forEach(function(c) {
-  c.onclick = function() { send(c.getAttribute('data-q')); };
-});
+function bindChips() {
+  document.querySelectorAll('.chip').forEach(function(c) {
+    c.onclick = function() { send(c.getAttribute('data-q')); };
+  });
+}
+bindChips();
 inp.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go.onclick(); }
 });
@@ -527,9 +532,18 @@ chat.addEventListener('click', function(e) {
 
 /* ===== obrolan baru ===== */
 function newChat() {
+  if (busy) { window._aborted = true; window._canceling = true; Android.cancel(); }
   Android.newChat();
+  window._cur = null; window._plain = '';
+  busy = false; window._done = false; window._aborted = false; window._canceling = false;
+  clearInterval(window._tm);
+  go.innerHTML = '\u2191'; go.classList.remove('stop');
+  chat.innerHTML = window._helloHTML;
+  bindChips();
+  dot.className = 'ok';
+  autoScroll = true;
+  scrollEnd();
   toast('obrolan baru dimulai');
-  setTimeout(function(){ location.reload(); }, 350);
 }
 document.getElementById('bnew').onclick = newChat;
 document.getElementById('dnew').onclick = function() { closeDrawer(); newChat(); };
@@ -621,14 +635,6 @@ document.getElementById('dupdate').onclick = function() {
 };
 document.getElementById('ubtn').onclick = function() {
   Android.openUrl('https://github.com/nemoobc/opencode-android/releases/tag/' + (window._upTag || 'latest'));
-};
-document.getElementById('dwork').onclick = function() {
-  closeDrawer();
-  toast('folder kerja: Android/data/com.nemoobc.opencode/files');
-};
-document.getElementById('drepo').onclick = function() {
-  closeDrawer();
-  Android.openUrl('https://github.com/nemoobc/opencode-android');
 };
 document.getElementById('dver').textContent = 'v' + (Android.appInfo ? Android.appInfo() : '?');
 

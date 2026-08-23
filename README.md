@@ -93,7 +93,7 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 | Versi | Isi |
 |---|---|
-| v1.2.0 | Arsitektur `opencode serve`: respons ±5 detik, streaming kata-per-kata, abort resmi + watchdog, nama model rapi |
+| v1.2.1 | Fix new chat stuck (tanpa reload halaman), auto-scroll anti-gagal (MutationObserver), bersih-bersih teks drawer, catatan relay lambat |
 
 ## 📄 Lisensi
 

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14532D"/>
+      <stop offset="1" stop-color="#071A13"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E3C15C"/>
+      <stop offset=".55" stop-color="#C9A227"/>
+      <stop offset="1" stop-color="#8F6B14"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="432" height="432" fill="url(#bg)"/>
+
+  <!-- pita topi urahara di bawah -->
+  <g>
+    <rect x="0" y="356" width="54" height="20" fill="#F2F2EC"/>
+    <rect x="108" y="356" width="54" height="20" fill="#F2F2EC"/>
+    <rect x="216" y="356" width="54" height="20" fill="#F2F2EC"/>
+    <rect x="324" y="356" width="54" height="20" fill="#F2F2EC"/>
+    <rect x="54" y="356" width="54" height="20" fill="#0E3B2E"/>
+    <rect x="162" y="356" width="54" height="20" fill="#0E3B2E"/>
+    <rect x="270" y="356" width="54" height="20" fill="#0E3B2E"/>
+    <rect x="378" y="356" width="54" height="20" fill="#0E3B2E"/>
+  </g>
+
+  <!-- bingkai tipis -->
+  <rect x="18" y="18" width="396" height="396" fill="none" stroke="#C9A227" stroke-width="6" opacity=".85"/>
+  <rect x="32" y="32" width="368" height="368" fill="none" stroke="#C9A227" stroke-width="2" opacity=".4"/>
+
+  <!-- prompt >_ -->
+  <g fill="url(#gold)">
+    <!-- chevron > -->
+    <path d="M96 128 L200 216 L96 304 L96 258 L148 216 L96 174 Z"/>
+    <!-- underscore -->
+    <rect x="228" y="272" width="120" height="32"/>
+  </g>
+
+  <!-- kilau kecil -->
+  <circle cx="330" cy="120" r="10" fill="#F2F2EC" opacity=".9"/>
+  <circle cx="356" cy="88" r="5" fill="#C9A227"/>
+</svg>

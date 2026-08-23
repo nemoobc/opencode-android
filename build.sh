@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd ~/opencode-app
+cd "$(dirname "$0")"
 AJ=dl/android-34/android.jar
 rm -rf build/classes build/gen build/*.apk build/classes.dex
 mkdir -p build/classes

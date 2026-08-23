@@ -83,14 +83,14 @@ jobs:
       - name: adb start-server
         run: adb start-server
       - name: emulator + autotest
-        timeout-minutes: 30
+        timeout-minutes: 40
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
           target: google_apis
           arch: x86_64
           disable-animations: false
-          disable-linux-hw-accel: false
+          disable-linux-hw-accel: true
           script: |
             echo "=== KVM check ==="
             egrep -c '(vmx|svm)' /proc/cpuinfo || true

@@ -92,19 +92,21 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: true
           script: |
-            echo "=== menunggu boot tuntas ==="
-            for i in $(seq 1 60); do
+            echo "=== menunggu device online ==="
+            adb wait-for-device || true
+            echo "=== menunggu boot tuntas (maks 12 menit) ==="
+            for i in $(seq 1 144); do
               B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-              [ "$B" = "1" ] && echo "boot completed" && break
+              [ "$B" = "1" ] && echo "boot completed pada $((i*5))s" && break
               sleep 5
             done
-            echo "system settle 20s..."
-            sleep 20
-            echo "=== install (retry 5x) ==="
+            echo "system settle 30s..."
+            sleep 30
+            echo "=== install (retry 8x20s) ==="
             OK=false
-            for i in 1 2 3 4 5; do
+            for i in 1 2 3 4 5 6 7 8; do
               if adb install -r app-x86.apk; then OK=true; break; fi
-              echo "install gagal ($i), retry 15s"; sleep 15
+              echo "install gagal ($i), retry 20s"; sleep 20
             done
             [ "$OK" = "true" ] || { echo "INSTALL TETAP GAGAL"; exit 1; }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true

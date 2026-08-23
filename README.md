@@ -81,7 +81,7 @@ tar -czf assets/payload/rootfs.bin -C staging rootfs
 
 | Versi | Isi |
 |---|---|
-| v1.1.0 | UI penuh ala AI app besar: drawer, ganti model dari header, markdown + code block + tombol copy, indikator mengetik, obrolan nyambung otomatis, update checker, CI build otomatis — fix payload nested & opsi `--` proot |
+| v1.1.1 | Desain ulang natural ala ChatGPT/Claude/Gemini: font sans-serif, jawaban AI full-width, bubble user lembut, aksi Salin/Tanya lagi, timer proses, tombol scroll — fix payload nested & opsi `--` proot, CI build otomatis |
 
 ## ⚠️ Catatan
 

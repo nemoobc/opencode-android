@@ -318,7 +318,15 @@ function toast(t) {
   el.textContent = t; el.classList.add('show');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ el.classList.remove('show'); }, 2200);
 }
-function scrollEnd() { wrap.scrollTop = wrap.scrollHeight; }
+function scrollEnd() {
+  wrap.scrollTop = wrap.scrollHeight;
+  requestAnimationFrame(function() { wrap.scrollTop = wrap.scrollHeight; });
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 80);
+}
+window.addEventListener('resize', function() {
+  var d = document.getElementById('down');
+  if (!d.classList.contains('show')) scrollEnd();
+});
 wrap = document.getElementById('chatwrap');
 document.getElementById('chatwrap').addEventListener('scroll', function() {
   var d = document.getElementById('down');

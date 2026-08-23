@@ -73,7 +73,7 @@ Butuh perangkat arm64 dengan JDK 21, `aapt`, `d8`, `apksigner`
 ```bash
 git clone https://github.com/nemoobc/opencode-android && cd opencode-android
 
-# 1. unduh bahan ke dl/ — daftar URL ada di build.sh & riwayat workflow
+# 1. unduh bahan ke dl/ — daftar URL ada di komentar build.yml di riwayat git
 #    - platform-34 android.jar (dl.google.com)
 #    - opencode-linux-arm64-musl (npm)  → jniLibs/arm64-v8a/libopencode.so
 #    - alpine-minirootfs 3.21 + libgcc + libstdc++ (dl-cdn.alpinelinux.org)

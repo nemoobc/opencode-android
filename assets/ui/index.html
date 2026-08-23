@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>OpenCode</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body { background:#0B0F0D; color:#E8F0EA; font-family:monospace; display:flex; flex-direction:column; overflow:hidden; }
+  header { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#0E1613; border-bottom:1px solid #1E3A2F; flex:0 0 auto; }
+  header .logo { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,#14532D,#0E3B2E); border:1.5px solid #C9A227; display:flex; align-items:center; justify-content:center; color:#C9A227; font-weight:bold; font-size:14px; }
+  header h1 { font-size:15px; letter-spacing:1px; flex:1; }
+  header h1 span { color:#C9A227; }
+  #dot { width:8px; height:8px; border-radius:50%; background:#666; }
+  #dot.ok { background:#3DDC84; box-shadow:0 0 6px #3DDC84; }
+  #dot.bad { background:#C0392B; }
+  #dot.work { background:#C9A227; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.3 } }
+  .icbtn { background:none; border:1px solid #1E3A2F; color:#9FD6BD; border-radius:8px; padding:5px 10px; font-size:13px; font-family:monospace; }
+  #chat { flex:1 1 auto; overflow-y:auto; padding:12px; -webkit-overflow-scrolling:touch; }
+  .row { display:flex; margin:6px 0; }
+  .row.me { justify-content:flex-end; }
+  .bub { max-width:86%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+  .me .bub { background:#14532D; border:1px solid #1E6B45; border-bottom-right-radius:3px; }
+  .oc .bub { background:#101B15; border:1px solid #1E3A2F; border-bottom-left-radius:3px; color:#CFE8DA; }
+  .sys { text-align:center; font-size:11px; color:#5F8A76; margin:10px 0; }
+  .err { color:#E07B6A; }
+  #bar { display:flex; gap:8px; padding:10px; background:#0E1613; border-top:1px solid #1E3A2F; flex:0 0 auto; align-items:flex-end; }
+  #inp { flex:1; background:#0B0F0D; border:1px solid #1E3A2F; color:#E8F0EA; border-radius:10px; padding:10px 12px; font-family:monospace; font-size:14px; resize:none; max-height:110px; outline:none; }
+  #inp:focus { border-color:#C9A227; }
+  #go { background:#14532D; border:1px solid #C9A227; color:#F2F2EC; border-radius:10px; padding:10px 16px; font-family:monospace; font-size:14px; }
+  #go:disabled { opacity:.4; }
+  #go.stop { background:#5A1F1A; border-color:#C0392B; }
+  #ov { position:fixed; inset:0; background:#0B0F0DF5; z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; }
+  #ov.show { display:flex; }
+  #ov .hat { width:74px; height:52px; margin-bottom:22px; position:relative; }
+  #ov .hat .crown { position:absolute; left:7px; top:6px; width:60px; height:40px; background:repeating-linear-gradient(180deg,#F2F2EC 0 8px,#14532D 8px 16px); border-radius:30px 30px 8px 8px; }
+  #ov .hat .brim { position:absolute; left:0; bottom:0; width:74px; height:10px; background:#F2F2EC; border-radius:5px; }
+  #ov h2 { font-size:15px; letter-spacing:1px; margin-bottom:8px; }
+  #ov p { font-size:12px; color:#9FD6BD; margin-bottom:20px; }
+  #pbar { width:240px; height:10px; background:#101B15; border:1px solid #1E3A2F; border-radius:5px; overflow:hidden; }
+  #pfill { height:100%; width:2%; background:linear-gradient(90deg,#14532D,#C9A227); transition:width .3s; }
+  #modal { position:fixed; inset:0; background:#000A; z-index:60; display:none; align-items:center; justify-content:center; padding:20px; }
+  #modal.show { display:flex; }
+  .card { background:#0E1613; border:1px solid #1E3A2F; border-radius:14px; width:100%; max-width:420px; padding:18px; }
+  .card h3 { font-size:14px; letter-spacing:1px; margin-bottom:14px; color:#C9A227; }
+  .card label { display:block; font-size:11px; color:#9FD6BD; margin:10px 0 4px; }
+  .card select, .card input {
+    width:100%; background:#0B0F0D; border:1px solid #1E3A2F; color:#E8F0EA;
+    border-radius:8px; padding:9px 10px; font-family:monospace; font-size:13px; outline:none;
+  }
+  .card .hint { font-size:10.5px; color:#5F8A76; margin-top:4px; line-height:1.5; }
+  .card .hint a { color:#C9A227; }
+  .card .acts { display:flex; gap:8px; margin-top:16px; }
+  .card button { flex:1; padding:10px; border-radius:8px; font-family:monospace; font-size:13px; }
+  #save { background:#14532D; border:1px solid #C9A227; color:#F2F2EC; }
+  #closem { background:none; border:1px solid #1E3A2F; color:#9FD6BD; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">&gt;_</div>
+  <h1>Open<span>Code</span></h1>
+  <div id="dot"></div>
+  <button class="icbtn" id="btnset">config</button>
+</header>
+
+<div id="chat">
+  <div class="sys">selamat datang di OpenCode Mobile &#8212; agent AI di HP-mu</div>
+</div>
+
+<div id="bar">
+  <textarea id="inp" rows="1" placeholder="tanya apa aja&#8230;"></textarea>
+  <button id="go">&#9654;</button>
+</div>
+
+<div id="ov" class="show">
+  <div class="hat"><div class="crown"></div><div class="brim"></div></div>
+  <h2>MEMASANG OPENCODE</h2>
+  <p>ekstrak rootfs pertama kali, sabar ya~<br>(sekali saja, ± 1-2 menit)</p>
+  <div id="pbar"><div id="pfill"></div></div>
+  <p id="pnum" style="margin-top:10px">0 file</p>
+</div>
+
+<div id="modal">
+  <div class="card">
+    <h3>&#9881; KONFIGURASI</h3>
+    <label>Provider</label>
+    <select id="cprov">
+      <option value="opencode">opencode (Zen / console.opencode.ai)</option>
+      <option value="anthropic">anthropic (Claude)</option>
+      <option value="openai">openai (ChatGPT)</option>
+      <option value="openrouter">openrouter</option>
+      <option value="groq">groq</option>
+      <option value="google">google (Gemini)</option>
+    </select>
+    <label>API Key</label>
+    <input id="ckey" type="password" placeholder="tempel API key di sini">
+    <div class="hint">Key opencode gratis: buka <a href="#" onclick="Android.openUrl('https://console.opencode.ai');return false">console.opencode.ai</a> &#8594; API Keys</div>
+    <label>Model (opsional)</label>
+    <input id="cmodel" placeholder="cth: opencode/grok-code (kosong = default)">
+    <div class="acts">
+      <button id="closem">tutup</button>
+      <button id="save">simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var chat = document.getElementById('chat');
+var inp  = document.getElementById('inp');
+var go   = document.getElementById('go');
+var dot  = document.getElementById('dot');
+var ov   = document.getElementById('ov');
+var busy = false;
+
+function scrollEnd() { chat.scrollTop = chat.scrollHeight; }
+function addRow(cls, txt) {
+  var d = document.createElement('div');
+  d.className = 'row ' + cls;
+  var b = document.createElement('div');
+  b.className = 'bub';
+  b.textContent = txt;
+  d.appendChild(b);
+  chat.appendChild(d);
+  scrollEnd();
+  return b;
+}
+
+window.appendOut = function(t) {
+  if (window._cur === undefined || window._cur === null) window._cur = addRow('oc', '');
+  window._cur.textContent += t;
+  scrollEnd();
+};
+window.onDone = function(code) {
+  window._cur = null;
+  busy = false;
+  go.innerHTML = '&#9654;';
+  go.classList.remove('stop');
+  dot.className = code === 0 ? 'ok' : 'bad';
+  if (code !== 0) addRow('sys err', 'proses selesai dengan kode ' + code);
+};
+window.onError = function(m) { addRow('sys err', m); dot.className = 'bad'; };
+window.onReady = function(ok, free) {
+  if (ok) {
+    ov.classList.remove('show');
+    dot.className = 'ok';
+    addRow('sys', 'siap! sisa storage ' + free + ' MB &#8226; config lewat tombol [config]');
+  } else { window.onError('payload tidak lengkap'); }
+};
+window.setProgress = function(n) {
+  document.getElementById('pfill').style.width = Math.min(100, n / 12) + '%';
+  document.getElementById('pnum').textContent = n + ' file';
+};
+window.onSaved = function() {
+  document.getElementById('modal').classList.remove('show');
+  addRow('sys', 'config tersimpan ✓');
+};
+
+go.onclick = function() {
+  if (busy) { Android.cancel(); return; }
+  var t = inp.value.trim();
+  if (!t) return;
+  addRow('me', t);
+  inp.value = '';
+  inp.style.height = 'auto';
+  window._cur = addRow('oc', '');
+  window._cur.textContent = '...';
+  busy = true;
+  dot.className = 'work';
+  go.innerHTML = '&#9632;';
+  go.classList.add('stop');
+  Android.send(t);
+};
+inp.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go.onclick(); }
+});
+inp.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(110, this.scrollHeight) + 'px';
+});
+
+document.getElementById('btnset').onclick = function() {
+  try {
+    var c = JSON.parse(Android.readConfig());
+    if (c.auth) {
+      try {
+        var a = JSON.parse(c.auth);
+        for (var k in a) {
+          document.getElementById('cprov').value = k;
+          document.getElementById('ckey').value = a[k].key || '';
+        }
+      } catch (e) {}
+    }
+    if (c.cfg) {
+      try {
+        var m = JSON.parse(c.cfg);
+        document.getElementById('cmodel').value = m.model || '';
+      } catch (e) {}
+    }
+  } catch (e) {}
+  document.getElementById('modal').classList.add('show');
+};
+document.getElementById('closem').onclick = function() {
+  document.getElementById('modal').classList.remove('show');
+};
+document.getElementById('save').onclick = function() {
+  Android.saveConfig(
+    document.getElementById('cprov').value,
+    document.getElementById('ckey').value,
+    document.getElementById('cmodel').value
+  );
+};
+</script>
+</body>
+</html>

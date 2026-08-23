@@ -1,0 +1,7 @@
+dl/
+staging/
+build/
+assets/payload/
+local.properties
+*.jks
+*.keystore

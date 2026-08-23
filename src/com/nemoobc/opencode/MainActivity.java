@@ -41,6 +41,11 @@ public class MainActivity extends Activity {
     private volatile boolean serverUp = false;
     private volatile String sessionId = null;
     private volatile HttpURLConnection msgConn = null;
+    private boolean autotest = false;
+    private volatile int deltaCount = 0;
+    private volatile long tSendMs = 0;
+    private volatile long firstDeltaMs = -1;
+    private volatile boolean sawIdle = false;
     private static final int PORT = 4096;
 
     @Override
@@ -59,6 +64,13 @@ public class MainActivity extends Activity {
         new File(rootFs, "root/.config/opencode").mkdirs();
         setupLibLinks();
 
+        autotest = getIntent() != null && getIntent().getBooleanExtra("autotest", false);
+        if (autotest) {
+            Diagnostics.reset();
+            Diagnostics.startServer(4099);
+            Diagnostics.extra("versi", appInfoSafe());
+        }
+
         web = new WebView(this);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -70,6 +82,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView v, String u) {
                 v.setVisibility(View.VISIBLE);
+                if (autotest) startAutoTest();
             }
         });
         setContentView(web);
@@ -118,6 +131,55 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private String appInfoSafe() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+        catch (Exception e) { return "?"; }
+    }
+
+    private byte[] capture() throws Exception {
+        final byte[][] out = new byte[1][];
+        final java.util.concurrent.CountDownLatch latch =
+                new java.util.concurrent.CountDownLatch(1);
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    View v = web;
+                    android.graphics.Bitmap bm = android.graphics.Bitmap.createBitmap(
+                            v.getWidth(), v.getHeight(), android.graphics.Bitmap.Config.ARGB_8888);
+                    android.graphics.Canvas cn = new android.graphics.Canvas(bm);
+                    v.draw(cn);
+                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                    bm.compress(android.graphics.Bitmap.CompressFormat.PNG, 55, bo);
+                    out[0] = bo.toByteArray();
+                } catch (Exception ignored) {}
+                latch.countDown();
+            }
+        });
+        latch.await(6, java.util.concurrent.TimeUnit.SECONDS);
+        return out[0];
+    }
+
+    private String evalSync(final String expr) throws Exception {
+        final String[] out = new String[1];
+        final java.util.concurrent.CountDownLatch latch =
+                new java.util.concurrent.CountDownLatch(1);
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                web.evaluateJavascript(expr, new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String v) {
+                        out[0] = v;
+                        latch.countDown();
+                    }
+                });
+            }
+        });
+        latch.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        return out[0] == null ? "" : out[0];
+    }
+
     private boolean readyOk() {
         return new File(rootFs, "usr/bin/busybox").exists()
                 && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
@@ -155,6 +217,66 @@ public class MainActivity extends Activity {
 
     private static String jq(String s) {
         return JSONObject.quote(s);
+    }
+
+    /* ================= autotest ================= */
+
+    private void startAutoTest() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1500);
+                    Diagnostics.step("buka", "halaman + server siap");
+                    Diagnostics.shot("1-buka", capture());
+
+                    // kirim via chip pertama
+                    evalSync("document.querySelectorAll('.chip')[0].click()");
+                    Thread.sleep(2500);
+                    Diagnostics.step("kirim", "delta: " + deltaCount + " (mengetik)");
+                    Diagnostics.shot("2-kirim", capture());
+
+                    // tunggu jawaban selesai
+                    int wait = 0;
+                    while (!sawIdle && wait < 150000) { Thread.sleep(2000); wait += 2000; }
+                    String stopState = evalSync("document.getElementById('go').classList.contains('stop')");
+                    Diagnostics.step("jawaban", "delta=" + deltaCount
+                            + ", deltaPertama=" + firstDeltaMs + "ms"
+                            + ", idle=" + sawIdle
+                            + ", tombolMasihStop=" + stopState);
+                    Thread.sleep(1200);
+                    Diagnostics.shot("3-jawaban", capture());
+
+                    // tes cancel: prompt panjang lalu stop
+                    evalSync("document.getElementById('inp').value='tuliskan esai 1000 kata'");
+                    evalSync("document.getElementById('go').click()");
+                    Thread.sleep(5000);
+                    int dSebelum = deltaCount;
+                    evalSync("document.getElementById('go').click()");
+                    Thread.sleep(7000);
+                    String stopAfter = evalSync("document.getElementById('go').classList.contains('stop')");
+                    Diagnostics.step("cancel", "deltaSebelum=" + dSebelum
+                            + " deltaSesudah=" + deltaCount
+                            + " tombolMasihStop=" + stopAfter);
+                    Diagnostics.shot("4-cancel", capture());
+
+                    // tes new chat
+                    evalSync("newChat()");
+                    Thread.sleep(1500);
+                    String hello = evalSync("!!document.getElementById('hello')");
+                    Diagnostics.step("newchat", "welcomeKembali=" + hello);
+                    Diagnostics.shot("5-newchat", capture());
+
+                    Diagnostics.extra("selesai", "true");
+                    Diagnostics.step("selesai", "semua tahap dijalankan");
+                } catch (Exception e) {
+                    Diagnostics.step("error", String.valueOf(e));
+                    Diagnostics.extra("selesai", "error");
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     /* ================= server opencode ================= */
@@ -289,9 +411,16 @@ public class MainActivity extends Activity {
             if ("message.part.delta".equals(type)) {
                 if ("text".equals(pr.optString("field", ""))) {
                     String delta = pr.optString("delta", "");
-                    if (delta.length() > 0) push("window.appendOut(" + jq(delta) + ")");
+                    if (delta.length() > 0) {
+                        deltaCount++;
+                        if (autotest && firstDeltaMs < 0 && tSendMs > 0) {
+                            firstDeltaMs = System.currentTimeMillis() - tSendMs;
+                        }
+                        push("window.appendOut(" + jq(delta) + ")");
+                    }
                 }
             } else if ("session.idle".equals(type)) {
+                sawIdle = true;
                 if (busy) {
                     busy = false;
                     push("window.onDone(0)");
@@ -318,6 +447,10 @@ public class MainActivity extends Activity {
         public void send(final String prompt) {
             if (busy || !serverUp) return;
             busy = true;
+            sawIdle = false;
+            deltaCount = 0;
+            firstDeltaMs = -1;
+            tSendMs = System.currentTimeMillis();
             new Thread(new Runnable() {
                 @Override
                 public void run() {

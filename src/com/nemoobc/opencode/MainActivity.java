@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.system.Os;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -40,6 +41,7 @@ public class MainActivity extends Activity {
         natLib = new File(getApplicationInfo().nativeLibraryDir);
 
         if (!workDir.exists()) workDir.mkdirs();
+        setupLibLinks();
         new File(rootFs, "root/.config/opencode").mkdirs();
 
         web = new WebView(this);
@@ -55,8 +57,7 @@ public class MainActivity extends Activity {
         Thread t0 = new Thread(new Runnable() {
             @Override
             public void run() {
-                boolean ready = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
-                        && new File(rootFs, "bin/sh").exists();
+                boolean ready = readyOk();
                 if (!ready) {
                     try {
                         InputStream raw = getAssets().open("payload/rootfs.bin");
@@ -71,11 +72,29 @@ public class MainActivity extends Activity {
                             File f = new File(rootFs, p);
                             if (f.exists()) f.setExecutable(true, false);
                         }
-                        ready = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+                        ready = readyOk();
+                        if (!ready) {
+                            // rootfs sisa/rusak -> hapus & ekstrak ulang sekali
+                            delTree(rootFs);
+                            InputStream raw2 = getAssets().open("payload/rootfs.bin");
+                            TarExtractor.extractGz(new BufferedInputStream(raw2, 1 << 16), rootFs, cb);
+                            for (String p : new String[]{"usr/bin/oc"}) {
+                                File f = new File(rootFs, p);
+                                if (f.exists()) f.setExecutable(true, false);
+                            }
+                            ready = readyOk();
+                        }
                     } catch (Exception e) {
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
                         return;
                     }
+                }
+                if (!ready) {
+                    String miss = "";
+                    if (!new File(rootFs, "usr/bin/busybox").exists()) miss += "usr/bin/busybox ";
+                    if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
+                    push("window.onError(" + jq("payload tidak lengkap, kurang: " + miss + " - uninstall lalu install ulang") + ")");
+                    return;
                 }
                 long free = rootFs.getFreeSpace() / (1024 * 1024);
                 final boolean ok = ready;
@@ -88,6 +107,34 @@ public class MainActivity extends Activity {
             }
         });
         t0.start();
+    }
+
+    private boolean readyOk() {
+        return new File(rootFs, "usr/bin/busybox").exists()
+                && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+    }
+
+    private void delTree(File f) {
+        File[] k = f.listFiles();
+        if (k != null) for (File x : k) delTree(x);
+        f.delete();
+    }
+
+    private File linkDir;
+
+    private void setupLibLinks() {
+        linkDir = new File(getFilesDir(), "lib");
+        linkDir.mkdirs();
+        mkLink("libtalloc.so", "libtalloc.so.2");
+        mkLink("libshmem.so", "libandroid-shmem.so");
+    }
+
+    private void mkLink(String src, String dst) {
+        File d = new File(linkDir, dst);
+        if (d.exists()) return;
+        try {
+            Os.symlink(new File(natLib, src).getAbsolutePath(), d.getAbsolutePath());
+        } catch (Exception ignored) {}
     }
 
     private void push(final String js) {
@@ -224,7 +271,7 @@ public class MainActivity extends Activity {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             pb.environment().clear();
-            pb.environment().put("LD_LIBRARY_PATH", natLib.getAbsolutePath());
+            pb.environment().put("LD_LIBRARY_PATH", linkDir.getAbsolutePath() + ":" + natLib.getAbsolutePath());
             pb.environment().put("PROOT_LOADER", loader);
             pb.environment().put("PROOT_TMP_DIR", cacheDir.getAbsolutePath());
             pb.environment().put("PROOT_NO_SECCOMP", "1");

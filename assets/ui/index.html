@@ -7,99 +7,187 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; }
-  body { background:#0B0F0D; color:#E8F0EA; font-family:monospace; display:flex; flex-direction:column; overflow:hidden; }
-  header { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#0E1613; border-bottom:1px solid #1E3A2F; flex:0 0 auto; }
-  header .logo { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,#14532D,#0E3B2E); border:1.5px solid #C9A227; display:flex; align-items:center; justify-content:center; color:#C9A227; font-weight:bold; font-size:14px; }
-  header h1 { font-size:15px; letter-spacing:1px; flex:1; }
-  header h1 span { color:#C9A227; }
-  #dot { width:8px; height:8px; border-radius:50%; background:#666; }
-  #dot.ok { background:#3DDC84; box-shadow:0 0 6px #3DDC84; }
-  #dot.bad { background:#C0392B; }
-  #dot.work { background:#C9A227; animation:blink 1s infinite; }
-  @keyframes blink { 50% { opacity:.3 } }
-  .icbtn { background:none; border:1px solid #1E3A2F; color:#9FD6BD; border-radius:8px; padding:5px 10px; font-size:13px; font-family:monospace; }
-  #chat { flex:1 1 auto; overflow-y:auto; padding:12px; -webkit-overflow-scrolling:touch; }
-  .row { display:flex; margin:6px 0; }
-  .row.me { justify-content:flex-end; }
-  .bub { max-width:86%; padding:9px 12px; border-radius:12px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
-  .me .bub { background:#14532D; border:1px solid #1E6B45; border-bottom-right-radius:3px; }
-  .oc .bub { background:#101B15; border:1px solid #1E3A2F; border-bottom-left-radius:3px; color:#CFE8DA; }
-  .sys { text-align:center; font-size:11px; color:#5F8A76; margin:10px 0; }
-  .err { color:#E07B6A; }
-  #bar { display:flex; gap:8px; padding:10px; background:#0E1613; border-top:1px solid #1E3A2F; flex:0 0 auto; align-items:flex-end; }
-  #inp { flex:1; background:#0B0F0D; border:1px solid #1E3A2F; color:#E8F0EA; border-radius:10px; padding:10px 12px; font-family:monospace; font-size:14px; resize:none; max-height:110px; outline:none; }
-  #inp:focus { border-color:#C9A227; }
-  #go { background:#14532D; border:1px solid #C9A227; color:#F2F2EC; border-radius:10px; padding:10px 16px; font-family:monospace; font-size:14px; }
-  #go:disabled { opacity:.4; }
-  #go.stop { background:#5A1F1A; border-color:#C0392B; }
-  #ov { position:fixed; inset:0; background:#0B0F0DF5; z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; }
-  #ov.show { display:flex; }
-  #ov .hat { width:74px; height:52px; margin-bottom:22px; position:relative; }
-  #ov .hat .crown { position:absolute; left:7px; top:6px; width:60px; height:40px; background:repeating-linear-gradient(180deg,#F2F2EC 0 8px,#14532D 8px 16px); border-radius:30px 30px 8px 8px; }
-  #ov .hat .brim { position:absolute; left:0; bottom:0; width:74px; height:10px; background:#F2F2EC; border-radius:5px; }
-  #ov h2 { font-size:15px; letter-spacing:1px; margin-bottom:8px; }
-  #ov p { font-size:12px; color:#9FD6BD; margin-bottom:20px; }
-  #pbar { width:240px; height:10px; background:#101B15; border:1px solid #1E3A2F; border-radius:5px; overflow:hidden; }
-  #pfill { height:100%; width:2%; background:linear-gradient(90deg,#14532D,#C9A227); transition:width .3s; }
-  #modal { position:fixed; inset:0; background:#000A; z-index:60; display:none; align-items:center; justify-content:center; padding:20px; }
-  #modal.show { display:flex; }
-  .card { background:#0E1613; border:1px solid #1E3A2F; border-radius:14px; width:100%; max-width:420px; padding:18px; }
-  .card h3 { font-size:14px; letter-spacing:1px; margin-bottom:14px; color:#C9A227; }
-  .card label { display:block; font-size:11px; color:#9FD6BD; margin:10px 0 4px; }
-  .card select, .card input {
-    width:100%; background:#0B0F0D; border:1px solid #1E3A2F; color:#E8F0EA;
-    border-radius:8px; padding:9px 10px; font-family:monospace; font-size:13px; outline:none;
+  body {
+    background:#0B0F0D; color:#E8F0EA; font-family:monospace;
+    display:flex; flex-direction:column; overflow:hidden;
   }
-  .card .hint { font-size:10.5px; color:#5F8A76; margin-top:4px; line-height:1.5; }
+  /* ===== header ===== */
+  header {
+    display:flex; align-items:center; gap:11px; padding:11px 16px;
+    background:rgba(14,22,19,.92); border-bottom:1px solid #1B2E25;
+    flex:0 0 auto; backdrop-filter:blur(8px);
+  }
+  .mark { width:30px; height:30px; flex:0 0 auto; }
+  header h1 { font-size:15.5px; letter-spacing:.5px; flex:1; font-weight:normal; }
+  header h1 b { color:#F2F2EC; } header h1 span { color:#3DDC84; }
+  #dot { width:8px; height:8px; border-radius:50%; background:#444; }
+  #dot.ok { background:#3DDC84; box-shadow:0 0 8px #3DDC8588; }
+  #dot.bad { background:#E05545; } #dot.work { background:#C9A227; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.25 } }
+  .icbtn {
+    background:#10160F; border:1px solid #244437; color:#9FD6BD;
+    border-radius:9px; padding:5px 11px; font-size:12.5px; font-family:monospace;
+  }
+  .icbtn:active { background:#16241D; }
+  /* ===== chat ===== */
+  #chat { flex:1 1 auto; overflow-y:auto; padding:14px 14px 6px; -webkit-overflow-scrolling:touch; }
+  .row { display:flex; margin:7px 0; }
+  .row.me { justify-content:flex-end; }
+  .bub {
+    max-width:87%; padding:10px 13px; font-size:13.5px; line-height:1.6;
+    white-space:pre-wrap; word-break:break-word; border-radius:14px;
+  }
+  .me .bub {
+    background:linear-gradient(135deg,#173E2C,#122E22);
+    border:1px solid #245C42; border-bottom-right-radius:4px; color:#EAF6EE;
+  }
+  .oc .bub {
+    background:#0F1712; border:1px solid #1C2F26; border-left:3px solid #C9A227;
+    border-bottom-left-radius:4px; color:#D7E8DC;
+  }
+  .caret::after { content:"▍"; color:#3DDC84; animation:blink .9s infinite; }
+  .sys { text-align:center; font-size:11px; color:#5F8A76; margin:12px 0; }
+  .err { color:#E07B6A; }
+  /* ===== welcome ===== */
+  #hello {
+    height:100%; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; padding:24px;
+  }
+  #hello .mark { width:76px; height:76px; margin-bottom:20px; animation:breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform:scale(1); opacity:.92 } 50% { transform:scale(1.05); opacity:1 } }
+  #hello h2 { font-size:21px; font-weight:normal; letter-spacing:.5px; margin-bottom:6px; }
+  #hello h2 b { color:#F2F2EC; } #hello h2 span { color:#3DDC84; }
+  #hello p { font-size:12px; color:#6FA087; margin-bottom:26px; }
+  #chips { display:grid; grid-template-columns:1fr 1fr; gap:9px; width:100%; max-width:420px; }
+  .chip {
+    background:#0F1712; border:1px solid #1E362B; border-radius:12px;
+    padding:12px 13px; font-size:12px; color:#A9CDB8; text-align:left; font-family:monospace;
+  }
+  .chip b { display:block; color:#E8F0EA; font-size:12.5px; margin-bottom:3px; }
+  .chip:active { border-color:#3DDC84; background:#122019; }
+  /* ===== input ===== */
+  #bar { flex:0 0 auto; padding:10px 12px 14px; background:linear-gradient(180deg,#0B0F0D00,#0B0F0D 30%); }
+  #pill {
+    display:flex; align-items:flex-end; gap:8px; background:#101812;
+    border:1px solid #244437; border-radius:24px; padding:7px 7px 7px 16px;
+  }
+  #pill:focus-within { border-color:#3DDC84; box-shadow:0 0 0 3px #3DDC8414; }
+  #inp {
+    flex:1; background:none; border:none; color:#E8F0EA; font-family:monospace;
+    font-size:14px; resize:none; max-height:110px; outline:none; padding:6px 0;
+  }
+  #go {
+    width:38px; height:38px; border-radius:50%; border:none; flex:0 0 auto;
+    background:linear-gradient(135deg,#3DDC84,#1FA063); color:#071A13;
+    font-size:16px; display:flex; align-items:center; justify-content:center;
+  }
+  #go:disabled { opacity:.35; }
+  #go.stop { background:linear-gradient(135deg,#E05545,#A03028); color:#FFF; }
+  /* ===== overlay ekstraksi ===== */
+  #ov {
+    position:fixed; inset:0; background:#0B0F0DF8; z-index:50;
+    display:none; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center;
+  }
+  #ov.show { display:flex; }
+  #ov .mark { width:86px; height:86px; margin-bottom:24px; animation:breathe 2.4s ease-in-out infinite; }
+  #ov h2 { font-size:15px; letter-spacing:2px; margin-bottom:8px; }
+  #ov p { font-size:12px; color:#6FA087; margin-bottom:22px; }
+  #pbar { width:250px; height:8px; background:#10160F; border:1px solid #1E362B; border-radius:4px; overflow:hidden; }
+  #pfill { height:100%; width:3%; background:linear-gradient(90deg,#3DDC84,#C9A227); transition:width .3s; }
+  /* ===== modal ===== */
+  #modal { position:fixed; inset:0; background:#000C; z-index:60; display:none; align-items:center; justify-content:center; padding:20px; }
+  #modal.show { display:flex; }
+  .card { background:#0E1613; border:1px solid #244437; border-radius:16px; width:100%; max-width:420px; padding:20px; }
+  .card h3 { font-size:13px; letter-spacing:2px; margin-bottom:14px; color:#C9A227; }
+  .card label { display:block; font-size:11px; color:#9FD6BD; margin:11px 0 4px; }
+  .card select, .card input {
+    width:100%; background:#0B0F0D; border:1px solid #244437; color:#E8F0EA;
+    border-radius:10px; padding:10px 11px; font-family:monospace; font-size:13px; outline:none;
+  }
+  .card select:focus, .card input:focus { border-color:#3DDC84; }
+  .card .hint { font-size:10.5px; color:#5F8A76; margin-top:5px; line-height:1.5; }
   .card .hint a { color:#C9A227; }
-  .card .acts { display:flex; gap:8px; margin-top:16px; }
-  .card button { flex:1; padding:10px; border-radius:8px; font-family:monospace; font-size:13px; }
-  #save { background:#14532D; border:1px solid #C9A227; color:#F2F2EC; }
-  #closem { background:none; border:1px solid #1E3A2F; color:#9FD6BD; }
+  .card .acts { display:flex; gap:9px; margin-top:18px; }
+  .card button { flex:1; padding:11px; border-radius:10px; font-family:monospace; font-size:13px; }
+  #save { background:linear-gradient(135deg,#1FA063,#14532D); border:1px solid #3DDC84; color:#F2F2EC; }
+  #closem { background:none; border:1px solid #244437; color:#9FD6BD; }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">&gt;_</div>
-  <h1>Open<span>Code</span></h1>
+  <svg class="mark" viewBox="0 0 432 432">
+    <defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
+    </linearGradient></defs>
+    <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+    <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+    <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#lg1)" transform="rotate(8 297 297)"/>
+  </svg>
+  <h1><b>Open</b><span>Code</span></h1>
   <div id="dot"></div>
   <button class="icbtn" id="btnset">config</button>
 </header>
 
 <div id="chat">
-  <div class="sys">selamat datang di OpenCode Mobile &#8212; agent AI di HP-mu</div>
+  <div id="hello">
+    <svg class="mark" viewBox="0 0 432 432">
+      <defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
+      </linearGradient></defs>
+      <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+      <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+      <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#lg2)" transform="rotate(8 297 297)"/>
+    </svg>
+    <h2><b>Ada yang bisa</b> <span>dibantu?</span></h2>
+    <p>agent AI penuh di HP-mu &#8212; model gratis aktif, tanpa API key</p>
+    <div id="chips">
+      <button class="chip" data-q="Jelaskan isi folder /work dan buatkan ringkasan"><b>📁 Jelaskan folder kerja</b>lihat isi /work lalu rangkum</button>
+      <button class="chip" data-q="Buatkan script bash untuk backup folder, jelasin step by step"><b>📜 Bikin script</b>backup folder otomatis</button>
+      <button class="chip" data-q="Kenapa error 'command not found' sering muncul di Termux? Jelasin cara fix"><b>🐞 Debug error</b>command not found di Termux</button>
+      <button class="chip" data-q="Buatkan contoh REST API Node.js sederhana dengan penjelasan"><b>⚡ Node.js API</b>contoh REST API sederhana</button>
+    </div>
+  </div>
 </div>
 
 <div id="bar">
-  <textarea id="inp" rows="1" placeholder="tanya apa aja&#8230;"></textarea>
-  <button id="go">&#9654;</button>
+  <div id="pill">
+    <textarea id="inp" rows="1" placeholder="Tanya apa aja..."></textarea>
+    <button id="go">&#9654;</button>
+  </div>
 </div>
 
 <div id="ov" class="show">
-  <div class="hat"><div class="crown"></div><div class="brim"></div></div>
-  <h2>MEMASANG OPENCODE</h2>
-  <p>ekstrak rootfs mini — hitungan detik</p>
+  <svg class="mark" viewBox="0 0 432 432">
+    <defs><linearGradient id="lg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
+    </linearGradient></defs>
+    <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+    <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+    <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#lg3)" transform="rotate(8 297 297)"/>
+  </svg>
+  <h2>BERSIAP...</h2>
+  <p>ekstrak rootfs mini &#8212; hitungan detik</p>
   <div id="pbar"><div id="pfill"></div></div>
   <p id="pnum" style="margin-top:10px">0 file</p>
 </div>
 
 <div id="modal">
   <div class="card">
-    <h3>&#9881; KONFIGURASI</h3>
+    <h3>KONFIGURASI</h3>
     <label>Provider</label>
     <select id="cprov">
-      <option value="opencode">opencode (Zen / console.opencode.ai)</option>
+      <option value="opencode">opencode (gratis &#8212; default)</option>
       <option value="anthropic">anthropic (Claude)</option>
       <option value="openai">openai (ChatGPT)</option>
       <option value="openrouter">openrouter</option>
       <option value="groq">groq</option>
       <option value="google">google (Gemini)</option>
     </select>
-    <label>API Key</label>
-    <input id="ckey" type="password" placeholder="tempel API key di sini">
-    <div class="hint">Key opencode gratis: buka <a href="#" onclick="Android.openUrl('https://console.opencode.ai');return false">console.opencode.ai</a> &#8594; API Keys</div>
+    <label>API Key (opsional)</label>
+    <input id="ckey" type="password" placeholder="kosongkan untuk model gratis">
+    <div class="hint">Default sudah pakai model gratis <b>opencode/x-preview-f-free</b> tanpa key. Mau model lain? Key dari <a href="#" onclick="Android.openUrl('https://console.opencode.ai');return false">console.opencode.ai</a></div>
     <label>Model (opsional)</label>
-    <input id="cmodel" placeholder="cth: opencode/grok-code (kosong = default)">
+    <input id="cmodel" placeholder="default: opencode/x-preview-f-free">
     <div class="acts">
       <button id="closem">tutup</button>
       <button id="save">simpan</button>
@@ -127,13 +215,22 @@ function addRow(cls, txt) {
   scrollEnd();
   return b;
 }
+function killHello() {
+  var h = document.getElementById('hello');
+  if (h) h.remove();
+}
 
 window.appendOut = function(t) {
-  if (window._cur === undefined || window._cur === null) window._cur = addRow('oc', '');
+  killHello();
+  if (!window._cur) {
+    window._cur = addRow('oc', '');
+    window._cur.classList.add('caret');
+  }
   window._cur.textContent += t;
   scrollEnd();
 };
 window.onDone = function(code) {
+  if (window._cur) window._cur.classList.remove('caret');
   window._cur = null;
   busy = false;
   go.innerHTML = '&#9654;';
@@ -141,13 +238,19 @@ window.onDone = function(code) {
   dot.className = code === 0 ? 'ok' : 'bad';
   if (code !== 0) addRow('sys err', 'proses selesai dengan kode ' + code);
 };
-window.onError = function(m) { ov.classList.remove('show'); addRow('sys err', m); dot.className = 'bad'; };
+window.onError = function(m) {
+  ov.classList.remove('show');
+  killHello();
+  addRow('sys err', m);
+  dot.className = 'bad';
+};
 window.onReady = function(ok, free) {
   if (ok) {
     ov.classList.remove('show');
     dot.className = 'ok';
-    addRow('sys', 'siap! sisa storage ' + free + ' MB &#8226; config lewat tombol [config]');
-  } else { window.onError('payload tidak lengkap'); }
+  } else {
+    window.onError('payload tidak lengkap - coba uninstall lalu install ulang');
+  }
 };
 window.setProgress = function(n) {
   document.getElementById('pfill').style.width = Math.min(95, n / 22) + '%';
@@ -155,24 +258,33 @@ window.setProgress = function(n) {
 };
 window.onSaved = function() {
   document.getElementById('modal').classList.remove('show');
-  addRow('sys', 'config tersimpan ✓');
+  addRow('sys', 'config tersimpan \u2713');
 };
 
-go.onclick = function() {
-  if (busy) { Android.cancel(); return; }
-  var t = inp.value.trim();
-  if (!t) return;
+function send(t) {
+  if (busy || !t) return;
+  killHello();
   addRow('me', t);
-  inp.value = '';
-  inp.style.height = 'auto';
   window._cur = addRow('oc', '');
-  window._cur.textContent = '...';
+  window._cur.classList.add('caret');
   busy = true;
   dot.className = 'work';
   go.innerHTML = '&#9632;';
   go.classList.add('stop');
   Android.send(t);
+}
+
+go.onclick = function() {
+  if (busy) { Android.cancel(); return; }
+  var t = inp.value.trim();
+  if (!t) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  send(t);
 };
+document.querySelectorAll('.chip').forEach(function(c) {
+  c.onclick = function() { send(c.getAttribute('data-q')); };
+});
 inp.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go.onclick(); }
 });
@@ -196,7 +308,7 @@ document.getElementById('btnset').onclick = function() {
     if (c.cfg) {
       try {
         var m = JSON.parse(c.cfg);
-        document.getElementById('cmodel').value = m.model || '';
+        document.getElementById('cmodel').value = (m.model === 'opencode/x-preview-f-free') ? '' : (m.model || '');
       } catch (e) {}
     }
   } catch (e) {}

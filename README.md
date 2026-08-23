@@ -15,6 +15,7 @@ Versi pendamping dari [opencode-termux](https://github.com/nemoobc/opencode-term
 - ⚡ **Sekali install langsung kebuka** — binary opencode diekstrak sistem saat instalasi (via jniLibs), first-open cuma ekstrak rootfs mini ±5 detik
 - 🤖 Chat UI siap pakai — agent AI jalan penuh (`opencode run`): baca/tulis file di folder kerja, eksekusi perintah, streaming output real-time
 - 📦 Semua bundel dalam 1 APK (~67 MB): binary opencode + Alpine rootfs mini + proot
+- 🆓 **Langsung bisa dipakai** — model gratis `opencode/x-preview-f-free` jadi default, tanpa API key
 - ⚙️ Panel config: provider (opencode/anthropic/openai/openrouter/groq/google) + API key + model
 - 🎨 Ikon & UI: interpretasi sendiri dari logo opencode — bingkai putih, kursor hijau-emas nembus keluar
 - 🔒 Sandbox app Android biasa — tidak butuh izin apa pun kecuali internet
@@ -76,9 +77,7 @@ tar -czf assets/payload/rootfs.bin -C staging rootfs
 
 | Versi | Isi |
 |---|---|
-| v1.0.2 | Ikon baru (interpretasi logo opencode), first-open cepat — binary pindah ke jniLibs, rootfs mini 4 MB, fix overlay error |
-| v1.0.1 | Ikon launcher tema Urahara |
-| v1.0.0 | Rilis pertama |
+| v1.0.3 | UI baru ala AI app modern (welcome screen, chips saran, streaming caret) senada logo — model gratis `opencode/x-preview-f-free` aktif tanpa API key, fix `libtalloc.so.2` & deteksi payload |
 
 ## ⚠️ Catatan
 

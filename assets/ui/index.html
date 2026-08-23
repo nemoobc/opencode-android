@@ -369,6 +369,12 @@ function mdRender(src) {
   txt = txt.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
   txt = txt.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<i>$2</i>');
   txt = txt.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="#" data-url="$2">$1</a>');
+  txt = txt.replace(/^\|(.+)\|\n\|[\s:|-]+\|\n((?:\|.*\|\n?)*)/gm, function(m, head, body) {
+    var hs = head.split('|').map(function(x){return x.trim();});
+    var rows = body.trim().split('\n').map(function(r){return r.split('|').map(function(x){return x.trim();});});
+    return '<table><thead><tr>' + hs.map(function(h){return '<th>'+h+'</th>';}).join('') + '</tr></thead><tbody>' +
+      rows.map(function(r){return '<tr>' + r.map(function(c){return '<td>'+c+'</td>';}).join('') + '</tr>';}).join('') + '</tbody></table>';
+  });
   txt = txt.replace(/^\s*[-*] (.*)$/gm, '<li>$1</li>');
   txt = txt.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>');
   txt = txt.replace(/<\/li>\s*<li>/g, '</li><li>');
@@ -471,14 +477,13 @@ window.onDone = function(code) {
   document.getElementById('hint').textContent = '';
 };
 window.onError = function(m) {
-  if (window._done) return;
+  var first = !window._done;
   window._done = true;
   clearInterval(window._tm);
   ov.classList.remove('show');
   killHello();
-  var e = addMsg('ai', 'SISTEM');
-  e.querySelector('.body').innerHTML = '<span class="err" style="color:#E07B6A">' + esc(m) + '</span>';
-  dot.className = 'bad';
+  if (first) addNote(m, true);
+  finishUI(-1);
 };
 window.onReady = function(ok, free) {
   if (ok) {

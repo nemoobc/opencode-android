@@ -451,6 +451,7 @@ function finishUI(code) {
 }
 
 window.onDone = function(code) {
+  window._lastOnDone = code + ' @ ' + new Date().toISOString();
   if (window._done) return;
   window._done = true;
   clearInterval(window._tm);
@@ -477,6 +478,7 @@ window.onDone = function(code) {
   document.getElementById('hint').textContent = '';
 };
 window.onError = function(m) {
+  window._lastOnError = m + ' @ ' + new Date().toISOString();
   var first = !window._done;
   window._done = true;
   clearInterval(window._tm);

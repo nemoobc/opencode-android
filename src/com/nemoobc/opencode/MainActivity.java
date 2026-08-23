@@ -255,9 +255,11 @@ public class MainActivity extends Activity {
                     evalSync("document.getElementById('go').click()");
                     Thread.sleep(7000);
                     String stopAfter = evalSync("document.getElementById('go').classList.contains('stop')");
+                    String jsState = evalSync("JSON.stringify({done:window._done,aborted:window._aborted,canceling:window._canceling,lastOnDone:window._lastOnDone||'belum-ada',lastOnError:(window._lastOnError||'belum-ada').substring(0,60)})");
                     Diagnostics.step("cancel", "deltaSebelum=" + dSebelum
                             + " deltaSesudah=" + deltaCount
                             + " tombolMasihStop=" + stopAfter);
+                    Diagnostics.step("cancel-js-state", jsState);
                     Diagnostics.shot("4-cancel", capture());
 
                     // tes new chat
@@ -380,6 +382,7 @@ public class MainActivity extends Activity {
                                 new URL("http://127.0.0.1:" + PORT + "/event").openConnection();
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(0);
+                        if (autotest) Diagnostics.step("sse-connect", "terhubung");
                         BufferedReader r = new BufferedReader(
                                 new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
                         String line;
@@ -388,7 +391,10 @@ public class MainActivity extends Activity {
                             handleEvent(line.substring(6).trim());
                         }
                         r.close();
-                    } catch (Exception ignored) {}
+                        if (autotest) Diagnostics.step("sse-putus", "stream berakhir");
+                    } catch (Exception e) {
+                        if (autotest) Diagnostics.step("sse-error", String.valueOf(e));
+                    }
                     if (running && serverUp) {
                         try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
                     }
@@ -415,12 +421,14 @@ public class MainActivity extends Activity {
                         deltaCount++;
                         if (autotest && firstDeltaMs < 0 && tSendMs > 0) {
                             firstDeltaMs = System.currentTimeMillis() - tSendMs;
+                            Diagnostics.step("sse-delta-pertama", firstDeltaMs + "ms");
                         }
                         push("window.appendOut(" + jq(delta) + ")");
                     }
                 }
             } else if ("session.idle".equals(type)) {
                 sawIdle = true;
+                if (autotest) Diagnostics.step("sse-idle", "session=" + sid);
                 if (busy) {
                     busy = false;
                     push("window.onDone(0)");
@@ -497,14 +505,18 @@ public class MainActivity extends Activity {
                         while ((l2 = rr.readLine()) != null) sb2.append(l2);
                         rr.close();
                         msgConn = null;
+                        if (autotest) Diagnostics.step("post-selesai", "HTTP " + code + " panjang=" + sb2.length());
                         if (code >= 400) throw new Exception("HTTP " + code);
                         String res = sb2.toString();
                         if (res.length() == 0 || res.startsWith("<")) {
+                            if (autotest) Diagnostics.step("post-aneh", res.substring(0, Math.min(80, res.length())));
                             throw new Exception("respon server tidak valid");
                         }
+                        if (autotest) Diagnostics.step("post-ok", "pesan masuk antrian selesai");
                         // teks mengalir via SSE; session.idle yang menutup
                     } catch (Exception e) {
                         busy = false;
+                        if (autotest) Diagnostics.step("post-error", String.valueOf(e));
                         push("window.onError(" + jq("Error: " + e) + ")");
                     }
                 }

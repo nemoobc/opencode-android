@@ -1,93 +1,97 @@
 # 📱 OpenCode Android
 
-**[opencode](https://opencode.ai)** sebagai aplikasi Android native — TANPA Termux, TANPA root.
+<div align="center">
 
-[![release](https://img.shields.io/github/v/release/nemoobc/opencode-android?color=C9A227)](https://github.com/nemoobc/opencode-android/releases)
-[![platform](https://img.shields.io/badge/platform-Android%208%2B-3DDC84)](#)
-[![arch](https://img.shields.io/badge/arch-arm64-blue)](#)
+<img src="icon.svg" width="120" alt="logo"/>
 
-Versi pendamping dari [opencode-termux](https://github.com/nemoobc/opencode-termux) — kalau di sana kita jalanin lewat terminal Termux, di sini cukup **install APK, tempel API key, gas.**
+**[opencode](https://opencode.ai) dalam bentuk aplikasi Android.**
+
+Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
+
+[![release](https://img.shields.io/github/v/release/nemoobc/opencode-android?color=C9A227&label=versi)](https://github.com/nemoobc/opencode-android/releases)
+[![ci](https://github.com/nemoobc/opencode-android/actions/workflows/build.yml/badge.svg)](https://github.com/nemoobc/opencode-android/actions/workflows/build.yml)
+[![platform](https://img.shields.io/badge/Android%208%2B-arm64-3DDC84)](#)
+
+[Unduh APK terbaru →](https://github.com/nemoobc/opencode-android/releases)
+
+</div>
 
 ---
 
-## ✨ Fitur
+## ✨ Apa yang bisa dilakukan
 
-- ⚡ **Sekali install langsung kebuka** — binary opencode diekstrak sistem saat instalasi (via jniLibs), first-open cuma ekstrak rootfs mini ±5 detik
-- 🤖 Chat UI siap pakai — agent AI jalan penuh (`opencode run`): baca/tulis file di folder kerja, eksekusi perintah, streaming output real-time
-- 📦 Semua bundel dalam 1 APK (~67 MB): binary opencode + Alpine rootfs mini + proot
-- 🆓 **Langsung bisa dipakai** — model gratis `opencode/x-preview-f-free` jadi default, tanpa API key
-- 💬 **Obrolan nyambung otomatis** — agent ingat konteks; tombol + untuk mulai baru
-- 📝 **Render markdown** — code block dengan tombol COPY, tabel, list, heading
-- ⚡ **Ganti model dari header** — tanpa buka config
-- 🔄 **Update checker** — notifikasi kalau ada versi baru
-- ⚙️ Panel config: provider (opencode/anthropic/openai/openrouter/groq/google) + API key + model
-- 🎨 Ikon & UI: interpretasi sendiri dari logo opencode — bingkai putih, kursor hijau-emas nembus keluar
-- 🔒 Sandbox app Android biasa — tidak butuh izin apa pun kecuali internet
+| | |
+|---|---|
+| 💬 **Obrolan nyambung** | Agent mengingat konteks percakapan — tombol **+** untuk mulai baru |
+| 🛠️ **Agent penuh** | Bisa membaca & menulis file di folder kerjanya, menjalankan perintah, menganalisis masalah |
+| 📝 **Jawaban rapi** | Render markdown: code block + tombol salin, tabel, list, heading |
+| ⚡ **Ganti model sekali tap** | Langsung dari header — preset gratis atau model kustom |
+| 🔒 **Privat** | Semua berjalan di sandbox aplikasi; hanya izin internet |
+| 🔄 **Update otomatis terdeteksi** | Banner muncul saat ada versi baru |
+| 🤖 **CI build** | APK dibangun otomatis oleh GitHub Actions setiap push |
 
-## 🚀 Install
+## 🆓 Gratis, tanpa API key
 
-1. Unduh APK terbaru dari [Releases](https://github.com/nemoobc/opencode-android/releases)
-2. Install (izinkan sumber tidak dikenal)
-3. Buka app → ekstraksi rootfs mini beberapa detik → langsung siap
-4. Tap **[config]** → pilih provider + tempel API key → simpan
-5. Ngobrol sama agent-nya. Kerja file ada di `/work` (folder internal app)
+Model default **`opencode/x-preview-f-free`** berjalan tanpa kunci apa pun —
+pasang aplikasi, buka, langsung pakai.
 
-> Key opencode gratis: [console.opencode.ai](https://console.opencode.ai) → API Keys
+> Catatan jujur: relay model gratis memproses di server, balasan pertama
+> bisa memakan **30–60 detik** (ada timer berjalan di layar). Mau lebih cepat?
+> Tempel API key provider lain lewat menu **config**.
 
-## 🔧 Cara kerja
+## 🚀 Pasang
+
+1. Unduh APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
+2. Izinkan instalasi dari sumber tidak dikenal
+3. Buka — ekstraksi awal hanya beberapa detik
+4. Ketuk chip model di header untuk ganti model, atau mulai bertanya
+
+Hasil kerja agent tersimpan di
+`Android/data/com.nemoobc.opencode/files` — terlihat di file manager mana pun.
+
+## ⚙️ Cara kerja
 
 ```
 OpenCode.apk
  ├─ lib/arm64-v8a/
- │   ├─ libopencode.so          ← binary opencode resmi (diekstrak installer saat install)
- │   ├─ libproot.so             ← proot: jalankan rootfs tanpa root
- │   ├─ libproot_loader.so
- │   ├─ libtalloc.so
- │   └─ libshmem.so
- └─ assets/payload/rootfs.bin   ← Alpine minirootfs (~4 MB, diekstrak saat first-open)
+ │   ├─ libopencode.so        binary opencode resmi (ekstrak sistem saat instalasi)
+ │   ├─ libproot.so           menjalankan rootfs tanpa root
+ │   └─ ...                   loader, libtalloc, libandroid-shmem
+ └─ assets/payload/rootfs.bin Alpine minirootfs ±4 MB (diekstrak saat pertama dibuka)
 ```
 
-Saat chat, app menjalankan:
+Saat bertanya, aplikasi menjalankan:
 
 ```
-proot -r rootfs -0 \
-  -b libopencode.so:/usr/bin/opencode \
-  -b cache:/tmp  -b work:/work \
-  /usr/bin/oc run "<prompt>"
+proot -r rootfs -0 -b libopencode.so:/usr/bin/opencode \
+      -b cache:/tmp -b external-files:/work \
+      /usr/bin/oc run "pertanyaan"
 ```
 
-- Binary opencode **tidak pernah dimodifikasi** — diambil apa adanya dari rilis resmi upstream
-- Output di-stream real-time ke WebView chat UI
-- Config/auth tersimpan persisten di `rootfs/root/.config/opencode/`
+Output mengalir real-time ke antarmuka obrolan (WebView), konfigurasi
+tersimpan persisten di `rootfs/root/.config/opencode/`.
 
 ## 🛠️ Build dari sumber
 
-Butuh: Termux/Android arm64 dengan `aapt d8 apksigner openjdk-21 librsvg` (semua ada di repo Termux).
+Butuh JDK 21, `aapt`, `d8`, `apksigner` (semua tersedia di repo Termux):
 
 ```bash
-# 1. unduh bahan ke dl/ (URL di build.sh & README):
-#    - platform-34-ext7 android.jar (dl.google.com)
-#    - opencode-linux-arm64-musl v1.18.21 (npm)  → jniLibs/libopencode.so
-#    - alpine-minirootfs 3.21 aarch64 + libgcc + libstdc++ (dl-cdn.alpinelinux.org)
-# 2. rakit rootfs mini (TANPA binary opencode — itu dari jniLibs)
-mkdir -p staging/rootfs && tar -xzf dl/minirootfs.tar.gz -C staging/rootfs
-#    + libstdc++/libgcc ke usr/lib, resolv.conf ke etc/, wrapper usr/bin/oc
-tar -czf assets/payload/rootfs.bin -C staging rootfs
-# 3. build
-./build.sh   # → build/OpenCode-v<versi>.apk (signed, verified)
+git clone https://github.com/nemoobc/opencode-android && cd opencode-android
+# unduh bahan ke dl/ — daftar URL ada di .github/workflows/build.yml
+# rakit payload + jniLibs (lihat langkah di workflow CI)
+./build.sh          # → build/OpenCode-vX.Y.Z.apk (signed + verified)
 ```
+
+Atau biarkan **GitHub Actions** yang membangun — push apa pun akan
+menghasilkan artefak APK di tab Actions.
 
 ## 📜 Riwayat versi
 
 | Versi | Isi |
 |---|---|
-| v1.1.1 | Desain ulang natural ala ChatGPT/Claude/Gemini: font sans-serif, jawaban AI full-width, bubble user lembut, aksi Salin/Tanya lagi, timer proses, tombol scroll — fix payload nested & opsi `--` proot, CI build otomatis |
-
-## ⚠️ Catatan
-
-- v1 belum punya: sesi interaktif berkelanjutan, mode TUI penuh
-- APK ~67 MB karena membawa binary opencode utuh (~193 MB, terkompresi 68% di APK)
+| v1.1.2 | Perapian teks antarmuka, perbaikan build |
 
 ## 📄 Lisensi
 
-Kode app: MIT. Komponen bundel mempertahankan lisensinya masing-masing (proot = GPLv3, opencode = lisensi upstream, Alpine = BSD/GPL campuran).
+Kode aplikasi: **MIT**. Komponen yang dibundel mempertahankan lisensinya
+masing-masing — proot (GPLv3), opencode (lisensi upstream), Alpine (BSD/GPL).

@@ -207,7 +207,7 @@
     <button class="d-item" id="dwork"><span class="ic">&#128193;</span> Folder kerja agent</button>
     <button class="d-item" id="drepo"><span class="ic">&#9741;</span> Repo GitHub</button>
   </div>
-  <div class="d-foot">opencode android<br/><span id="dver">v?</span> &#8226; dibuat dari Termux</div>
+  <div class="d-foot">opencode android <span id="dver">v?</span></div>
 </div>
 <div id="scrim"></div>
 
@@ -233,7 +233,7 @@
       <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#gd2)" transform="rotate(8 297 297)"/>
     </svg>
     <h2><b>Ada yang bisa</b> <span>dibantu?</span></h2>
-    <p>agent AI penuh di HP-mu &#8212; model gratis aktif, tanpa API key</p>
+    <p>model gratis aktif &#8212; tanpa API key</p>
     <div id="chips">
       <button class="chip" data-q="Jelaskan isi folder kerja /work dan buatkan ringkasannya"><b>&#128193; Jelaskan folder kerja</b>lihat isi /work lalu rangkum</button>
       <button class="chip" data-q="Buatkan script bash untuk backup folder otomatis, jelaskan langkahnya"><b>&#128220; Bikin script</b>backup folder otomatis</button>
@@ -433,7 +433,7 @@ window.onDone = function(code) {
   go.innerHTML = '&#8593;';
   go.classList.remove('stop');
   dot.className = code === 0 ? 'ok' : 'bad';
-  document.getElementById('hint').innerHTML = 'agent bisa baca/tulis file di folder kerjanya &bull; obrolan nyambung otomatis';
+  document.getElementById('hint').textContent = '';
 };
 window.onError = function(m) {
   if (window._done) return;

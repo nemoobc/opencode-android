@@ -1,0 +1,126 @@
+name: tes emulator (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-x86:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - name: alat
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt apksigner unzip curl
+          curl -sL -o r8.jar "https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.5.35/r8-8.5.35.jar"
+          echo "D8_CMD=java -cp $PWD/r8.jar com.android.tools.r8.D8" >> $GITHUB_ENV
+      - name: unduh bahan x86_64
+        run: |
+          mkdir -p dl
+          curl -sL -o dl/platform-34.zip "https://dl.google.com/android/repository/platform-34-ext7_r02.zip"
+          unzip -oq dl/platform-34.zip "*/android.jar" -d dl/
+          curl -sL -o dl/oc.tgz "https://registry.npmjs.org/opencode-linux-x64-musl/-/opencode-linux-x64-musl-1.18.21.tgz"
+          curl -sL -o dl/minirootfs.tar.gz "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-minirootfs-3.21.3-x86_64.tar.gz"
+          curl -sL -o dl/libgcc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/libgcc-14.2.0-r4.apk"
+          curl -sL -o dl/libstdc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/libstdc%2B%2B-14.2.0-r4.apk"
+      - name: unduh proot termux x86_64
+        run: |
+          mkdir -p dl/termux && cd dl/termux
+          curl -sL -o Packages "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-x86_64/Packages"
+          for pkg in proot libtalloc libandroid-shmem; do
+            url=$(awk -v p="Package: $pkg" '$0==p{f=1} f&&/^Filename:/{print $2; exit}' Packages)
+            echo "pkg $pkg -> $url"
+            curl -sL -O "https://packages.termux.dev/apt/termux-main/${url}"
+          done
+          for d in *.deb; do dpkg-deb -x "$d" ex; done
+          find ex -name "proot" -type f -exec cp {} ./proot.bin \;
+          find ex -path "*libexec/proot/loader" -exec cp {} ./loader.bin \;
+          find ex -name "libtalloc.so*" -exec cp {} ./libtalloc.so \;
+          find ex -name "libandroid-shmem.so*" -exec cp {} ./libshmem.so \;
+          ls -la
+      - name: rakit payload + jniLibs x86_64
+        run: |
+          mkdir -p staging/rootfs staging/apks assets/payload jniLibs/x86_64
+          tar -xzf dl/minirootfs.tar.gz -C staging/rootfs
+          tar -xzf dl/oc.tgz -C staging/
+          cp staging/package/bin/opencode jniLibs/x86_64/libopencode.so
+          mv dl/libgcc.apk dl/libstdc.apk staging/apks/
+          tar -xzf staging/apks/libgcc.apk -C staging/apks/ || true
+          tar -xzf staging/apks/libstdc.apk -C staging/apks/ || true
+          cp -a staging/apks/usr/lib/. staging/rootfs/usr/lib/
+          printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > staging/rootfs/etc/resolv.conf
+          mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
+          printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
+          chmod +x staging/rootfs/usr/bin/oc
+          printf '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "opencode/x-preview-f-free"\n}\n' > staging/rootfs/root/.config/opencode/opencode.json
+          tar -czf assets/payload/rootfs.bin -C staging/rootfs .
+          cp dl/termux/proot.bin jniLibs/x86_64/libproot.so
+          cp dl/termux/loader.bin jniLibs/x86_64/libproot_loader.so
+          cp dl/termux/libtalloc.so jniLibs/x86_64/libtalloc.so
+          cp dl/termux/libshmem.so jniLibs/x86_64/libshmem.so
+      - name: build apk x86_64
+        run: |
+          sed -i 's|jniLibs/arm64-v8a|jniLibs/x86_64|' build.sh || true
+          bash build.sh
+          mkdir -p out
+          mv build/OpenCode-*.apk out/app-x86.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: apk-x86, path: out/app-x86.apk }
+
+  emulator:
+    needs: build-x86
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: apk-x86, path: . }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+      - name: adb start-server
+        run: adb start-server
+      - name: emulator + autotest
+        timeout-minutes: 30
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          disable-animations: false
+          disable-linux-hw-accel: false
+          script: |
+            echo "=== KVM check ==="
+            egrep -c '(vmx|svm)' /proc/cpuinfo || true
+            adb install app-x86.apk
+            adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
+            sleep 10
+            adb exec-out screencap -p > shot-1-launch.png
+            adb forward tcp:18096 tcp:4099
+            echo "=== menunggu autotest selesai (maks 4 menit) ==="
+            SELESAI=false
+            for i in $(seq 1 48); do
+              sleep 5
+              R=$(curl -s -m 5 http://127.0.0.1:18096/ || true)
+              if echo "$R" | grep -q '"selesai":"true"'; then SELESAI=true; echo "selesai setelah $((i*5))s"; break; fi
+            done
+            echo "selesai: $SELESAI"
+            curl -s -m 10 http://127.0.0.1:18096/ -o hasil-diagnosa.json || true
+            for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do
+              curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true
+            done
+            adb exec-out screencap -p > shot-final-layar.png
+            adb logcat -d > logcat.txt || true
+            echo "=== isi diagnosa ==="
+            cat hasil-diagnosa.json || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bukti-emulator
+          path: |
+            hasil-diagnosa.json
+            diag-*.png
+            shot-*.png
+            logcat.txt
+          if-no-files-found: warn

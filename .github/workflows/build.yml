@@ -18,7 +18,10 @@ jobs:
       - name: pasang alat
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq aapt apksigner
+          sudo apt-get install -y -qq aapt apksigner unzip
+          curl -sL -o bt.zip "https://dl.google.com/android/repository/build-tools_r34-linux.zip"
+          unzip -oq bt.zip -d bt
+          echo "$(pwd)/$(find bt -name d8 -type f | head -1 | xargs dirname)" >> $GITHUB_PATH
 
       - name: unduh bahan
         run: |

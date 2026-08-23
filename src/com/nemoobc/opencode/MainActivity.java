@@ -28,6 +28,8 @@ public class MainActivity extends Activity {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private Process proc;
     private volatile boolean busy = false;
+    private boolean sessionLive = false;
+    private File extWork;
 
     private File rootFs, workDir, cacheDir, natLib;
 
@@ -40,6 +42,9 @@ public class MainActivity extends Activity {
         cacheDir = getCacheDir();
         natLib = new File(getApplicationInfo().nativeLibraryDir);
 
+        extWork = getExternalFilesDir(null);
+        if (extWork == null) extWork = workDir;
+        if (!extWork.exists()) extWork.mkdirs();
         if (!workDir.exists()) workDir.mkdirs();
         setupLibLinks();
         new File(rootFs, "root/.config/opencode").mkdirs();
@@ -184,6 +189,65 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void newChat() {
+            sessionLive = false;
+        }
+
+        @JavascriptInterface
+        public void copyText(final String t) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.ClipboardManager cm =
+                            (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("oc", t));
+                        android.widget.Toast.makeText(MainActivity.this, "Tersalin", android.widget.Toast.LENGTH_SHORT).show();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void checkUpdate() {
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                try {
+                    java.net.URL u = new java.net.URL(
+                        "https://api.github.com/repos/nemoobc/opencode-android/releases/latest");
+                    java.net.HttpURLConnection cx = (java.net.HttpURLConnection) u.openConnection();
+                    cx.setConnectTimeout(8000); cx.setReadTimeout(8000);
+                    cx.setRequestProperty("User-Agent", "opencode-android");
+                    java.io.BufferedReader r = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(cx.getInputStream()));
+                    StringBuilder sb = new StringBuilder(); String l;
+                    while ((l = r.readLine()) != null) sb.append(l);
+                    r.close();
+                    org.json.JSONObject j = new org.json.JSONObject(sb.toString());
+                    String tag = j.getString("tag_name");
+                    String mine = getPackageManager()
+                        .getPackageInfo(getPackageName(), 0).versionName;
+                    if (!tag.contains(mine)) {
+                        String body = j.optString("body", "").replaceAll("\\s+", " ");
+                        if (body.length() > 160) body = body.substring(0, 160) + "...";
+                        final String ftag = tag, fbody = body;
+                        push("window.onUpdate(" + JSONObject.quote(ftag) + "," + JSONObject.quote(fbody) + ")");
+                    }
+                } catch (Exception ignored) {}
+                }
+            });
+            t.start();
+        }
+
+        @JavascriptInterface
+        public String appInfo() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) { return "?"; }
+        }
+
+        @JavascriptInterface
         public void cancel() {
             Process p = proc;
             if (p != null) p.destroy();
@@ -252,21 +316,23 @@ public class MainActivity extends Activity {
             String proot = new File(natLib, "libproot.so").getAbsolutePath();
             String loader = new File(natLib, "libproot_loader.so").getAbsolutePath();
 
-            String[] cmd = {
-                proot,
-                "--kill-on-exit",
-                "-0",
-                "-r", rootFs.getAbsolutePath(),
-                "-b", "/dev",
-                "-b", "/proc",
-                "-b", "/sys",
-                "-b", new File(natLib, "libopencode.so").getAbsolutePath() + ":/usr/bin/opencode",
-                "-b", cacheDir.getAbsolutePath() + ":/tmp",
-                "-b", workDir.getAbsolutePath() + ":/work",
-                "-w", "/work",
-                "--",
-                "/usr/bin/oc", "run", prompt
-            };
+            java.util.List<String> c = new java.util.ArrayList<>();
+            c.add(proot);
+            c.add("--kill-on-exit");
+            c.add("-0");
+            c.add("-r"); c.add(rootFs.getAbsolutePath());
+            c.add("-b"); c.add("/dev");
+            c.add("-b"); c.add("/proc");
+            c.add("-b"); c.add("/sys");
+            c.add("-b"); c.add(new File(natLib, "libopencode.so").getAbsolutePath() + ":/usr/bin/opencode");
+            c.add("-b"); c.add(cacheDir.getAbsolutePath() + ":/tmp");
+            c.add("-b"); c.add(extWork.getAbsolutePath() + ":/work");
+            c.add("-w"); c.add("/work");
+            c.add("/usr/bin/oc");
+            c.add("run");
+            if (sessionLive) c.add("-c");
+            c.add(prompt);
+            String[] cmd = c.toArray(new String[0]);
 
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
@@ -297,7 +363,9 @@ public class MainActivity extends Activity {
                 }
             }
             flushOut(acc);
-            return proc.waitFor();
+            int code = proc.waitFor();
+            if (code == 0) sessionLive = true;
+            return code;
         } catch (Exception e) {
             push("window.onError(" + jq("Error: " + e) + ")");
             return -1;

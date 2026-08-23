@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.system.Os;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -39,6 +40,7 @@ public class MainActivity extends Activity {
     private Process serverProc;
     private volatile boolean serverUp = false;
     private volatile String sessionId = null;
+    private volatile HttpURLConnection msgConn = null;
     private static final int PORT = 4096;
 
     @Override
@@ -62,8 +64,14 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         web.setBackgroundColor(0xFF0C100E);
-        web.setWebViewClient(new WebViewClient());
         web.addJavascriptInterface(new Bridge(), "Android");
+        web.setVisibility(View.INVISIBLE);
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView v, String u) {
+                v.setVisibility(View.VISIBLE);
+            }
+        });
         setContentView(web);
         web.loadUrl("file:///android_asset/ui/index.html");
 
@@ -153,6 +161,13 @@ public class MainActivity extends Activity {
 
     private void startServer() {
         try {
+            if (httpCode("http://127.0.0.1:" + PORT + "/", 1200) == 200) {
+                serverUp = true;
+                long free = rootFs.getFreeSpace() / (1024 * 1024);
+                push("window.onReady(true," + free + ")");
+                startEventStream();
+                return;
+            }
             String proot = new File(natLib, "libproot.so").getAbsolutePath();
             String loader = new File(natLib, "libproot_loader.so").getAbsolutePath();
 
@@ -328,8 +343,29 @@ public class MainActivity extends Activity {
                         mm.put("providerID", prov);
                         mm.put("modelID", mid);
                         body.put("model", mm);
-                        String res = httpPost("http://127.0.0.1:" + PORT + "/session/"
-                                + sessionId + "/message", body.toString());
+                        HttpURLConnection mc = (HttpURLConnection)
+                                new URL("http://127.0.0.1:" + PORT + "/session/"
+                                + sessionId + "/message").openConnection();
+                        mc.setRequestMethod("POST");
+                        mc.setConnectTimeout(8000);
+                        mc.setReadTimeout(180000);
+                        mc.setDoOutput(true);
+                        mc.setRequestProperty("Content-Type", "application/json");
+                        OutputStream os = mc.getOutputStream();
+                        os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+                        os.close();
+                        msgConn = mc;
+                        int code = mc.getResponseCode();
+                        InputStream is = code >= 400 ? mc.getErrorStream() : mc.getInputStream();
+                        BufferedReader rr = new BufferedReader(
+                                new InputStreamReader(is, StandardCharsets.UTF_8));
+                        StringBuilder sb2 = new StringBuilder();
+                        String l2;
+                        while ((l2 = rr.readLine()) != null) sb2.append(l2);
+                        rr.close();
+                        msgConn = null;
+                        if (code >= 400) throw new Exception("HTTP " + code);
+                        String res = sb2.toString();
                         if (res.length() == 0 || res.startsWith("<")) {
                             throw new Exception("respon server tidak valid");
                         }
@@ -345,11 +381,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void cancel() {
             if (sessionId == null) return;
+            final String sid = sessionId;
+            final HttpURLConnection cc = msgConn;
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
                     try {
-                        httpPost("http://127.0.0.1:" + PORT + "/session/" + sessionId + "/abort", "{}");
+                        httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}");
+                    } catch (Exception ignored) {}
+                    try {
+                        httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}");
                     } catch (Exception ignored) {}
                 }
             }).start();

@@ -93,7 +93,7 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 | Versi | Isi |
 |---|---|
-| v1.2.1 | Fix new chat stuck (tanpa reload halaman), auto-scroll anti-gagal (MutationObserver), bersih-bersih teks drawer, catatan relay lambat |
+| v1.2.2 | Fix auto-scroll (model sentuhan pengguna), streaming ringan, cancel ganda (interrupt+abort+putus koneksi), adopsi server yatim, anti white-flash saat buka app |
 
 ## 📄 Lisensi
 

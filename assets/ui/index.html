@@ -76,6 +76,7 @@
     word-break:break-word; color:#F0F4F1;
   }
   .msg.ai .body { font-size:15.5px; line-height:1.75; color:#E4EAE5; word-break:break-word; padding:2px 0; }
+  .msg.ai .body.plain { white-space:pre-wrap; }
   .caret::after { content:"▍"; color:#3DDC84; animation:blink .9s infinite; }
   .dots { display:inline-flex; gap:5px; padding:8px 0 2px; }
   .dots i { width:7px; height:7px; border-radius:50%; background:#5E7568; animation:db 1.2s infinite; }
@@ -317,17 +318,22 @@ function toast(t) {
   el.textContent = t; el.classList.add('show');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ el.classList.remove('show'); }, 2200);
 }
-var autoScroll = true;
-function scrollEnd() {
-  autoScroll = true;
+var userHold = false;
+function follow() {
+  if (userHold) return;
   wrap.scrollTop = wrap.scrollHeight;
-  requestAnimationFrame(function() { wrap.scrollTop = wrap.scrollHeight; });
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 60);
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 220);
+  requestAnimationFrame(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; });
+  setTimeout(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; }, 120);
 }
-new MutationObserver(function() {
-  if (autoScroll) wrap.scrollTop = wrap.scrollHeight;
-}).observe(chat, { childList: true, subtree: true, characterData: true });
+function scrollEnd() { userHold = false; follow(); }
+wrap.addEventListener('touchstart', function() { userHold = true; }, { passive: true });
+wrap.addEventListener('touchend', function() {
+  setTimeout(function() {
+    userHold = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight > 150;
+    var d = document.getElementById('down');
+    if (userHold) d.classList.add('show'); else d.classList.remove('show');
+  }, 60);
+});
 window.addEventListener('resize', function() {
   var d = document.getElementById('down');
   if (!d.classList.contains('show')) scrollEnd();
@@ -336,8 +342,8 @@ wrap = document.getElementById('chatwrap');
 document.getElementById('chatwrap').addEventListener('scroll', function() {
   var d = document.getElementById('down');
   var far = this.scrollHeight - this.scrollTop - this.clientHeight > 300;
-  if (far) { d.classList.add('show'); autoScroll = false; }
-  else { d.classList.remove('show'); autoScroll = true; }
+  if (far && !userHold) d.classList.add('show');
+  else if (!far) d.classList.remove('show');
 });
 document.getElementById('down').onclick = function() { scrollEnd(); };
 function killHello() { var h = document.getElementById('hello'); if (h) h.remove(); }
@@ -412,6 +418,7 @@ function addActions(body, plain) {
 
 window.appendOut = function(t) {
   if (window._aborted) return;
+  killHello();
   if (!window._cur) {
     window._plain = '';
     var body = addMsg('ai');
@@ -422,8 +429,10 @@ window.appendOut = function(t) {
     if (d) d.remove();
   }
   window._plain += t;
-  window._cur.innerHTML = '<div class="md caret">' + mdRender(window._plain) + '</div>';
-  scrollEnd();
+  window._cur.classList.add('caret');
+  window._cur.classList.add('plain');
+  window._cur.textContent = window._plain;
+  follow();
 };
 window.onDone = function(code) {
   if (window._done) return;
@@ -436,6 +445,7 @@ window.onDone = function(code) {
     if (window._canceling) {
       window._cur.innerHTML = '<i style="color:#8AA396">dihentikan.</i>';
     } else if (plain) {
+      window._cur.classList.remove('plain');
       window._cur.innerHTML = '<div class="md">' + mdRender(plain) + '</div>';
       addActions(window._cur, plain);
     } else if (code !== 0) {
@@ -541,7 +551,7 @@ function newChat() {
   chat.innerHTML = window._helloHTML;
   bindChips();
   dot.className = 'ok';
-  autoScroll = true;
+
   scrollEnd();
   toast('obrolan baru dimulai');
 }

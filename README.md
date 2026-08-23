@@ -2,17 +2,16 @@
 
 <div align="center">
 
-<img src="icon.svg" width="120" alt="logo"/>
+<img src="icon.svg" width="120" alt="OpenCode"/>
 
 **[opencode](https://opencode.ai) dalam bentuk aplikasi Android.**
 
 Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 
 [![release](https://img.shields.io/github/v/release/nemoobc/opencode-android?color=C9A227&label=versi)](https://github.com/nemoobc/opencode-android/releases)
-[![ci](https://github.com/nemoobc/opencode-android/actions/workflows/build.yml/badge.svg)](https://github.com/nemoobc/opencode-android/actions/workflows/build.yml)
 [![platform](https://img.shields.io/badge/Android%208%2B-arm64-3DDC84)](#)
 
-[Unduh APK terbaru →](https://github.com/nemoobc/opencode-android/releases)
+[**⬇ Unduh APK terbaru**](https://github.com/nemoobc/opencode-android/releases)
 
 </div>
 
@@ -23,27 +22,29 @@ Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 | | |
 |---|---|
 | 💬 **Obrolan nyambung** | Agent mengingat konteks percakapan — tombol **+** untuk mulai baru |
-| 🛠️ **Agent penuh** | Bisa membaca & menulis file di folder kerjanya, menjalankan perintah, menganalisis masalah |
+| ⚡ **Respons cepat** | Server opencode berjalan persisten — tanpa startup ulang di tiap pesan |
+| 🌊 **Jawaban mengalir** | Teks muncul kata-per-kata saat model menulis |
+| 🛠️ **Agent penuh** | Membaca & menulis file di folder kerja, menjalankan perintah, analisis masalah |
 | 📝 **Jawaban rapi** | Render markdown: code block + tombol salin, tabel, list, heading |
-| ⚡ **Ganti model sekali tap** | Langsung dari header — preset gratis atau model kustom |
+| ⚡ **Ganti model sekali tap** | Langsung dari header — X Preview Free, Grok Code, Qwen3 Coder, atau model kustom |
 | 🔒 **Privat** | Semua berjalan di sandbox aplikasi; hanya izin internet |
-| 🔄 **Update otomatis terdeteksi** | Banner muncul saat ada versi baru |
-| 🤖 **CI build** | APK dibangun otomatis oleh GitHub Actions setiap push |
+| 🔄 **Deteksi update** | Pemberitahuan otomatis saat ada versi baru |
 
 ## 🆓 Gratis, tanpa API key
 
 Model default **`opencode/x-preview-f-free`** berjalan tanpa kunci apa pun —
 pasang aplikasi, buka, langsung pakai.
 
-> Relay model gratis tetap menjadi penentu kecepatan utama, tapi kini
-> tanpa startup ulang di setiap pesan dan teks mengalim seiring generasi.
+> Kecepatan akhir tetap ditentukan relay model gratis di sisi server —
+> kadang butuh beberapa detik ekstra. Mau lebih cepat? Tempel API key
+> provider lain lewat menu **config**.
 
 ## 🚀 Pasang
 
 1. Unduh APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
 2. Izinkan instalasi dari sumber tidak dikenal
-3. Buka — ekstraksi awal hanya beberapa detik
-4. Ketuk chip model di header untuk ganti model, atau mulai bertanya
+3. Buka — ekstraksi awal hanya beberapa detik, lalu server siap
+4. Ketuk nama model di header untuk ganti model, atau langsung bertanya
 
 Hasil kerja agent tersimpan di
 `Android/data/com.nemoobc.opencode/files` — terlihat di file manager mana pun.
@@ -59,36 +60,40 @@ OpenCode.apk
  └─ assets/payload/rootfs.bin Alpine minirootfs ±4 MB (diekstrak saat pertama dibuka)
 ```
 
-Saat bertanya, aplikasi menjalankan:
-
-```
-proot -r rootfs -0 -b libopencode.so:/usr/bin/opencode \
-      -b cache:/tmp -b external-files:/work \
-      /usr/bin/oc run "pertanyaan"
-```
-
-Output mengalir real-time ke antarmuka obrolan (WebView), konfigurasi
-tersimpan persisten di `rootfs/root/.config/opencode/`.
+Saat aplikasi dibuka, `opencode serve` dijalankan sebagai server lokal
+persisten di `127.0.0.1:4096`. Setiap pertanyaan dikirim lewat HTTP API —
+karena itu tanpa startup ulang, dan jawaban mengalir real-time lewat
+event stream.
 
 ## 🛠️ Build dari sumber
 
-Butuh JDK 21, `aapt`, `d8`, `apksigner` (semua tersedia di repo Termux):
+Butuh perangkat arm64 dengan JDK 21, `aapt`, `d8`, `apksigner`
+(semua tersedia di repo paket Termux):
 
 ```bash
 git clone https://github.com/nemoobc/opencode-android && cd opencode-android
-# unduh bahan ke dl/ — daftar URL ada di .github/workflows/build.yml
-# rakit payload + jniLibs (lihat langkah di workflow CI)
+
+# 1. unduh bahan ke dl/ — daftar URL ada di build.sh & riwayat workflow
+#    - platform-34 android.jar (dl.google.com)
+#    - opencode-linux-arm64-musl (npm)  → jniLibs/arm64-v8a/libopencode.so
+#    - alpine-minirootfs 3.21 + libgcc + libstdc++ (dl-cdn.alpinelinux.org)
+
+# 2. rakit payload (tanpa prefix folder!) + salin binary
+tar -xzf dl/minirootfs.tar.gz -C staging/rootfs
+tar -xzf dl/oc-musl.tgz -C staging/
+cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
+#    + libstdc++/libgcc ke usr/lib, resolv.conf, wrapper usr/bin/oc, config model gratis
+tar -czf assets/payload/rootfs.bin -C staging/rootfs .
+
+# 3. bangun
 ./build.sh          # → build/OpenCode-vX.Y.Z.apk (signed + verified)
 ```
-
-Atau biarkan **GitHub Actions** yang membangun — push apa pun akan
-menghasilkan artefak APK di tab Actions.
 
 ## 📜 Riwayat versi
 
 | Versi | Isi |
 |---|---|
-| v1.2.0 | Arsitektur baru `opencode serve`: respons **5 detik-an** (sebelumnya 47s), teks mengalir kata-per-kata, tombol berhenti benar-benar berhenti — plus watchdog stop, nama model rapi, auto-scroll |
+| v1.2.0 | Arsitektur `opencode serve`: respons ±5 detik, streaming kata-per-kata, abort resmi + watchdog, nama model rapi |
 
 ## 📄 Lisensi
 

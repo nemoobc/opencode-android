@@ -55,8 +55,8 @@ public class MainActivity extends Activity {
         Thread t0 = new Thread(new Runnable() {
             @Override
             public void run() {
-                boolean ready = new File(rootFs, "usr/bin/opencode").exists()
-                        && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+                boolean ready = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
+                        && new File(rootFs, "bin/sh").exists();
                 if (!ready) {
                     try {
                         InputStream raw = getAssets().open("payload/rootfs.bin");
@@ -67,11 +67,11 @@ public class MainActivity extends Activity {
                             }
                         };
                         TarExtractor.extractGz(new BufferedInputStream(raw, 1 << 16), rootFs, cb);
-                        for (String p : new String[]{"usr/bin/opencode", "usr/bin/oc"}) {
+                        for (String p : new String[]{"usr/bin/oc"}) {
                             File f = new File(rootFs, p);
                             if (f.exists()) f.setExecutable(true, false);
                         }
-                        ready = new File(rootFs, "usr/bin/opencode").exists();
+                        ready = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
                     } catch (Exception e) {
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
                         return;
@@ -213,6 +213,8 @@ public class MainActivity extends Activity {
                 "-b", "/dev",
                 "-b", "/proc",
                 "-b", "/sys",
+                "-b", new File(natLib, "libopencode.so").getAbsolutePath() + ":/usr/bin/opencode",
+                "-b", cacheDir.getAbsolutePath() + ":/tmp",
                 "-b", workDir.getAbsolutePath() + ":/work",
                 "-w", "/work",
                 "--",

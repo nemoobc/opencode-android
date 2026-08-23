@@ -78,7 +78,7 @@
 <div id="ov" class="show">
   <div class="hat"><div class="crown"></div><div class="brim"></div></div>
   <h2>MEMASANG OPENCODE</h2>
-  <p>ekstrak rootfs pertama kali, sabar ya~<br>(sekali saja, ± 1-2 menit)</p>
+  <p>ekstrak rootfs mini — hitungan detik</p>
   <div id="pbar"><div id="pfill"></div></div>
   <p id="pnum" style="margin-top:10px">0 file</p>
 </div>
@@ -141,7 +141,7 @@ window.onDone = function(code) {
   dot.className = code === 0 ? 'ok' : 'bad';
   if (code !== 0) addRow('sys err', 'proses selesai dengan kode ' + code);
 };
-window.onError = function(m) { addRow('sys err', m); dot.className = 'bad'; };
+window.onError = function(m) { ov.classList.remove('show'); addRow('sys err', m); dot.className = 'bad'; };
 window.onReady = function(ok, free) {
   if (ok) {
     ov.classList.remove('show');
@@ -150,7 +150,7 @@ window.onReady = function(ok, free) {
   } else { window.onError('payload tidak lengkap'); }
 };
 window.setProgress = function(n) {
-  document.getElementById('pfill').style.width = Math.min(100, n / 12) + '%';
+  document.getElementById('pfill').style.width = Math.min(95, n / 22) + '%';
   document.getElementById('pnum').textContent = n + ' file';
 };
 window.onSaved = function() {

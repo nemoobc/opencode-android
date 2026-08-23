@@ -1,43 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#14532D"/>
-      <stop offset="1" stop-color="#071A13"/>
+    <radialGradient id="glowbg" cx=".5" cy=".42" r=".75">
+      <stop offset="0" stop-color="#12241C"/>
+      <stop offset="1" stop-color="#0B0F0D"/>
+    </radialGradient>
+    <linearGradient id="cursor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3DDC84"/>
+      <stop offset=".6" stop-color="#1FA063"/>
+      <stop offset="1" stop-color="#C9A227"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E3C15C"/>
-      <stop offset=".55" stop-color="#C9A227"/>
-      <stop offset="1" stop-color="#8F6B14"/>
-    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <rect width="432" height="432" fill="url(#bg)"/>
+  <rect width="432" height="432" fill="url(#glowbg)"/>
 
-  <!-- pita topi urahara di bawah -->
-  <g>
-    <rect x="0" y="356" width="54" height="20" fill="#F2F2EC"/>
-    <rect x="108" y="356" width="54" height="20" fill="#F2F2EC"/>
-    <rect x="216" y="356" width="54" height="20" fill="#F2F2EC"/>
-    <rect x="324" y="356" width="54" height="20" fill="#F2F2EC"/>
-    <rect x="54" y="356" width="54" height="20" fill="#0E3B2E"/>
-    <rect x="162" y="356" width="54" height="20" fill="#0E3B2E"/>
-    <rect x="270" y="356" width="54" height="20" fill="#0E3B2E"/>
-    <rect x="378" y="356" width="54" height="20" fill="#0E3B2E"/>
+  <!-- garis energi diagonal -->
+  <g stroke="#1E3A2F" stroke-width="3" opacity=".8">
+    <line x1="52" y1="96" x2="128" y2="96"/>
+    <line x1="36" y1="120" x2="96" y2="120"/>
+  </g>
+  <g stroke="#2A4A3A" stroke-width="3" opacity=".6">
+    <line x1="304" y1="356" x2="380" y2="356"/>
+    <line x1="336" y1="380" x2="396" y2="380"/>
   </g>
 
-  <!-- bingkai tipis -->
-  <rect x="18" y="18" width="396" height="396" fill="none" stroke="#C9A227" stroke-width="6" opacity=".85"/>
-  <rect x="32" y="32" width="368" height="368" fill="none" stroke="#C9A227" stroke-width="2" opacity=".4"/>
+  <!-- bingkai kotak: sisi kanan-bawah dibuka -->
+  <path d="M132 84 H300 Q316 84 316 100 V196"
+        fill="none" stroke="#F2F2EC" stroke-width="18" stroke-linecap="round"/>
+  <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84"
+        fill="none" stroke="#F2F2EC" stroke-width="18" stroke-linecap="round" opacity=".92"/>
 
-  <!-- prompt >_ -->
-  <g fill="url(#gold)">
-    <!-- chevron > -->
-    <path d="M96 128 L200 216 L96 304 L96 258 L148 216 L96 174 Z"/>
-    <!-- underscore -->
-    <rect x="228" y="272" width="120" height="32"/>
+  <!-- kursor breakout: menembus sisi kanan-bawah -->
+  <g filter="url(#soft)">
+    <rect x="238" y="238" width="118" height="118" rx="14" fill="url(#cursor)" transform="rotate(8 297 297)"/>
   </g>
+  <rect x="238" y="238" width="118" height="118" rx="14" fill="none" stroke="#F2F2EC" stroke-width="3" opacity=".5" transform="rotate(8 297 297)"/>
 
-  <!-- kilau kecil -->
-  <circle cx="330" cy="120" r="10" fill="#F2F2EC" opacity=".9"/>
-  <circle cx="356" cy="88" r="5" fill="#C9A227"/>
+  <!-- led status -->
+  <circle cx="352" cy="84" r="10" fill="#3DDC84"/>
+  <circle cx="352" cy="84" r="16" fill="none" stroke="#3DDC84" stroke-width="2" opacity=".4"/>
 </svg>

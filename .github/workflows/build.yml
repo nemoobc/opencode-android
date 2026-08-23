@@ -33,8 +33,10 @@ jobs:
       - name: unduh proot (termux aarch64)
         run: |
           mkdir -p dl/termux && cd dl/termux
+          curl -sL -o Packages "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages"
           for pkg in proot libtalloc libandroid-shmem; do
-            url=$(curl -sL "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages" | grep -A2 "Package: ${pkg}$" | grep Filename | head -1 | cut -d' ' -f2)
+            url=$(awk -v p="Package: $pkg" '$0==p{f=1} f&&/^Filename:/{print $2; exit}' Packages)
+            echo "pkg $pkg -> $url"
             curl -sL -O "https://packages.termux.dev/apt/termux-main/${url}"
           done
           ls

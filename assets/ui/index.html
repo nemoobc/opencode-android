@@ -478,8 +478,13 @@ window.appendOut = function(t) {
   if (!window._flushAt || now - window._flushAt >= 120) {
     window._flushAt = now;
     window._cur.textContent = window._plain;
+    window._cur.classList.add('caret');
     follow();
   }
+};
+/* paksa render buffer sekarang (dipakai sebelum pengukuran/tes) */
+window.flushStream = function() {
+  if (window._cur) { window._cur.textContent = window._plain; follow(); }
 };
 function finishUI(code) {
   busy = false;
@@ -599,6 +604,7 @@ function forceStop() {
   dot.className = '';
   document.getElementById('hint').textContent = '';
 }
+window.forceStop = forceStop;
 go.onclick = function() {
   if (busy) {
     window._canceling = true; window._aborted = true;

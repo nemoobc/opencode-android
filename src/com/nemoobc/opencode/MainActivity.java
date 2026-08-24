@@ -8,6 +8,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.PowerManager;
 import android.view.View;
 import android.system.Os;
 import android.webkit.JavascriptInterface;
@@ -40,9 +43,11 @@ public class MainActivity extends Activity {
     private File rootFs, extWork, cacheDir, natLib, linkDir, workDir;
     private Process serverProc;
     private volatile boolean serverUp = false;
+    private final StringBuilder serverLog = new StringBuilder();
     private volatile String sessionId = null;
     private volatile HttpURLConnection msgConn = null;
     private boolean autotest = false;
+    private static PowerManager.WakeLock wakeLock;
     private volatile int deltaCount = 0;
     private volatile long tSendMs = 0;
     private volatile long firstDeltaMs = -1;
@@ -66,6 +71,11 @@ public class MainActivity extends Activity {
         setupLibLinks();
 
         autotest = getIntent() != null && getIntent().getBooleanExtra("autotest", false);
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            nm.createNotificationChannel(new NotificationChannel("oc", "OpenCode", NotificationManager.IMPORTANCE_LOW));
+            startForegroundService(new Intent(this, ServerService.class));
+        } catch (Exception ignored) {}
         if (autotest) {
             Diagnostics.reset();
             Diagnostics.startServer(4099);
@@ -130,6 +140,21 @@ public class MainActivity extends Activity {
                 startServer();
             }
         }).start();
+    }
+
+    private void wakeHold() {
+        try {
+            if (wakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "opencode:generate");
+                wakeLock.setReferenceCounted(false);
+            }
+            wakeLock.acquire(300000);
+        } catch (Exception ignored) {}
+    }
+
+    private void wakeFree() {
+        try { if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); } catch (Exception ignored) {}
     }
 
     private String appInfoSafe() {
@@ -334,7 +359,13 @@ public class MainActivity extends Activity {
                     try {
                         BufferedReader r = new BufferedReader(
                                 new InputStreamReader(serverProc.getInputStream()));
-                        while (r.readLine() != null && running) { /* buang log */ }
+                        String ln;
+                        while ((ln = r.readLine()) != null && running) {
+                            synchronized (serverLog) {
+                                serverLog.append(ln).append('\n');
+                                if (serverLog.length() > 4000) serverLog.delete(0, serverLog.length() - 4000);
+                            }
+                        }
                     } catch (Exception ignored) {}
                 }
             }).start();
@@ -349,12 +380,35 @@ public class MainActivity extends Activity {
                 waited += 1000;
             }
             if (!serverUp) {
-                push("window.onError(" + jq("server opencode gagal start") + ")");
+                String tail;
+                synchronized (serverLog) { tail = serverLog.toString(); }
+                if (tail.length() > 200) tail = tail.substring(tail.length() - 200);
+                if (autotest) Diagnostics.step("server-log", tail);
+                push("window.onError(" + jq("server gagal start: " + tail) + ")");
                 return;
             }
             long free = rootFs.getFreeSpace() / (1024 * 1024);
             push("window.onReady(true," + free + ")");
             startEventStream();
+            // sesi hangat: siapkan sebelum user minta
+            try {
+                String r0 = httpPost("http://127.0.0.1:" + PORT + "/session", "{\"title\":\"opencode\"}");
+                sessionId = new JSONObject(r0).optString("id", null);
+            } catch (Exception ignored) {}
+            // keep-alive: ping tiap 4 menit biar semuanya tetap hangat
+            Thread ka = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (running) {
+                        try { Thread.sleep(240000); } catch (InterruptedException ignored) {}
+                        if (running && serverUp && !busy) {
+                            try { httpCode("http://127.0.0.1:" + PORT + "/session", 4000); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            });
+            ka.setDaemon(true);
+            ka.start();
         } catch (Exception e) {
             push("window.onError(" + jq("Server error: " + e) + ")");
         }
@@ -436,6 +490,7 @@ public class MainActivity extends Activity {
                 if (autotest) Diagnostics.step("sse-idle", "session=" + sid);
                 if (busy) {
                     busy = false;
+                    wakeFree();
                     push("window.onDone(0)");
                 }
             }
@@ -460,6 +515,7 @@ public class MainActivity extends Activity {
         public void send(final String prompt) {
             if (busy || !serverUp) return;
             busy = true;
+            wakeHold();
             sawIdle = false;
             deltaCount = 0;
             firstDeltaMs = -1;
@@ -521,6 +577,7 @@ public class MainActivity extends Activity {
                         // teks mengalir via SSE; session.idle yang menutup
                     } catch (Exception e) {
                         busy = false;
+                        wakeFree();
                         if (autotest) Diagnostics.step("post-error", String.valueOf(e));
                         push("window.onError(" + jq("Error: " + e) + ")");
                     }
@@ -550,6 +607,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     try { Thread.sleep(6000); } catch (InterruptedException ignored) {}
                     busy = false;
+                    wakeFree();
                     push("window.onDone(-2)");
                 }
             }).start();

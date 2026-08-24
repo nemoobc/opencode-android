@@ -102,43 +102,25 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: true
           script: |
-            echo "=== menunggu device online ==="
             adb wait-for-device || true
-            echo "=== menunggu boot tuntas (maks 12 menit) ==="
-            for i in $(seq 1 144); do
-              B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-              [ "$B" = "1" ] && echo "boot completed pada $((i*5))s" && break
-              sleep 5
-            done
-            echo "system settle 30s..."
-            sleep 30
-            echo "=== install (retry 8x20s) ==="
-            OK=false
-            for i in 1 2 3 4 5 6 7 8; do
-              if adb install -r app-x86.apk; then OK=true; break; fi
-              echo "install gagal ($i), retry 20s"; sleep 20
-            done
-            [ "$OK" = "true" ] || { echo "INSTALL TETAP GAGAL"; exit 1; }
+            echo "=== menunggu boot tuntas ==="
+            i=0; while [ $i -lt 100 ]; do B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'); [ "$B" = "1" ] && echo "boot completed" && break; sleep 5; i=$((i+1)); done
+            echo "settle 30s..."; sleep 30
+            echo "=== install (retry 8x) ==="
+            OK=false; for i in 1 2 3 4 5 6 7 8; do if adb install -r app-x86.apk; then OK=true; break; fi; echo "gagal $i"; sleep 20; done
+            [ "$OK" = "true" ] || { echo "INSTALL GAGAL"; exit 1; }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
             sleep 10
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
-            echo "=== menunggu autotest selesai (maks 4 menit) ==="
-            SELESAI=false
-            for i in $(seq 1 48); do
-              sleep 5
-              R=$(curl -s -m 5 http://127.0.0.1:18096/ || true)
-              if echo "$R" | grep -q '"selesai":"true"'; then SELESAI=true; echo "selesai setelah $((i*5))s"; break; fi
-            done
+            echo "=== menunggu autotest (maks 4 menit) ==="
+            SELESAI=false; i=0; while [ $i -lt 48 ]; do sleep 5; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); echo "$R" | grep -q '"selesai":"true"' && SELESAI=true && break; i=$((i+1)); done
             echo "selesai: $SELESAI"
             curl -s -m 10 http://127.0.0.1:18096/ -o hasil-diagnosa.json || true
-            for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do
-              curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true
-            done
+            for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true; done
             adb exec-out screencap -p > shot-final-layar.png
             adb logcat -d > logcat.txt || true
-            echo "=== isi diagnosa ==="
-            cat hasil-diagnosa.json || true
+            echo "=== diagnosa ==="; cat hasil-diagnosa.json || true
       - uses: actions/upload-artifact@v4
         with:
           name: bukti-emulator

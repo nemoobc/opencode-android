@@ -106,11 +106,13 @@ jobs:
           disable-linux-hw-accel: true
           script: |
             adb wait-for-device || true
-            echo "=== menunggu boot tuntas ==="
-            i=0; while [ $i -lt 100 ]; do B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'); [ "$B" = "1" ] && echo "boot completed" && break; sleep 5; i=$((i+1)); done
-            echo "settle 30s..."; sleep 30
-            echo "=== install (retry 8x) ==="
-            OK=false; for i in 1 2 3 4 5 6 7 8; do if adb install -r app-x86.apk; then OK=true; break; fi; echo "gagal $i"; sleep 20; done
+            echo "=== menunggu boot tuntas (maks 12 menit) ==="
+            i=0; while [ $i -lt 144 ]; do B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'); [ "$B" = "1" ] && echo "boot flag OK" && break; sleep 5; i=$((i+1)); done
+            echo "=== menunggu service package hidup (fungsi) ==="
+            i=0; while [ $i -lt 60 ]; do if adb shell pm list packages >/dev/null 2>&1; then echo "service OK"; break; fi; sleep 5; i=$((i+1)); done
+            sleep 15
+            echo "=== install (retry 10x30s) ==="
+            OK=false; i=0; while [ $i -lt 10 ]; do if adb install -r app-x86.apk; then OK=true; break; fi; echo "gagal $i"; sleep 30; i=$((i+1)); done
             [ "$OK" = "true" ] || { echo "INSTALL GAGAL"; exit 1; }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
             sleep 10

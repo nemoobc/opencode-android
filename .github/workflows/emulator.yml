@@ -103,7 +103,6 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: false
-          disable-linux-hw-accel: true
           script: |
             adb wait-for-device || true
             echo "=== menunggu boot tuntas (maks 12 menit) ==="

@@ -560,6 +560,8 @@ public class MainActivity extends Activity {
             try {
                 File dir = new File(rootFs, "root/.config/opencode");
                 dir.mkdirs();
+                File dir2 = new File(rootFs, "root/.local/share/opencode");
+                dir2.mkdirs();
                 if (key != null && key.trim().length() > 0) {
                     JSONObject auth = new JSONObject();
                     JSONObject ent = new JSONObject();
@@ -567,6 +569,7 @@ public class MainActivity extends Activity {
                     ent.put("key", key.trim());
                     auth.put(provider.trim(), ent);
                     write(new File(dir, "auth.json"), auth.toString());
+                    write(new File(dir2, "auth.json"), auth.toString());
                 }
                 if (model != null && model.trim().length() > 0) {
                     JSONObject cfg = new JSONObject();
@@ -697,6 +700,16 @@ public class MainActivity extends Activity {
                 if (m.length() > 0) return m;
             }
         } catch (Exception ignored) {}
+        // kalau ada key google -> pakai gemini (cepat), kalau tidak -> relay gratis
+        for (String p : new String[]{"root/.local/share/opencode/auth.json", "root/.config/opencode/auth.json"}) {
+            try {
+                File a = new File(rootFs, p);
+                if (a.exists()) {
+                    JSONObject auth = new JSONObject(read(a));
+                    if (auth.has("google")) return "google/gemini-3.6-flash";
+                }
+            } catch (Exception ignored) {}
+        }
         return "opencode/x-preview-f-free";
     }
 

@@ -588,10 +588,15 @@ document.getElementById('scrim').onclick = closeDrawer;
 
 /* ===== model switcher ===== */
 var MODELS = [
-  {id:'google/gemini-3.6-flash',   nm:'Gemini 3.6 Flash', ds:'cepat (1-3 dtk) — key gratis AI Studio', tag:'CEPAT'},
-  {id:'opencode/x-preview-f-free', nm:'X Preview Free',   ds:'tanpa key — kadang lambat', tag:'GRATIS'},
-  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4',  ds:'butuh api key anthropic', tag:'PRO'},
-  {id:'openai/gpt-4.1',            nm:'GPT-4.1',          ds:'butuh api key openai', tag:'PRO'}
+  {id:'opencode/x-preview-f-free',        nm:'X Preview Free',        ds:'default toko — terverifikasi', tag:'GRATIS'},
+  {id:'opencode/hy3-free',                nm:'Hy3 Free',              ds:'terverifikasi ~6 dtk', tag:'GRATIS'},
+  {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning', ds:'terverifikasi ~9 dtk', tag:'GRATIS'},
+  {id:'opencode/big-pickle',              nm:'Big Pickle',            ds:'terverifikasi ~5 dtk', tag:'GRATIS'},
+  {id:'opencode/mimo-v2.5-free',          nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/muse-spark-1.2-contributor-free', nm:'Muse Spark 1.2', ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/nemotron-3-ultra-free',   nm:'Nemotron 3 Ultra',      ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'anthropic/claude-sonnet-4',        nm:'Claude Sonnet 4',       ds:'butuh api key anthropic', tag:'PRO'},
+  {id:'openai/gpt-4.1',                   nm:'GPT-4.1',               ds:'butuh api key openai', tag:'PRO'}
 ];
 function openModels() {
   var l = document.getElementById('mlist');

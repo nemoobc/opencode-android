@@ -700,16 +700,6 @@ public class MainActivity extends Activity {
                 if (m.length() > 0) return m;
             }
         } catch (Exception ignored) {}
-        // kalau ada key google -> pakai gemini (cepat), kalau tidak -> relay gratis
-        for (String p : new String[]{"root/.local/share/opencode/auth.json", "root/.config/opencode/auth.json"}) {
-            try {
-                File a = new File(rootFs, p);
-                if (a.exists()) {
-                    JSONObject auth = new JSONObject(read(a));
-                    if (auth.has("google")) return "google/gemini-3.6-flash";
-                }
-            } catch (Exception ignored) {}
-        }
         return "opencode/x-preview-f-free";
     }
 

@@ -34,7 +34,8 @@ public class MainActivity extends Activity {
     private WebView web;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private volatile boolean busy = false;
-    private volatile boolean running = true;
+    private static volatile boolean running = true;
+    private static volatile boolean sseStarted = false;
 
     private File rootFs, extWork, cacheDir, natLib, linkDir, workDir;
     private Process serverProc;
@@ -375,6 +376,8 @@ public class MainActivity extends Activity {
     /* ================= event stream (SSE) ================= */
 
     private void startEventStream() {
+        if (sseStarted) return;
+        sseStarted = true;
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -732,9 +735,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        running = false;
-        Process p = serverProc;
-        if (p != null) p.destroy();
+        // server sengaja TIDAK dimatikan — tetap hidup selama proses app hidup,
+        // dibuka ulang = langsung pakai (adopt via cek http 200)
         super.onDestroy();
     }
 }

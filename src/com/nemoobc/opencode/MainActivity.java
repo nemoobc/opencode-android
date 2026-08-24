@@ -121,7 +121,7 @@ public class MainActivity extends Activity {
                 }
                 if (!ready) {
                     String miss = "";
-                    if (!new File(rootFs, "usr/bin/busybox").exists()) miss += "usr/bin/busybox ";
+                    if (!new File(rootFs, "bin/busybox").exists() && !new File(rootFs, "usr/bin/busybox").exists()) miss += "busybox ";
                     if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
                     push("window.onError(" + jq("payload tidak lengkap, kurang: " + miss) + ")");
                     return;
@@ -181,8 +181,10 @@ public class MainActivity extends Activity {
     }
 
     private boolean readyOk() {
-        return new File(rootFs, "usr/bin/busybox").exists()
-                && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+        boolean bb = new File(rootFs, "bin/busybox").exists()
+                || new File(rootFs, "usr/bin/busybox").exists();
+        boolean musl = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+        return bb && musl;
     }
 
     private void delTree(File f) {

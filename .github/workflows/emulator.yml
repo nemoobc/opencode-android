@@ -76,6 +76,9 @@ jobs:
           bash build.sh
           mkdir -p out
           mv build/OpenCode-*.apk out/app-x86.apk
+      - name: verifikasi arsc uncompressed
+        run: |
+          unzip -v out/app-x86.apk | grep resources.arsc | grep -q "Stored" && echo "arsc STORED OK" || (echo "arsc TERKOMPRESI!" && exit 1)
       - uses: actions/upload-artifact@v4
         with: { name: apk-x86, path: out/app-x86.apk }
 

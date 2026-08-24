@@ -35,6 +35,10 @@ cd build/pkglib
 aapt add ../base.apk $(find . -type f | sed 's|^\./||')
 cd ../..
 
+echo "[4.5/6] align 4-byte (wajib android R+)..."
+python3 tools/align.py build/base.apk build/base-aligned.apk
+mv build/base-aligned.apk build/base.apk
+
 echo "[5/6] keystore..."
 if [ ! -f build/ks.jks ]; then
   keytool -genkeypair -keystore build/ks.jks -alias oc \

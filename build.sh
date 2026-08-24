@@ -45,6 +45,6 @@ fi
 
 echo "[6/6] sign + verify..."
 apksigner sign --ks build/ks.jks --ks-pass pass:opencode123 \
-  --out build/OpenCode-v1.4.2.apk build/base.apk
-apksigner verify build/OpenCode-v1.4.2.apk && echo "VERIFIED"
+  --out build/OpenCode-v1.4.3.apk build/base.apk
+apksigner verify build/OpenCode-v1.4.3.apk && echo "VERIFIED"
 ls -la build/*.apk

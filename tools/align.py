@@ -11,7 +11,7 @@ central = []
 for item in items:
     data = zin.read(item.filename)
     name = item.filename.encode('utf-8')
-    stored = item.filename.endswith('.arsc') or item.filename.endswith('.so') or item.compress_type == zipfile.ZIP_STORED
+    stored = item.filename.endswith('.arsc')
     if stored:
         method, cdata = 0, data
     else:
@@ -30,7 +30,7 @@ cd_start = offset
 for (name, crc, csz, usz, off, method) in central:
     out.write(struct.pack('<IHHHHHHIIIHHHHHII', 0x02014b50, 20, 20, 0, method, 0, 0x21, crc, csz, usz, len(name), 0, 0, 0, 0, 0, off))
     out.write(name)
-cd_size = offset - cd_start
+cd_size = out.tell() - cd_start
 out.write(struct.pack('<IHHHHIIH', 0x06054b50, 0, 0, len(central), len(central), cd_size, cd_start, 0))
 out.close()
 print('aligned:', dst, os.path.getsize(dst), 'byte')

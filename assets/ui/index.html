@@ -355,7 +355,7 @@ function follow() {
   if (userHold) return;
   wrap.scrollTop = wrap.scrollHeight;
   requestAnimationFrame(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; });
-  setTimeout(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; }, 120);
+  setTimeout(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; }, 250);
 }
 function scrollEnd() { userHold = false; follow(); }
 wrap.addEventListener('touchstart', function() { userHold = true; }, { passive: true });
@@ -367,6 +367,10 @@ wrap.addEventListener('touchend', function() {
   }, 60);
 });
 window.addEventListener('resize', function() {
+  var d = document.getElementById('down');
+  if (!d.classList.contains('show')) scrollEnd();
+});
+if (window.visualViewport) visualViewport.addEventListener('resize', function() {
   var d = document.getElementById('down');
   if (!d.classList.contains('show')) scrollEnd();
 });
@@ -461,16 +465,21 @@ window.appendOut = function(t) {
     window._plain = '';
     var body = addMsg('ai');
     body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    body.classList.add('caret');
+    body.classList.add('plain');
     window._cur = body;
   } else {
     var d = window._cur.querySelector('.dots');
     if (d) d.remove();
   }
   window._plain += t;
-  window._cur.classList.add('caret');
-  window._cur.classList.add('plain');
-  window._cur.textContent = window._plain;
-  follow();
+  /* throttle render: maksimal tiap 120ms — cegah lag saat stream panjang */
+  var now = Date.now();
+  if (!window._flushAt || now - window._flushAt >= 120) {
+    window._flushAt = now;
+    window._cur.textContent = window._plain;
+    follow();
+  }
 };
 function finishUI(code) {
   busy = false;
@@ -482,6 +491,7 @@ function finishUI(code) {
 
 window.onDone = function(code) {
   window._lastOnDone = code + ' @ ' + new Date().toISOString();
+  clearTimeout(window._cw);
   if (window._done) return;
   window._done = true;
   clearInterval(window._tm);
@@ -509,6 +519,7 @@ window.onDone = function(code) {
 };
 window.onError = function(m) {
   window._lastOnError = m + ' @ ' + new Date().toISOString();
+  clearTimeout(window._cw);
   var first = !window._done;
   window._done = true;
   clearInterval(window._tm);
@@ -546,6 +557,10 @@ window.onUpdate = function(tag, body) {
 function send(t) {
   if (busy || !t) return;
   window._lastPrompt = t;
+  /* pastikan auto-scroll aktif saat mengirim pesan baru */
+  userHold = false;
+  document.getElementById('down').classList.remove('show');
+  window._flushAt = 0;
   addMsg('user').textContent = t;
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
   var body = addMsg('ai');
@@ -566,8 +581,33 @@ function send(t) {
   document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-60 detik</b>';
   Android.send(t);
 }
+/* pengaman: kalau sisi Android tidak pernah membalas setelah cancel,
+   paksa UI kembali normal — tombol STOP tidak pernah nyangkut */
+function forceStop() {
+  clearTimeout(window._cw);
+  if (window._done || !busy) return;
+  window._done = true;
+  busy = false;
+  clearInterval(window._tm);
+  if (window._cur) {
+    window._cur.classList.remove('caret');
+    window._cur.innerHTML = '<i style="color:#8AA396">dihentikan.</i>';
+    window._cur = null;
+  }
+  go.innerHTML = '&#8593;';
+  go.classList.remove('stop');
+  dot.className = '';
+  document.getElementById('hint').textContent = '';
+}
 go.onclick = function() {
-  if (busy) { window._canceling = true; window._aborted = true; Android.cancel(); toast('menghentikan...'); return; }
+  if (busy) {
+    window._canceling = true; window._aborted = true;
+    toast('menghentikan...');
+    Android.cancel();
+    clearTimeout(window._cw);
+    window._cw = setTimeout(forceStop, 4000);
+    return;
+  }
   var t = inp.value.trim();
   if (!t) return;
   inp.value = ''; inp.style.height = 'auto';
@@ -595,6 +635,7 @@ chat.addEventListener('click', function(e) {
 /* ===== obrolan baru ===== */
 function newChat() {
   if (busy) { window._aborted = true; window._canceling = true; Android.cancel(); }
+  clearTimeout(window._cw);
   Android.newChat();
   window._cur = null; window._plain = '';
   busy = false; window._done = false; window._aborted = false; window._canceling = false;

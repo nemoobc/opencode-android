@@ -587,25 +587,22 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void cancel() {
-            if (sessionId == null) return;
             final String sid = sessionId;
             final HttpURLConnection cc = msgConn;
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
-                    try {
-                        httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}");
-                    } catch (Exception ignored) {}
-                    try {
-                        httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}");
-                    } catch (Exception ignored) {}
-                }
-            }).start();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try { Thread.sleep(6000); } catch (InterruptedException ignored) {}
+                    if (sid != null) {
+                        try {
+                            httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}");
+                        } catch (Exception ignored) {}
+                        try {
+                            httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}");
+                        } catch (Exception ignored) {}
+                    }
+                    /* watchdog: sesi null pun UI harus selalu di-reset */
+                    try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
                     busy = false;
                     wakeFree();
                     push("window.onDone(-2)");

@@ -58,10 +58,12 @@ ok('bubble AI + dots mengetik', !!$('.msg.ai .dots'));
 ok('tombol jadi stop (merah)', $('#go').classList.contains('stop'));
 ok('timer elapsed tampil', !!$('.elapsed'));
 
-console.log('== 3. STREAMING DELTA ==');
+console.log('== 3. STREAMING DELTA (throttled) ==');
 window.appendOut('halo ');
 window.appendOut('dunia');
-ok('teks terakumulasi', $('.msg.ai .body').textContent.includes('halo dunia'));
+ok('delta terakumulasi di buffer', window._plain.includes('halo dunia'));
+window.flushStream();
+ok('teks ter-render setelah flush', $('.msg.ai .body').textContent.includes('halo dunia'));
 ok('caret aktif saat streaming', !!$('.caret'));
 
 console.log('== 4. SELESAI (onDone) ==');
@@ -91,6 +93,17 @@ $('#go').click();
 window.onError('HTTP 500: model mati');
 ok('catatan error tampil', doc.body.textContent.includes('HTTP 500'));
 ok('tombol tetap normal setelah error (fix onError)', !$('#go').classList.contains('stop'));
+
+console.log('== 6b. WATCHDOG CANCEL (forceStop tanpa onDone dari Java) ==');
+$('#inp').value = 'stream panjang';
+$('#go').click();
+window.appendOut('potongan ');
+$('#go').click();               // klik stop -> watchdog 4 detik terpasang
+ok('busy saat menunggu watchdog', window.busy === true);
+window.forceStop();             // simulasikan watchdog meledak tanpa onDone
+ok('tombol reset oleh watchdog (anti stuck total)', !$('#go').classList.contains('stop'));
+ok('status dihentikan tampil', doc.body.textContent.includes('dihentikan'));
+ok('_done ditandai oleh watchdog', window._done === true);
 
 console.log('== 7. NEW CHAT ==');
 $('#bnew').click();

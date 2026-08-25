@@ -3,21 +3,24 @@ package com.nemoobc.opencode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class Diagnostics {
 
     private static final Object LOCK = new Object();
-    private static final Map<String, byte[]> SHOTS = new LinkedHashMap<>();
+    private static final int MAX_SHOTS = 20;
+    private static final Map<String, byte[]> SHOTS = new LinkedHashMap<String, byte[]>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {
+            return size() > MAX_SHOTS;
+        }
+    };
     private static JSONArray STEPS = new JSONArray();
     private static JSONObject EXTRA = new JSONObject();
     private static long t0 = System.currentTimeMillis();
@@ -47,6 +50,7 @@ public final class Diagnostics {
     }
 
     public static void shot(String nama, byte[] png) {
+        if (png == null || png.length == 0) return;
         synchronized (LOCK) { SHOTS.put(nama, png); }
         step("screenshot:" + nama, png.length + " byte");
     }
@@ -64,6 +68,7 @@ public final class Diagnostics {
                     ss = new ServerSocket(port);
                     while (true) {
                         final Socket s = ss.accept();
+                        s.setSoTimeout(10000);
                         new Thread(new Runnable() {
                             @Override
                             public void run() { handle(s); }
@@ -91,7 +96,9 @@ public final class Diagnostics {
                 String[] parts = line.split(" ");
                 if (parts.length >= 2) path = parts[1];
             }
-            s.getInputStream().read(new byte[4096]);
+            /* drain remaining request headers */
+            byte[] drain = new byte[4096];
+            while (in.available() > 0) { int r = in.read(drain); if (r <= 0) break; }
 
             if (path.startsWith("/shot/")) {
                 String nama = path.substring("/shot/".length());
@@ -114,14 +121,22 @@ public final class Diagnostics {
                 }
                 respond(s, 200, "application/json", out.toString().getBytes());
             }
-            s.close();
         } catch (Exception ignored) {
-            try { s.close(); } catch (Exception ignored2) {}
+        } finally {
+            try { s.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    private static String httpStatusText(int code) {
+        switch (code) {
+            case 200: return "OK";
+            case 404: return "Not Found";
+            default: return "OK";
         }
     }
 
     private static void respond(Socket s, int code, String type, byte[] body) throws IOException {
-        String head = "HTTP/1.1 " + code + " OK\r\n"
+        String head = "HTTP/1.1 " + code + " " + httpStatusText(code) + "\r\n"
                 + "Content-Type: " + type + "\r\n"
                 + "Content-Length: " + body.length + "\r\n"
                 + "Connection: close\r\n\r\n";

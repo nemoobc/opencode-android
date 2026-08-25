@@ -10,7 +10,8 @@ echo "[1/6] javac..."
 javac -source 8 -target 8 -nowarn \
   -bootclasspath $AJ \
   -d build/classes \
-  src/com/nemoobc/opencode/*.java 2>&1 | grep -v "bootstrap class path" || true
+  src/com/nemoobc/opencode/*.java 2>&1 | { grep -v "bootstrap class path" || true; }
+[ -d build/classes/com/nemoobc/opencode ] || { echo "FATAL: javac gagal — tidak ada .class"; exit 1; }
 
 echo "[2/6] d8..."
 D8_BIN="${D8_CMD:-d8}"

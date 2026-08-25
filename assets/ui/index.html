@@ -391,6 +391,7 @@ var curModel = 'zen/big-pickle';
 document.getElementById('mname').textContent = 'Big Pickle';
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(t) {
   var el = document.getElementById('toast');
   el.textContent = t; el.classList.add('show');
@@ -448,6 +449,7 @@ function mdRender(src) {
   txt = txt.replace(/^---$/gm, '<hr>');
   txt = txt.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
   txt = txt.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+  txt = txt.replace(/!\[([^\]]*)\]\((https?:[^)]+)\)/g, '<img alt="$1" src="$2" style="max-width:100%;border-radius:8px;margin:8px 0">');
   txt = txt.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="#" data-url="$2">$1</a>');
   txt = txt.replace(/^\|(.+)\|\n\|[\s:|-]+\|\n((?:\|.*\|\n?)*)/gm, function(m, head, body) {
     var hs = head.split('|').map(function(x){return x.trim();});
@@ -468,7 +470,7 @@ function mdRender(src) {
   txt = txt.replace(/\u0000B(\d+)\u0000/g, function(m, i) {
     var b = blocks[+i];
     return '<div class="cb"><div class="cb-h"><span class="lang">' + esc(b.lang) +
-      '</span><button data-copy="' + esc(b.code) + '">COPY</button></div><pre><code>' +
+      '</span><button data-copy="' + escAttr(b.code) + '">COPY</button></div><pre><code>' +
       b.code.replace(/\[/g,'&#91;') + '</code></pre></div>';
   });
   return txt;
@@ -636,6 +638,7 @@ function send(t) {
   window._flushAt = 0;
   addMsg('user').textContent = t;
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
+  window._suggested = false;
   var body = addMsg('ai');
   body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
     '<span class="elapsed">mengetik...</span>';
@@ -725,7 +728,7 @@ chat.addEventListener('click', function(e) {
   var cp = e.target.closest('button[data-copy]');
   if (cp) { Android.copyText(cp.getAttribute('data-copy')); return; }
   var a = e.target.closest('a[data-url]');
-  if (a) { Android.openUrl(a.getAttribute('data-url')); }
+  if (a) { var u = a.getAttribute('data-url'); if (/^https?:\/\//i.test(u)) Android.openUrl(u); }
 });
 
 /* ===== obrolan baru ===== */

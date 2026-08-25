@@ -1,7 +1,6 @@
 package com.nemoobc.opencode;
 
 import android.app.Activity;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.ZipEntry;
@@ -321,33 +320,42 @@ public class MainActivity extends Activity {
     /* ekstrak native libs dari APK ke filesDir/native — dipakai saat
        extractNativeLibs=false supaya install tetap instan */
     private void ensureNativeLibs() throws IOException {
+        /* cek marker + versi APK — kalau APK update, ekstrak ulang */
         File marker = new File(natLib, "libopencode.so");
-        if (marker.exists() && marker.length() > 0) return;
-        natLib.mkdirs();
-        ZipInputStream z = new ZipInputStream(new BufferedInputStream(
-                new FileInputStream(getApplicationInfo().sourceDir), 1 << 16));
-        ZipEntry e;
-        byte[] buf = new byte[1 << 16];
-        long total = 0, lastPush = 0;
-        while ((e = z.getNextEntry()) != null) {
-            String n = e.getName();
-            if (!n.startsWith("lib/arm64-v8a/") || !n.endsWith(".so")) continue;
-            File out = new File(natLib, new File(n).getName());
-            FileOutputStream fo = new FileOutputStream(out);
-            int r;
-            while ((r = z.read(buf)) > 0) {
-                fo.write(buf, 0, r);
-                total += r;
-                if (total - lastPush > 4194304) {
-                    lastPush = total;
-                    push("window.setProgressBytes(" + total + ")");
-                }
-            }
-            fo.close();
-            out.setExecutable(true, false);
+        String curVer = appInfoSafe();
+        File verFile = new File(natLib, ".version");
+        if (marker.exists() && marker.length() > 0 && verFile.exists()) {
+            try {
+                if (curVer.equals(new String(java.nio.file.Files.readAllBytes(verFile.toPath())).trim())) return;
+            } catch (Exception ignored) {}
         }
-        z.close();
+        natLib.mkdirs();
+        long total = 0, lastPush = 0;
+        try (ZipInputStream z = new ZipInputStream(new BufferedInputStream(
+                new FileInputStream(getApplicationInfo().sourceDir), 1 << 16))) {
+            ZipEntry e;
+            byte[] buf = new byte[1 << 16];
+            while ((e = z.getNextEntry()) != null) {
+                String n = e.getName();
+                if (!n.startsWith("lib/arm64-v8a/") || !n.endsWith(".so")) continue;
+                File out = new File(natLib, new File(n).getName());
+                try (FileOutputStream fo = new FileOutputStream(out)) {
+                    int r;
+                    while ((r = z.read(buf)) > 0) {
+                        fo.write(buf, 0, r);
+                        total += r;
+                        if (total - lastPush > 4194304) {
+                            lastPush = total;
+                            push("window.setProgressBytes(" + total + ")");
+                        }
+                    }
+                }
+                out.setExecutable(true, false);
+            }
+        }
         push("window.setProgressBytes(" + total + ")");
+        /* tulis versi APK ke marker agar ekstrak ulang saat update */
+        try (FileOutputStream fv = new FileOutputStream(verFile)) { fv.write(curVer.getBytes()); }
     }
 
     private void startServer() {
@@ -456,15 +464,16 @@ public class MainActivity extends Activity {
     }
 
     private int httpCode(String url, int timeout) {
+        HttpURLConnection c = null;
         try {
-            HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+            c = (HttpURLConnection) new URL(url).openConnection();
             c.setConnectTimeout(timeout);
             c.setReadTimeout(timeout);
-            int code = c.getResponseCode();
-            c.disconnect();
-            return code;
+            return c.getResponseCode();
         } catch (Exception e) {
             return -1;
+        } finally {
+            if (c != null) c.disconnect();
         }
     }
 
@@ -477,8 +486,9 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 while (running) {
+                    HttpURLConnection c = null;
                     try {
-                        HttpURLConnection c = (HttpURLConnection)
+                        c = (HttpURLConnection)
                                 new URL("http://127.0.0.1:" + PORT + "/event").openConnection();
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(0);
@@ -494,6 +504,8 @@ public class MainActivity extends Activity {
                         if (autotest) Diagnostics.step("sse-putus", "stream berakhir");
                     } catch (Exception e) {
                         if (autotest) Diagnostics.step("sse-error", String.valueOf(e));
+                    } finally {
+                        if (c != null) c.disconnect();
                     }
                     if (running && serverUp) {
                         try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
@@ -586,35 +598,41 @@ public class MainActivity extends Activity {
                         mm.put("providerID", prov);
                         mm.put("modelID", mid);
                         body.put("model", mm);
-                        HttpURLConnection mc = (HttpURLConnection)
-                                new URL("http://127.0.0.1:" + PORT + "/session/"
-                                + sessionId + "/message").openConnection();
-                        mc.setRequestMethod("POST");
-                        mc.setConnectTimeout(8000);
-                        mc.setReadTimeout(180000);
-                        mc.setDoOutput(true);
-                        mc.setRequestProperty("Content-Type", "application/json");
-                        OutputStream os = mc.getOutputStream();
-                        os.write(body.toString().getBytes(StandardCharsets.UTF_8));
-                        os.close();
-                        msgConn = mc;
-                        int code = mc.getResponseCode();
-                        InputStream is = code >= 400 ? mc.getErrorStream() : mc.getInputStream();
-                        BufferedReader rr = new BufferedReader(
-                                new InputStreamReader(is, StandardCharsets.UTF_8));
-                        StringBuilder sb2 = new StringBuilder();
-                        String l2;
-                        while ((l2 = rr.readLine()) != null) sb2.append(l2);
-                        rr.close();
-                        msgConn = null;
-                        if (autotest) Diagnostics.step("post-selesai", "HTTP " + code + " panjang=" + sb2.length());
-                        if (code >= 400) throw new Exception("HTTP " + code);
-                        String res = sb2.toString();
-                        if (res.length() == 0 || res.startsWith("<")) {
-                            if (autotest) Diagnostics.step("post-aneh", res.substring(0, Math.min(80, res.length())));
-                            throw new Exception("respon server tidak valid");
+                        HttpURLConnection mc = null;
+                        try {
+                            mc = (HttpURLConnection)
+                                    new URL("http://127.0.0.1:" + PORT + "/session/"
+                                    + sessionId + "/message").openConnection();
+                            mc.setRequestMethod("POST");
+                            mc.setConnectTimeout(8000);
+                            mc.setReadTimeout(180000);
+                            mc.setDoOutput(true);
+                            mc.setRequestProperty("Content-Type", "application/json");
+                            OutputStream os = mc.getOutputStream();
+                            os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+                            os.close();
+                            msgConn = mc;
+                            int code = mc.getResponseCode();
+                            InputStream is = code >= 400 ? mc.getErrorStream() : mc.getInputStream();
+                            BufferedReader rr = new BufferedReader(
+                                    new InputStreamReader(is, StandardCharsets.UTF_8));
+                            StringBuilder sb2 = new StringBuilder();
+                            String l2;
+                            while ((l2 = rr.readLine()) != null) sb2.append(l2);
+                            rr.close();
+                            msgConn = null;
+                            if (autotest) Diagnostics.step("post-selesai", "HTTP " + code + " panjang=" + sb2.length());
+                            if (code >= 400) throw new Exception("HTTP " + code);
+                            String res = sb2.toString();
+                            if (res.length() == 0 || res.startsWith("<")) {
+                                if (autotest) Diagnostics.step("post-aneh", res.substring(0, Math.min(80, res.length())));
+                                throw new Exception("respon server tidak valid");
+                            }
+                            if (autotest) Diagnostics.step("post-ok", "pesan masuk antrian selesai");
+                        } finally {
+                            msgConn = null;
+                            if (mc != null) mc.disconnect();
                         }
-                        if (autotest) Diagnostics.step("post-ok", "pesan masuk antrian selesai");
                         // teks mengalir via SSE; session.idle yang menutup
                     } catch (Exception e) {
                         busy = false;
@@ -729,20 +747,22 @@ public class MainActivity extends Activity {
                     java.net.URL u = new java.net.URL(
                         "https://api.github.com/repos/nemoobc/opencode-android/releases/latest");
                     java.net.HttpURLConnection cx = (java.net.HttpURLConnection) u.openConnection();
-                    cx.setConnectTimeout(8000); cx.setReadTimeout(8000);
-                    cx.setRequestProperty("User-Agent", "opencode-android");
-                    java.io.BufferedReader r = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(cx.getInputStream()));
-                    StringBuilder sb = new StringBuilder(); String l;
-                    while ((l = r.readLine()) != null) sb.append(l);
-                    r.close();
-                    org.json.JSONObject j = new org.json.JSONObject(sb.toString());
-                    String tag = j.getString("tag_name");
-                    String mine = getPackageManager()
-                        .getPackageInfo(getPackageName(), 0).versionName;
-                    if (!tag.contains(mine)) {
-                        push("window.onUpdate(" + JSONObject.quote(tag) + ")");
-                    }
+                    try {
+                        cx.setConnectTimeout(8000); cx.setReadTimeout(8000);
+                        cx.setRequestProperty("User-Agent", "opencode-android");
+                        java.io.BufferedReader r = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(cx.getInputStream()));
+                        StringBuilder sb = new StringBuilder(); String l;
+                        while ((l = r.readLine()) != null) sb.append(l);
+                        r.close();
+                        org.json.JSONObject j = new org.json.JSONObject(sb.toString());
+                        String tag = j.getString("tag_name");
+                        String mine = getPackageManager()
+                            .getPackageInfo(getPackageName(), 0).versionName;
+                        if (!tag.contains(mine)) {
+                            push("window.onUpdate(" + JSONObject.quote(tag) + ")");
+                        }
+                    } finally { cx.disconnect(); }
                 } catch (Exception ignored) {}
                 }
             });
@@ -772,24 +792,29 @@ public class MainActivity extends Activity {
     /* ================= http helper ================= */
 
     private String httpPost(String urlStr, String body) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(urlStr).openConnection();
-        c.setRequestMethod("POST");
-        c.setConnectTimeout(8000);
-        c.setReadTimeout(120000);
-        c.setDoOutput(true);
-        c.setRequestProperty("Content-Type", "application/json");
-        OutputStream os = c.getOutputStream();
-        os.write(body.getBytes(StandardCharsets.UTF_8));
-        os.close();
-        int code = c.getResponseCode();
-        InputStream is = code >= 400 ? c.getErrorStream() : c.getInputStream();
-        BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        String l;
-        while ((l = r.readLine()) != null) sb.append(l);
-        r.close();
-        if (code >= 400) throw new Exception("HTTP " + code + ": " + sb.substring(0, Math.min(120, sb.length())));
-        return sb.toString();
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(urlStr).openConnection();
+            c.setRequestMethod("POST");
+            c.setConnectTimeout(8000);
+            c.setReadTimeout(120000);
+            c.setDoOutput(true);
+            c.setRequestProperty("Content-Type", "application/json");
+            OutputStream os = c.getOutputStream();
+            os.write(body.getBytes(StandardCharsets.UTF_8));
+            os.close();
+            int code = c.getResponseCode();
+            InputStream is = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String l;
+            while ((l = r.readLine()) != null) sb.append(l);
+            r.close();
+            if (code >= 400) throw new Exception("HTTP " + code + ": " + sb.substring(0, Math.min(120, sb.length())));
+            return sb.toString();
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     private String readModel() {
@@ -801,29 +826,44 @@ public class MainActivity extends Activity {
                 if (m.length() > 0) return m;
             }
         } catch (Exception ignored) {}
-        return "opencode/x-preview-f-free";
+        return "zen/big-pickle";
     }
 
     private void write(File f, String s) throws Exception {
-        FileWriter w = new FileWriter(f);
-        w.write(s);
-        w.close();
+        try (FileWriter w = new FileWriter(f)) {
+            w.write(s);
+        }
     }
 
     private String read(File f) throws Exception {
-        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = r.readLine()) != null) sb.append(line).append("\n");
-        r.close();
-        return sb.toString();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f)))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) sb.append(line).append("\n");
+            return sb.toString();
+        }
     }
 
     @Override
     public void onBackPressed() {
         if (busy) {
-            Bridge b = new Bridge();
-            b.cancel();
+            /* cancel via bridge langsung — jangan buat Bridge() baru */
+            final String sid = sessionId;
+            final HttpURLConnection cc = msgConn;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
+                    if (sid != null) {
+                        try { httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}"); } catch (Exception ignored) {}
+                        try { httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}"); } catch (Exception ignored) {}
+                    }
+                    try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
+                    busy = false;
+                    wakeFree();
+                    push("window.onDone(-2)");
+                }
+            }).start();
             return;
         }
         super.onBackPressed();
@@ -831,8 +871,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        // server sengaja TIDAK dimatikan — tetap hidup selama proses app hidup,
-        // dibuka ulang = langsung pakai (adopt via cek http 200)
+        wakeFree();
+        if (serverProc != null) { try { serverProc.destroy(); } catch (Exception ignored) {} }
         super.onDestroy();
     }
 }

@@ -118,9 +118,9 @@ $('#go').click();
 ok('bisa kirim lagi setelah new chat', calls.send.length >= 2);
 
 console.log('== 8. GANTI MODEL ==');
-window.setModel('opencode/x-preview-f-free');
-ok('chip nama model tetap X Preview Free', $('#mname').textContent === 'X Preview Free');
-ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'opencode/x-preview-f-free'));
+window.setModel('zen/x-preview-f-free');
+ok('chip nama model 0x Alpha Free (Unlimited)', $('#mname').textContent === '0x Alpha Free (Unlimited)');
+ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'zen/x-preview-f-free'));
 ok('preset grok-code mati sudah dihapus', !doc.body.innerHTML.includes('grok-code'));
 
 console.log('== 9. MODAL CONFIG ==');

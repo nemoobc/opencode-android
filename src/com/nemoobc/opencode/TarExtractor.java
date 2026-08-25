@@ -51,7 +51,7 @@ public final class TarExtractor {
             }
 
             File out = new File(dest, name);
-            if (name.contains("../")) continue;
+            if (name.contains("../") || name.startsWith("/") || !out.getCanonicalPath().startsWith(dest.getCanonicalPath())) continue;
 
             try {
                 switch (type) {
@@ -88,16 +88,16 @@ public final class TarExtractor {
                         File parent = out.getParentFile();
                         if (parent != null) parent.mkdirs();
                         if (out.isDirectory()) break;
-                        java.io.FileOutputStream fo = new java.io.FileOutputStream(out);
-                        long left = size;
-                        while (left > 0) {
-                            int chunk = (int) Math.min(buf.length, left);
-                            int r = in.read(buf, 0, chunk);
-                            if (r < 0) throw new IOException("EOF di tengah file " + name);
-                            fo.write(buf, 0, r);
-                            left -= r;
+                        try (java.io.FileOutputStream fo = new java.io.FileOutputStream(out)) {
+                            long left = size;
+                            while (left > 0) {
+                                int chunk = (int) Math.min(buf.length, left);
+                                int r = in.read(buf, 0, chunk);
+                                if (r < 0) throw new IOException("EOF di tengah file " + name);
+                                fo.write(buf, 0, r);
+                                left -= r;
+                            }
                         }
-                        fo.close();
                         skipPad(in, size);
                         applyMode(out, mode);
                         break;
@@ -123,16 +123,18 @@ public final class TarExtractor {
         if (src.isDirectory()) {
             dst.mkdirs();
             File[] kids = src.listFiles();
-            if (kids != null) for (File k : kids) copyTree(k, new File(dst, k.getName()));
+            if (kids != null) for (File k : kids) {
+                if (k.getCanonicalPath().equals(dst.getCanonicalPath())) continue;
+                copyTree(k, new File(dst, k.getName()));
+            }
         } else {
             dst.getParentFile().mkdirs();
-            java.io.FileInputStream fi = new java.io.FileInputStream(src);
-            java.io.FileOutputStream fo = new java.io.FileOutputStream(dst);
-            byte[] b = new byte[65536];
-            int r;
-            while ((r = fi.read(b)) > 0) fo.write(b, 0, r);
-            fi.close();
-            fo.close();
+            try (java.io.FileInputStream fi = new java.io.FileInputStream(src);
+                 java.io.FileOutputStream fo = new java.io.FileOutputStream(dst)) {
+                byte[] b = new byte[65536];
+                int r;
+                while ((r = fi.read(b)) > 0) fo.write(b, 0, r);
+            }
             applyMode(dst, src.canExecute() ? 0755 : 0644);
         }
     }

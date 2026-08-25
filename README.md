@@ -26,7 +26,7 @@ Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 | 🌊 **Jawaban mengalir** | Teks muncul kata-per-kata saat model menulis |
 | 🛠️ **Agent penuh** | Membaca & menulis file di folder kerja, menjalankan perintah, analisis masalah |
 | 📝 **Jawaban rapi** | Render markdown: code block + tombol salin, tabel, list, heading |
-| ⚡ **Ganti model sekali tap** | Langsung dari header — X Preview Free, Grok Code, Qwen3 Coder, atau model kustom |
+| ⚡ **Ganti model sekali tap** | Langsung dari header — 7 model gratis terverifikasi, atau model kustom |
 | 🔒 **Privat** | Semua berjalan di sandbox aplikasi; hanya izin internet |
 | 🔄 **Deteksi update** | Pemberitahuan otomatis saat ada versi baru |
 
@@ -43,7 +43,7 @@ pasang aplikasi, buka, langsung pakai.
 
 1. Unduh APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
 2. Izinkan instalasi dari sumber tidak dikenal
-3. Buka — ekstraksi awal hanya beberapa detik, lalu server siap
+3. Buka — ekstraksi awal hanya sekali (±1 menit), setelah itu server langsung siap
 4. Ketuk nama model di header untuk ganti model, atau langsung bertanya
 
 Hasil kerja agent tersimpan di
@@ -93,6 +93,7 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 | Versi | Isi |
 |---|---|
+| v1.5.1 | Fix tombol cancel benar-benar tidak nyangkut (watchdog ganda JS+Java), render streaming anti-lag (throttle 120ms), auto-scroll pasti turun saat kirim, ABI build diperbaiki |
 | v1.2.3 | Fix tombol cancel stuck merah (onError kini mereset UI + watchdog tanpa syarat), welcome screen kosong saat buka pertama, auto-scroll, streaming ringan, anti white-flash |
 
 ## 📄 Lisensi

@@ -112,8 +112,19 @@ jobs:
             i=0; while [ $i -lt 60 ]; do BA=$(adb shell getprop init.svc.bootanim 2>/dev/null | tr -d '\r'); [ "$BA" = "stopped" ] && echo "bootanim stopped" && break; sleep 5; i=$((i+1)); done
             sleep 30
             echo "=== install (retry 10x30s) ==="
-            OK=false; i=0; while [ $i -lt 10 ]; do if adb install -r --no-streaming app-x86.apk; then OK=true; break; fi; echo "gagal $i"; sleep 30; i=$((i+1)); done
-            [ "$OK" = "true" ] || { echo "INSTALL GAGAL"; exit 1; }
+            adb root || true; sleep 3; adb wait-for-device
+            adb push app-x86.apk /data/local/tmp/app.apk
+            OK=false; i=0; while [ $i -lt 10 ]; do
+              OUT=$(adb shell pm install -r /data/local/tmp/app.apk 2>&1); echo "$OUT"
+              echo "$OUT" | grep -q Success && { OK=true; break; }
+              sleep 20
+            done
+            [ "$OK" = "true" ] || {
+              echo "=== DIAGNOSTIK ==="
+              adb shell getprop init.svc.system_server
+              adb logcat -d 2>/dev/null | grep -iE 'PackageManager|FATAL|crash_|Installer|installd' | tail -40 || true
+              exit 1
+            }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
             sleep 10
             adb exec-out screencap -p > shot-1-launch.png

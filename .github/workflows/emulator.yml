@@ -113,7 +113,7 @@ jobs:
             echo "=== install (retry 10x30s) ==="
             adb root || true; sleep 3; adb wait-for-device
             adb push app-x86.apk /data/local/tmp/app.apk
-            OK=false; i=0; while [ $i -lt 10 ]; do OUT=$(adb shell pm install -r /data/local/tmp/app.apk 2>&1); echo "$OUT"; echo "$OUT" | grep -q Success && OK=true && break; sleep 20; i=$((i+1)); done; [ "$OK" = "true" ] || { echo "=== DIAGNOSTIK ==="; adb shell getprop init.svc.system_server; adb logcat -d -t 600 2>/dev/null | grep -iE 'FATAL|crash_|installd' | tail -25 || true; exit 1; }
+            OK=false; i=0; while [ $i -lt 12 ]; do adb wait-for-device 2>/dev/null; OUT=$(adb shell pm install -r /data/local/tmp/app.apk 2>&1); echo "$OUT"; echo "$OUT" | grep -q Success && OK=true && break; echo "tunggu device pulih..."; sleep 40; i=$((i+1)); done; [ "$OK" = "true" ] || { echo "=== DIAGNOSTIK ==="; adb shell getprop init.svc.system_server; adb logcat -d -t 600 2>/dev/null | grep -iE 'FATAL|crash_|installd' | tail -25 || true; exit 1; }
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
             sleep 10
             adb exec-out screencap -p > shot-1-launch.png

@@ -6,3 +6,5 @@ jniLibs/arm64-v8a/libopencode.so
 local.properties
 *.jks
 *.keystore
+node_modules/
+package-lock.json

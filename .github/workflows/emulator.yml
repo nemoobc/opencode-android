@@ -129,6 +129,15 @@ jobs:
             [ -n "$LIVE_URL" ] && echo "🔗 **EMULATOR LIVE (buka di HP): $LIVE_URL**" >> $GITHUB_STEP_SUMMARY || true
             echo "=== menunggu autotest (maks 4 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
+            echo "=== BUG HUNTER: monkey 500 aksi acak ==="
+            adb logcat -G 16M
+            adb shell monkey -p com.nemoobc.opencode --throttle 250 --pct-touch 60 --pct-motion 20 --pct-app-switch 10 --pct-flip 5 -v 500 > monkey.log 2>&1 || true
+            tail -5 monkey.log
+            echo "=== PANEN CRASH ==="
+            adb shell dumpsys dropbox --print 2>/dev/null | grep -E 'Process: com.nemoobc|Crash|FATAL' | head -20 || true
+            adb logcat -d 2>/dev/null | grep -E 'FATAL EXCEPTION|AndroidRuntime.*com.nemoobc|E AndroidRuntime' | head -30 > crash-report.txt || true
+            grep -q . crash-report.txt && echo "⚠️ ADA CRASH (lihat crash-report.txt)" || echo "✓ tidak ada crash"
+            adb exec-out screencap -p > shot-after-monkey.png
             echo "=== STATE APP ==="
             adb shell ps -A | grep -i 'opencod\|nemoob' || echo "(proses app tidak ada)"
             adb shell netstat -ltn 2>/dev/null | grep -E '4096|4099' || echo "(netstat: tidak ada listener)"
@@ -146,6 +155,9 @@ jobs:
           name: bukti-emulator
           path: |
             hasil-diagnosa.json
+            monkey.log
+            crash-report.txt
+            shot-after-monkey.png
             diag-*.png
             shot-*.png
             logcat.txt

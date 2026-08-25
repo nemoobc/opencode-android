@@ -94,6 +94,7 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 | Versi | Isi |
 |---|---|
 | v1.5.1 | Fix tombol cancel benar-benar tidak nyangkut (watchdog ganda JS+Java), render streaming anti-lag (throttle 120ms), auto-scroll pasti turun saat kirim, ABI build diperbaiki |
+| v1.5.2 | Fix "server gagal start" palsu — deteksi siap kini terima respons HTTP apa pun (tidak menuntut 200 di /), sekaligus UI v2: splash logo tergambar + glow, avatar AI, aurora welcome, tombol spring |
 | v1.2.3 | Fix tombol cancel stuck merah (onError kini mereset UI + watchdog tanpa syarat), welcome screen kosong saat buka pertama, auto-scroll, streaming ringan, anti white-flash |
 
 ## 📄 Lisensi

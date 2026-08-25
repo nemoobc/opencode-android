@@ -45,16 +45,19 @@ ok('logo svg ada', !!$('#hello svg'));
 ok('4 chip saran', $$('.chip').length === 4);
 ok('tombol + ada', !!$('#bnew'));
 ok('tombol menu ada', !!$('#bmenu'));
-ok('chip model: X Preview Free', $('#mname').textContent === 'X Preview Free');
+ok('chip model: Big Pickle (tercepat)', $('#mname').textContent === 'Big Pickle');
 ok('tanpa teks "agent AI di HP-mu"', !html.includes('agent AI di HP-mu'));
 ok('tanpa "dibuat dari Termux"', !html.includes('dibuat dari Termux'));
 ok('checkUpdate terpanggil saat load', calls.checkUpdate === 1);
+ok('sapaan waktu tampil', !!$('#greet'));
+ok('greet terisi', $('#greet').textContent.length > 5);
 
 console.log('== 2. KIRIM PESAN (klik chip) ==');
 $$('.chip')[0].click();
 ok('Android.send terpanggil dgn prompt chip', calls.send[0].includes('folder kerja'));
 ok('bubble user muncul', $$('.msg.user').length === 1);
 ok('bubble AI + dots mengetik', !!$('.msg.ai .dots'));
+ok('avatar AI tampil', !!$('.msg.ai .ava svg'));
 ok('tombol jadi stop (merah)', $('#go').classList.contains('stop'));
 ok('timer elapsed tampil', !!$('.elapsed'));
 
@@ -84,7 +87,7 @@ ok('Android.cancel terpanggil', calls.cancel >= 1);
 ok('flag aborted aktif', window._aborted === true);
 window.onDone(-2);
 ok('tombol RESET setelah cancel (fix stuck merah)', !$('#go').classList.contains('stop'));
-ok('ada catatan dihentikan', doc.body.textContent.includes('dihentikan'));
+ok('cancel senyap — tanpa tulisan dihentikan', !doc.body.textContent.includes('dihentikan'));
 ok('delta basi diabaikan setelah cancel', (window.appendOut('ZOMBIE'), !doc.body.textContent.includes('ZOMBIE')));
 
 console.log('== 6. ON ERROR (jalur yang dulu bikin stuck) ==');
@@ -99,10 +102,10 @@ $('#inp').value = 'stream panjang';
 $('#go').click();
 window.appendOut('potongan ');
 $('#go').click();               // klik stop -> watchdog 4 detik terpasang
-ok('busy saat menunggu watchdog', window.busy === true);
+ok('cancel instan terpanggil', calls.cancel >= 2);
 window.forceStop();             // simulasikan watchdog meledak tanpa onDone
 ok('tombol reset oleh watchdog (anti stuck total)', !$('#go').classList.contains('stop'));
-ok('status dihentikan tampil', doc.body.textContent.includes('dihentikan'));
+ok('potongan jawaban tetap dirender', !!doc.querySelector('.msg.ai:last-child .md'));
 ok('_done ditandai oleh watchdog', window._done === true);
 
 console.log('== 7. NEW CHAT ==');

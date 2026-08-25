@@ -584,6 +584,7 @@ window.onError = function(m) {
   window._lastOnError = m + ' @ ' + new Date().toISOString();
   clearTimeout(window._cw);
   var first = !window._done;
+  if (window._cur) { window._cur.parentNode.parentNode.remove(); window._cur = null; }
   window._done = true;
   clearInterval(window._tm);
   ov.classList.remove('show');

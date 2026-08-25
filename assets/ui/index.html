@@ -602,8 +602,13 @@ window.onReady = function(ok, free) {
   } else window.onError('payload tidak lengkap - uninstall lalu install ulang');
 };
 window.setProgress = function(n) {
-  document.getElementById('pfill').style.width = Math.min(95, n / 22) + '%';
+  document.getElementById('pfill').style.width = (70 + Math.min(25, n / 60)) + '%';
   document.getElementById('pnum').textContent = n + ' file';
+};
+window.setProgressBytes = function(b) {
+  var mb = b / 1048576;
+  document.getElementById('pfill').style.width = Math.min(68, mb / 2.9) + '%';
+  document.getElementById('pnum').textContent = mb.toFixed(0) + ' MB / ±190 MB';
 };
 window.setStage = function(t) {
   var p = document.getElementById('ovp');
@@ -736,7 +741,6 @@ function newChat() {
   dot.className = 'ok';
 
   scrollEnd();
-  toast('obrolan baru dimulai');
 }
 document.getElementById('bnew').onclick = newChat;
 document.getElementById('dnew').onclick = function() { closeDrawer(); newChat(); };

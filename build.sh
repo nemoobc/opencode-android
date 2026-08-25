@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")"
+ABI="${OCX_ABI:-arm64-v8a}"
 AJ=dl/android-34/android.jar
 rm -rf build/classes build/gen build/*.apk build/classes.dex
 mkdir -p build/classes
@@ -29,8 +30,8 @@ echo "[4/6] tambahkan dex + native libs..."
 cd build
 aapt add base.apk classes.dex
 cd ..
-rm -rf build/pkglib && mkdir -p build/pkglib/lib
-cp -a jniLibs/arm64-v8a build/pkglib/lib/arm64-v8a
+rm -rf build/pkglib && mkdir -p build/pkglib/lib/$ABI
+cp -a jniLibs/$ABI/. build/pkglib/lib/$ABI/
 cd build/pkglib
 aapt add ../base.apk $(find . -type f | sed 's|^\./||')
 cd ../..

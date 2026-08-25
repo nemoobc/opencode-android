@@ -119,12 +119,7 @@ jobs:
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
             echo "=== menunggu autotest (maks 4 menit) ==="
-            SELESAI=false; i=0; LOGGED=0; while [ $i -lt 150 ]; do
-              sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true)
-              if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama OK: $(echo "$R" | head -c 160)"; LOGGED=1; fi
-              echo "$R" | grep -q '"selesai":"true"' && SELESAI=true && break
-              i=$((i+1))
-            done
+            SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== STATE APP ==="; adb shell ps -A 2>/dev/null | grep -iE 'nemoobc|opencode|proot' || echo "(tidak ada proses app)"; adb shell ss -ltn 2>/dev/null | grep -E '4096|4099' || echo "(tidak ada listener 4096/4099)"
             echo "selesai: $SELESAI"
             curl -s -m 10 http://127.0.0.1:18096/ -o hasil-diagnosa.json || true

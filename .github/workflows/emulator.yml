@@ -85,7 +85,7 @@ jobs:
   emulator:
     needs: build-x86
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -96,11 +96,11 @@ jobs:
       - name: adb start-server
         run: adb start-server
       - name: emulator + autotest
-        timeout-minutes: 40
+        timeout-minutes: 60
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
-          target: google_apis
+          target: google_atd
           arch: x86_64
           disable-animations: false
           script: |

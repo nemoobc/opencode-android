@@ -64,7 +64,11 @@ jobs:
           mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
           printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
           chmod +x staging/rootfs/usr/bin/oc
-          printf '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "opencode/big-pickle"\n}\n' > staging/rootfs/root/.config/opencode/opencode.json
+          printf '{
+            "\"$schema\"": \"https://opencode.ai/config.json\",
+            \"provider\": { \"zen\": { \"npm\": \"@ai-sdk/openai-compatible\", \"name\": \"Zen\", \"options\": { \"baseURL\": \"https://opencode.ai/zen/v1\" }, \"models\": { \"big-pickle\": {}, \"x-preview-f-free\": {} } } },
+            \"model\": \"zen/big-pickle\"
+          }\n' > staging/rootfs/root/.config/opencode/opencode.json
           tar -czf assets/payload/rootfs.bin -C staging/rootfs .
           cp dl/termux/proot.bin jniLibs/x86_64/libproot.so
           cp dl/termux/loader.bin jniLibs/x86_64/libproot_loader.so

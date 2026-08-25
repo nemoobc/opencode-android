@@ -64,7 +64,7 @@ jobs:
           mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
           printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
           chmod +x staging/rootfs/usr/bin/oc
-          printf '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "opencode/x-preview-f-free"\n}\n' > staging/rootfs/root/.config/opencode/opencode.json
+          printf '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "opencode/big-pickle"\n}\n' > staging/rootfs/root/.config/opencode/opencode.json
           tar -czf assets/payload/rootfs.bin -C staging/rootfs .
           cp dl/termux/proot.bin jniLibs/x86_64/libproot.so
           cp dl/termux/loader.bin jniLibs/x86_64/libproot_loader.so
@@ -118,6 +118,15 @@ jobs:
             sleep 10
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
+            echo "=== live view ==="
+            mkdir -p live && printf '<!doctype html><meta charset=utf-8><meta http-equiv=refresh content=2><body style="margin:0;background:#000"><img src="screen.png" style="width:100%%" alt=emulator></body>' > live/index.html
+            nohup bash -c 'while true; do adb exec-out screencap -p > live/screen.png 2>/dev/null; sleep 2; done' >/dev/null 2>&1 &
+            nohup python3 -m http.server 8080 --directory live >/dev/null 2>&1 &
+            nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 serveo.net > serveo.log 2>&1 &
+            sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.serveo\.net' serveo.log | head -1)
+            if [ -z "$LIVE_URL" ]; then nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 nokey@localhost.run > lhr.log 2>&1 & sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.lhr\.life' lhr.log | head -1); fi
+            echo "LIHAT LIVE: ${LIVE_URL:-tidak-tersedia}"
+            [ -n "$LIVE_URL" ] && echo "🔗 **EMULATOR LIVE (buka di HP): $LIVE_URL**" >> $GITHUB_STEP_SUMMARY || true
             echo "=== menunggu autotest (maks 4 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== STATE APP ==="

@@ -1,6 +1,11 @@
 package com.nemoobc.opencode;
 
 import android.app.Activity;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
@@ -63,7 +68,7 @@ public class MainActivity extends Activity {
         extWork = getExternalFilesDir(null);
         if (extWork == null) extWork = workDir;
         cacheDir = getCacheDir();
-        natLib = new File(getApplicationInfo().nativeLibraryDir);
+        natLib = new File(getFilesDir(), "native");
 
         if (!workDir.exists()) workDir.mkdirs();
         if (!extWork.exists()) extWork.mkdirs();
@@ -74,7 +79,6 @@ public class MainActivity extends Activity {
         try {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             nm.createNotificationChannel(new NotificationChannel("oc", "OpenCode", NotificationManager.IMPORTANCE_LOW));
-            startForegroundService(new Intent(this, ServerService.class));
         } catch (Exception ignored) {}
         if (autotest) {
             Diagnostics.reset();
@@ -102,6 +106,7 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                try { ensureNativeLibs(); } catch (Exception e) { push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); return; }
                 boolean ready = new File(rootFs, "usr/bin/busybox").exists()
                         && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
                 if (!ready) {
@@ -312,6 +317,38 @@ public class MainActivity extends Activity {
     }
 
     /* ================= server opencode ================= */
+
+    /* ekstrak native libs dari APK ke filesDir/native — dipakai saat
+       extractNativeLibs=false supaya install tetap instan */
+    private void ensureNativeLibs() throws IOException {
+        File marker = new File(natLib, "libopencode.so");
+        if (marker.exists() && marker.length() > 0) return;
+        natLib.mkdirs();
+        ZipInputStream z = new ZipInputStream(new BufferedInputStream(
+                new FileInputStream(getApplicationInfo().sourceDir), 1 << 16));
+        ZipEntry e;
+        byte[] buf = new byte[1 << 16];
+        long total = 0, lastPush = 0;
+        while ((e = z.getNextEntry()) != null) {
+            String n = e.getName();
+            if (!n.startsWith("lib/arm64-v8a/") || !n.endsWith(".so")) continue;
+            File out = new File(natLib, new File(n).getName());
+            FileOutputStream fo = new FileOutputStream(out);
+            int r;
+            while ((r = z.read(buf)) > 0) {
+                fo.write(buf, 0, r);
+                total += r;
+                if (total - lastPush > 4194304) {
+                    lastPush = total;
+                    push("window.setProgressBytes(" + total + ")");
+                }
+            }
+            fo.close();
+            out.setExecutable(true, false);
+        }
+        z.close();
+        push("window.setProgressBytes(" + total + ")");
+    }
 
     private void startServer() {
         try {

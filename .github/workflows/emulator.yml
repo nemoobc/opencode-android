@@ -130,7 +130,7 @@ jobs:
             echo "=== menunggu autotest (maks 4 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
-            adb logcat -G 16M
+            adb logcat -G 16M || true
             adb shell monkey -p com.nemoobc.opencode --throttle 250 --pct-touch 60 --pct-motion 20 --pct-app-switch 10 --pct-flip 5 -v 500 > monkey.log 2>&1 || true
             tail -5 monkey.log
             echo "=== PANEN CRASH ==="

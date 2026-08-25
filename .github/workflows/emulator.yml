@@ -72,8 +72,7 @@ jobs:
           cp dl/termux/libshmem.so jniLibs/x86_64/libshmem.so
       - name: build apk x86_64
         run: |
-          sed -i 's|jniLibs/arm64-v8a|jniLibs/x86_64|' build.sh || true
-          bash build.sh
+          OCX_ABI=x86_64 bash build.sh
           mkdir -p out
           mv build/OpenCode-*.apk out/app-x86.apk
       - name: verifikasi arsc uncompressed

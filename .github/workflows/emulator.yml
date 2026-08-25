@@ -120,7 +120,12 @@ jobs:
             adb forward tcp:18096 tcp:4099
             echo "=== menunggu autotest (maks 4 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
-            echo "=== STATE APP ==="; adb shell ps -A 2>/dev/null | grep -iE 'nemoobc|opencode|proot' || echo "(tidak ada proses app)"; adb shell ss -ltn 2>/dev/null | grep -E '4096|4099' || echo "(tidak ada listener 4096/4099)"
+            echo "=== STATE APP ==="
+            adb shell ps -A | grep -i 'opencod\|nemoob' || echo "(proses app tidak ada)"
+            adb shell netstat -ltn 2>/dev/null | grep -E '4096|4099' || echo "(netstat: tidak ada listener)"
+            adb forward --list
+            adb shell 'echo -e "GET / HTTP/1.0\r\n" | nc -w 3 127.0.0.1 4099' 2>/dev/null | head -c 200 || echo "(nc 4099 gagal)"
+            adb shell dumpsys dropbox --print 2>/dev/null | grep -A15 'Process: com.nemoobc' | head -40 || echo "(tidak ada crash dropbox)"
             echo "selesai: $SELESAI"
             curl -s -m 10 http://127.0.0.1:18096/ -o hasil-diagnosa.json || true
             for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true; done

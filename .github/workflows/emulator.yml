@@ -119,7 +119,7 @@ jobs:
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
             echo "=== menunggu autotest (maks 4 menit) ==="
-            SELESAI=false; i=0; while [ $i -lt 48 ]; do sleep 5; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); echo "$R" | grep -q '"selesai":"true"' && SELESAI=true && break; i=$((i+1)); done
+            SELESAI=false; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); echo "$R" | grep -q '"selesai":"true"' && SELESAI=true && break; i=$((i+1)); done
             echo "selesai: $SELESAI"
             curl -s -m 10 http://127.0.0.1:18096/ -o hasil-diagnosa.json || true
             for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true; done

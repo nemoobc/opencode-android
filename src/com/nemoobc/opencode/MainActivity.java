@@ -118,12 +118,14 @@ public class MainActivity extends Activity {
                             File f = new File(rootFs, p);
                             if (f.exists()) f.setExecutable(true, false);
                         }
+                        push("window.setStage(\"menyalakan server AI...\")");
                         ready = readyOk();
                         if (!ready) {
                             delTree(rootFs);
                             InputStream raw2 = getAssets().open("payload/rootfs.bin");
                             TarExtractor.extractGz(new BufferedInputStream(raw2, 1 << 16), rootFs, cb);
-                            ready = readyOk();
+                            push("window.setStage(\"menyalakan server AI...\")");
+                        ready = readyOk();
                         }
                     } catch (Exception e) {
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
@@ -313,7 +315,9 @@ public class MainActivity extends Activity {
 
     private void startServer() {
         try {
-            if (httpCode("http://127.0.0.1:" + PORT + "/", 1200) == 200) {
+            /* server dianggap hidup jika ada respons HTTP apa pun (200/401/404...) —
+               bukan hanya 200, karena opencode menjawab beda-beda di path / */
+            if (httpCode("http://127.0.0.1:" + PORT + "/", 1200) > 0) {
                 serverUp = true;
                 long free = rootFs.getFreeSpace() / (1024 * 1024);
                 push("window.onReady(true," + free + ")");
@@ -372,7 +376,7 @@ public class MainActivity extends Activity {
 
             int waited = 0;
             while (running && waited < 90000) {
-                if (httpCode("http://127.0.0.1:" + PORT + "/", 1500) == 200) {
+                if (httpCode("http://127.0.0.1:" + PORT + "/", 1500) > 0) {
                     serverUp = true;
                     break;
                 }

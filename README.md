@@ -93,14 +93,14 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 ## 📜 Riwayat versi
 
-| Versi | Isi |
-|---|---|
-| v1.5.5 | **APK sekarang ±64 MB** (libopencode dikompresi level 9, turun dari ±190 MB); splash logo **10 detik**; streaming token-per-token mulus (throttle 40 ms + append-tail, anti-crash); fix ekstrak ulang tiap buka; model default `opencode/big-pickle`; banyak perbaikan sebelumnya tetap |
-| v1.5.4 | Perombakan internal & penuh perbaikan dari v1.5.3 |
-| v1.5.3 | Upaya install instan (native libs tidak diekstrak saat instal) |
-| v1.5.2 | Fix "server gagal start" palsu — deteksi siap terima respons HTTP apa pun; UI v2 splash |
-| v1.5.1 | Fix tombol cancel tidak nyangkut (watchdog ganda), streaming anti-lag, auto-scroll |
-| v1.2.3 | Fix tombol cancel stif stuck, welcome kosong saat buka pertama, anti white-flash |
+| Versi | Ukuran | Isi |
+|---|---|---|
+| v1.5.5 | **±64 MB** | Fix ekstrak rootfs tar (tidak stuck di "bersiap"); upload file (tombol **+** di input); auto-detect bahasa + reset per percakapan; streaming token-per-token mulus; model default `opencode/big-pickle` |
+| v1.5.4 | ±64 MB | Perombakan internal & penuh perbaikan dari v1.5.3 |
+| v1.5.3 | ±190 MB | Upaya install instan (native libs tidak diekstrak saat instal) |
+| v1.5.2 | ±190 MB | Fix "server gagal start" palsu — deteksi siap terima respons HTTP apa pun; UI v2 splash |
+| v1.5.1 | ±190 MB | Fix tombol cancel tidak nyangkut (watchdog ganda), streaming anti-lag, auto-scroll |
+| v1.2.3 | ±190 MB | Fix tombol cancel stif stuck, welcome kosong saat buka pertama, anti white-flash |
 
 ## 📄 Lisensi
 

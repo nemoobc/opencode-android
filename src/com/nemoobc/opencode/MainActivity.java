@@ -114,28 +114,32 @@ public class MainActivity extends Activity {
                 try { ensureNativeLibs(); } catch (Exception e) { push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); return; }
                 boolean ready = readyOk();
                 if (!ready) {
-                    push("window.setStage(\"menyiapkan sistem — memeriksa sisa sistem lama...\")");
                     File old = new File(getFilesDir(), "rootfs.old");
                     File tmp = new File(getFilesDir(), "rootfs.tmp");
+                    push("window.setStage(\"menyiapkan sistem — memeriksa...\")");
                     try {
                         if (tmp.exists()) {
-                            push("window.setStage(\"menyiapkan sistem — membersihkan ekstrak lama...\")");
+                            push("window.setStage(\"menyiapkan sistem — membersihkan sisa...\")");
                             delTree(tmp);
                         }
                         /* Sisa percobaan yang ditutup paksa: rootfs belum ada, .old ada.
-                           Pulihkan dulu — kalau ternyata valid, tidak perlu ekstrak ulang. */
-                        if (!rootFs.exists() && old.exists()) moveTree(old, rootFs);
+                           Pulihkan dulu — PRIORITAS renameTo (instan), bukan menyalin
+                           file satu-satu yang bikin "ekstrak ulang" & stuck lama. */
+                        if (!rootFs.exists() && old.exists()) {
+                            push("window.setStage(\"menyiapkan sistem — memulihkan sistem lama...\")");
+                            moveDir(old, rootFs);
+                        }
                         if (readyOk()) {
                             ready = true;
                         } else {
-                            /* Kalau rootfs lama ada, BACKUP dulu (jangan hapus):
-                               ekstrak baru batal/gagal di tengah → rootfs lama dipulihkan. */
+                            /* Kalau rootfs lama ada, BACKUP dulu — pakai renameTo instan */
                             if (rootFs.exists()) {
-                                push("window.setStage(\"menyiapkan sistem — memindahkan sistem lama...\")");
+                                push("window.setStage(\"menyiapkan sistem — menyimpan sistem lama...\")");
                                 if (!rootFs.renameTo(old)) moveTree(rootFs, old);
                             }
-                            push("window.setStage(\"menyiapkan sistem — mengekstrak sistem baru...\")");
+                            push("window.setStage(\"menyiapkan sistem — mengekstrak...\")");
                             tmp.mkdirs();
+                            push("window.setProgress(1)");
                             InputStream raw = getAssets().open("payload/rootfs.bin");
                             TarExtractor.Progress cb = new TarExtractor.Progress() {
                                 @Override
@@ -155,21 +159,26 @@ public class MainActivity extends Activity {
                             new File(tmp, EXT_OK).createNewFile();
                             if (!tmp.renameTo(rootFs)) moveTree(tmp, rootFs);
                             ready = readyOk();
-                            /* rootfs baru sudah aktif. Hapus backup lama DI LATAR BELAKANG
-                               (jangan blokir start server — inilah yang bikin "stuck"). */
-                            final File oldDel = old;
-                            Thread bg = new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (oldDel.exists()) delTree(oldDel);
-                                }
-                            });
-                            bg.setDaemon(true);
-                            bg.start();
+                            /* JANGAN langsung hapus old di sini: kalau app dibunuh saat
+                               penghapusan berjalan, buka berikutnya harusnya GAMPANG
+                               restore. Hapus old nanti, setelah server mulai hidup. */
+                            if (ready && old.exists()) {
+                                push("window.setProgress(555)");
+                                push("window.setProgressBytes(16332800)");
+                                Thread bg = new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try { Thread.sleep(25000); } catch (InterruptedException ignored) {}
+                                        if (old.exists()) delTree(old);
+                                    }
+                                });
+                                bg.setDaemon(true);
+                                bg.start();
+                            }
                         }
                     } catch (Exception e) {
                         /* gagal/batal di tengah: kembalikan rootfs lama biar app tetap jalan */
-                        if (!rootFs.exists() && old.exists()) moveTree(old, rootFs);
+                        if (!rootFs.exists() && old.exists()) moveDir(old, rootFs);
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
                         return;
                     }
@@ -296,6 +305,13 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
             src.delete();
         }
+    }
+
+    /* pindah pohon direktori secara INSTAN via renameTo; kalau gagal baru salin.
+       Beda dengan moveTree: restore .old → rootfs jadi seketika, tidak "ekstrak ulang". */
+    private void moveDir(File src, File dst) {
+        if (dst.exists()) { if (dst.isDirectory()) delTree(dst); else dst.delete(); }
+        if (!src.renameTo(dst)) moveTree(src, dst);
     }
 
     private void setupLibLinks() {
@@ -898,6 +914,37 @@ public class MainActivity extends Activity {
                     }
                 }
             });
+        }
+
+        /* Baca file gambar sebagai data URL untuk PRIVIEW di bubble (bukan untuk dikirim
+           ke model — model cukup dapat path, biar tidak lambat). Batasi 8MB & hanya gambar. */
+        @JavascriptInterface
+        public String readImageDataUrl(String path) {
+            try {
+                File f = new File(path);
+                if (!f.exists() || f.length() > 8L * 1024 * 1024) return null;
+                String n = f.getName().toLowerCase();
+                String mime;
+                if (n.endsWith(".jpg") || n.endsWith(".jpeg")) mime = "image/jpeg";
+                else if (n.endsWith(".png")) mime = "image/png";
+                else if (n.endsWith(".gif")) mime = "image/gif";
+                else if (n.endsWith(".webp")) mime = "image/webp";
+                else if (n.endsWith(".bmp")) mime = "image/bmp";
+                else return null;
+                byte[] b = new byte[(int) f.length()];
+                try (java.io.FileInputStream fin = new java.io.FileInputStream(f)) {
+                    int off = 0;
+                    while (off < b.length) {
+                        int r = fin.read(b, off, b.length - off);
+                        if (r < 0) break;
+                        off += r;
+                    }
+                }
+                return "data:" + mime + ";base64," +
+                        android.util.Base64.encodeToString(b, android.util.Base64.NO_WRAP);
+            } catch (Exception e) {
+                return null;
+            }
         }
 
         @JavascriptInterface

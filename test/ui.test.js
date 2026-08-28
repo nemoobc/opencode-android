@@ -17,6 +17,7 @@ const dom = new JSDOM(html, {
       copyText: (t) => calls.copyText.push(t),
       openUrl: (u) => calls.openUrl.push(u),
       checkUpdate: () => calls.checkUpdate++,
+      readImageDataUrl: (p) => 'data:image/png;base64,AAAA',
       readConfig: () => JSON.stringify({ auth: '{"opencode":{"type":"api","key":"KEY123"}}', cfg: '{"model":"opencode/big-pickle"}' }),
       appInfo: () => '1.2.4',
       toast: () => {},
@@ -177,7 +178,8 @@ ok('kirim manual tetap jalan dengan lampiran', calls.send.length === sendCountSe
 const lastSend = calls.send[calls.send.length - 1] || '';
 ok('prompt lampiran terkirim via go', calls.send.length === sendCountSebelum + 1 && lastSend.includes('foto.png'));
 ok('bar lampiran hilang setelah kirim', !$('#attachbar').classList.contains('show'));
-ok('bubble user menampilkan label lampiran', doc.body.textContent.includes('[lampiran: foto.png]'));
+ok('bubble user menampilkan label lampiran', doc.body.textContent.includes('foto.png') && doc.body.textContent.includes('🖼️'));
+ok('preview gambar dirender di bubble user', !!$('.msg.user .attimg'));
 
 console.log('== 13b. BATAL LAMPIRAN ==');
 window.onFileReady('hapus.txt', '/work/hapus.txt');

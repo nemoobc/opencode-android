@@ -12,7 +12,14 @@ public final class TarExtractor {
     public interface Progress { void onEntry(int count); }
 
     public static void extractGz(InputStream raw, File dest, Progress p) throws IOException {
-        extract(new GZIPInputStream(raw, 65536), dest, p);
+        // Auto-detect format payload: kalau tar POLOS (bukan gzip), jangan dibungkus
+        // GZIPInputStream — itu bikin macet karena deflate tak pernah selesai. Magic gzip = 1f 8b.
+        java.io.PushbackInputStream pb = new java.io.PushbackInputStream(raw, 512);
+        int a = pb.read();
+        int b = pb.read();
+        pb.unread(new byte[]{(byte) a, (byte) b}, 0, 2);
+        boolean gz = a == 0x1f && (b & 0xff) == 0x8b;
+        extract(gz ? new GZIPInputStream(pb, 65536) : pb, dest, p);
     }
 
     public static void extract(InputStream in, File dest, Progress p) throws IOException {

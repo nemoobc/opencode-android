@@ -94,7 +94,8 @@ console.log('== 6. ON ERROR (jalur yang dulu bikin stuck) ==');
 $('#inp').value = 'tes error';
 $('#go').click();
 window.onError('HTTP 500: model mati');
-ok('catatan error tampil', doc.body.textContent.includes('HTTP 500'));
+ok('catatan error tampil', doc.body.textContent.includes('Model tidak tersedia'));
+ok('error mentah ter-rapikan (tidak menampilkan HTTP 500)', !doc.body.textContent.includes('HTTP 500'));
 ok('tombol tetap normal setelah error (fix onError)', !$('#go').classList.contains('stop'));
 
 console.log('== 6b. WATCHDOG CANCEL (forceStop tanpa onDone dari Java) ==');

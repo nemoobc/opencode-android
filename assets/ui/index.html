@@ -282,6 +282,7 @@
   <button id="mchip"><span class="lbl" id="mname">Big Pickle</span><span class="car">&#9662;</span></button>
   <div style="flex:1"></div>
   <div id="dot"></div>
+  <button class="hbtn" id="blang" title="bahasa balasan">&#127760;</button>
   <button class="hbtn" id="bnew" title="obrolan baru">&#10010;</button>
 </header>
 
@@ -312,6 +313,7 @@
 <div id="bar">
   <div id="pill">
     <textarea id="inp" rows="1" placeholder="Tanya apa aja..."></textarea>
+    <button id="battach" title="lampirkan file">+</button>
     <button id="go">&#8593;</button>
   </div>
   <div id="hint">agent bisa baca/tulis file di folder kerjanya &#8226; obrolan nyambung otomatis</div>
@@ -339,6 +341,14 @@
     <label>Model kustom</label>
     <input id="cmcustom" placeholder="provider/nama-model">
     <div class="acts"><button class="bb ghost" id="mclose">tutup</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mlang">
+  <div class="card">
+    <h3>BAHASA BALASAN</h3>
+    <div class="mlist" id="llist"></div>
+    <div class="acts"><button class="bb ghost" id="lclose">tutup</button></div>
   </div>
 </div>
 
@@ -597,6 +607,18 @@ window.onDone = function(code) {
   dot.className = code === 0 ? 'ok' : 'bad';
   document.getElementById('hint').textContent = '';
 };
+function friendlyErr(m) {
+  var low = String(m).toLowerCase();
+  if (low.indexOf('http 500') >= 0 || low.indexOf('model not found') >= 0)
+    return 'Model tidak tersedia saat ini. Coba ganti model cepat dari menu, lalu ketik ulang.';
+  if (low.indexOf('http 429') >= 0 || low.indexOf('too many') >= 0 || low.indexOf('rate limit') >= 0)
+    return 'Terlalu banyak permintaan (rate limit). Tunggu sebentar, lalu coba lagi.';
+  if (low.indexOf('cleartext') >= 0 || low.indexOf('localhost') >= 0 || low.indexOf('connect') >= 0)
+    return 'Koneksi ke server lokal gagal. Tutup lalu buka ulang aplikasi.';
+  if (low.indexOf('timed out') >= 0 || low.indexOf('timeout') >= 0)
+    return 'Server model lambat/kehabisan waktu. Periksa internet, lalu coba lagi.';
+  return String(m);
+}
 window.onError = function(m) {
   window._lastOnError = m + ' @ ' + new Date().toISOString();
   clearTimeout(window._cw);
@@ -606,7 +628,7 @@ window.onError = function(m) {
   clearInterval(window._tm);
   ov.classList.remove('show');
   killHello();
-  if (first) addNote(m, true);
+  if (first) addNote(friendlyErr(m), true);
   finishUI(-1);
 };
 window.onReady = function(ok, free) {
@@ -683,7 +705,7 @@ function send(t) {
   go.innerHTML = '&#9632;';
   go.classList.add('stop');
   document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-60 detik</b>';
-  Android.send(t);
+  Android.send(langPromp(t));
 }
 /* pengaman: kalau sisi Android tidak pernah membalas setelah cancel,
    paksa UI kembali normal — senyap, potongan jawaban tetap ditampilkan */
@@ -751,6 +773,7 @@ function newChat() {
   if (busy) { window._aborted = true; window._canceling = true; Android.cancel(); }
   clearTimeout(window._cw);
   Android.newChat();
+  window._langDetected = null;
   window._cur = null; window._plain = '';
   busy = false; window._done = false; window._aborted = false; window._canceling = false;
   clearInterval(window._tm);
@@ -811,6 +834,65 @@ document.getElementById('cmcustom').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && this.value.trim()) { setModel(this.value.trim()); }
 });
 
+/* ===== pilih bahasa balasan ===== */
+var curLang = localStorage.getItem('oc-lang') || 'auto';
+var LANGS = [
+  {id:'auto', e:'\uD83C\uDF10', nm:'Auto (ikuti bahasa)', ds:'deteksi otomatis dari pertanyaan pertama'},
+  {id:'id',   e:'\uD83C\uDDEE\uD83C\uDDE9', nm:'Indonesia',        ds:'balasan selalu bahasa Indonesia'},
+  {id:'en',   e:'\uD83C\uDDEC\uD83C\uDDE7', nm:'English',          ds:'always reply in English'}
+];
+function langName(id) {
+  for (var i = 0; i < LANGS.length; i++) if (LANGS[i].id === id) return LANGS[i];
+  return LANGS[0];
+}
+function renderLangBtn() {
+  var o = langName(curLang);
+  document.getElementById('blang').textContent = o.e;
+  document.getElementById('blang').title = 'bahasa balasan: ' + o.nm;
+}
+function openLang() {
+  var l = document.getElementById('llist');
+  l.innerHTML = '';
+  LANGS.forEach(function(m) {
+    var b = document.createElement('button');
+    b.className = 'mopt' + (m.id === curLang ? ' sel' : '');
+    b.innerHTML = '<div style="font-size:18px">' + m.e + '</div><div><div class="nm">' + m.nm + '</div><div class="ds">' + m.ds + '</div></div>';
+    b.onclick = function() { setLang(m.id); };
+    l.appendChild(b);
+  });
+  document.getElementById('mlang').classList.add('show');
+}
+function setLang(id) {
+  curLang = id;
+  localStorage.setItem('oc-lang', id);
+  renderLangBtn();
+  window._langDetected = null;
+  document.getElementById('mlang').classList.remove('show');
+  toast('bahasa balasan: ' + langName(id).nm);
+}
+function detectLang(s) {
+  s = String(s).toLowerCase();
+  var idw = ['halo','hai','apa','tolong','saya','kamu','kapan','kenapa','gimana','tidak','banget','nya ','yang ','bisa','buat','dari','untuk','ini ','itu '];
+  var enw = ['hello','hi','what','please','how','why','can you','you ','this','that','write a','make a','help','the ',' is ',' to ',' for '];
+  var idHit = 0, enHit = 0;
+  for (var i = 0; i < idw.length; i++) if (s.indexOf(idw[i]) >= 0) idHit++;
+  for (var j = 0; j < enw.length; j++) if (s.indexOf(enw[j]) >= 0) enHit++;
+  return idHit > enHit ? 'id' : (enHit > idHit ? 'en' : null);
+}
+function langPromp(t) {
+  var lang = curLang;
+  if (lang === 'auto') {
+    if (window._langDetected) lang = window._langDetected;
+    else { lang = detectLang(t) || 'auto'; window._langDetected = lang; }
+  }
+  if (lang === 'id') return '(instruksi sistem: jawab SELALU dengan bahasa Indonesia, apa pun bahasa pertanyaanku. gunakan bahasa Indonesia yang alami.)\n\n' + t;
+  if (lang === 'en') return '(system instruction: ALWAYS reply in English, regardless of the question language.)\n\n' + t;
+  return t;
+}
+document.getElementById('blang').onclick = openLang;
+document.getElementById('lclose').onclick = function() { document.getElementById('mlang').classList.remove('show'); };
+renderLangBtn();
+
 /* ===== config modal ===== */
 document.getElementById('dconfig').onclick = function() { closeDrawer(); openConfig(); };
 function openConfig() {
@@ -856,6 +938,35 @@ document.getElementById('ubtn').onclick = function() {
   Android.openUrl('https://github.com/nemoobc/opencode-android/releases/tag/' + (window._upTag || 'latest'));
 };
 document.getElementById('dver').textContent = 'v' + (Android.appInfo ? Android.appInfo() : '?');
+
+document.getElementById('battach').onclick = function () {
+  if (busy) { toast('tunggu balasan selesai dulu'); return; }
+  if (typeof Android.pickFile === 'function') Android.pickFile();
+  else toast('upload file belum didukung di versi ini');
+};
+window.onFileReady = function (name, path) {
+  addMsg('user').textContent = '[Lampiran] ' + name;
+  window._lastPrompt = 'baca file ' + name;
+  window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
+  window._suggested = false;
+  var body = addMsg('ai');
+  body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
+    '<span class="elapsed">membaca file...</span>';
+  window._cur = body;
+  var t0 = Date.now();
+  clearInterval(window._tm);
+  window._tm = setInterval(function() {
+    var el = window._cur ? window._cur.querySelector('.elapsed') : null;
+    var sec = Math.round((Date.now() - t0) / 1000);
+    if (el) el.textContent = 'membaca file... ' + sec + 's';
+  }, 1000);
+  busy = true;
+  dot.className = 'work';
+  go.innerHTML = '&#9632;';
+  go.classList.add('stop');
+  Android.send(langPromp('(file dilampirkan)\n\nNama: ' + name + '\nPath kerja: ' + path + '\n\nBaca/buka isi file ini. Kalau ada pertanyaan, jawab; kalau tidak, buatkan rangkuman singkat isinya.'));
+};
+window.onFileError = function (m) { var n = addNote('gagal lampirkan file: ' + m, true); setTimeout(function(){ if(n&&n.parentNode)n.parentNode.removeChild(n); }, 6000); };
 
 Android.checkUpdate();
 </script>

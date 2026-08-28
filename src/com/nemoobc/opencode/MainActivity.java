@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     private volatile long firstDeltaMs = -1;
     private volatile boolean sawIdle = false;
     private static final int PORT = 4096;
+    private static final int REQ_PICK = 7001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -396,6 +397,39 @@ public class MainActivity extends Activity {
         try (FileOutputStream fv = new FileOutputStream(verFile)) { fv.write(appInfoSafe().getBytes()); }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri u = data.getData();
+            try {
+                String name = queryDisplayName(u);
+                if (name == null || name.isEmpty()) name = "file_" + System.currentTimeMillis();
+                workDir.mkdirs();
+                File dest = new File(workDir, name);
+                try (InputStream in = getContentResolver().openInputStream(u);
+                     OutputStream out = new FileOutputStream(dest)) {
+                    byte[] buf = new byte[65536];
+                    int r;
+                    while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+                }
+                push("window.onFileReady(" + jq(name) + ", " + jq(dest.getAbsolutePath()) + ")");
+            } catch (Exception e) {
+                push("window.onFileError(" + jq(String.valueOf(e)) + ")");
+            }
+        }
+    }
+
+    private String queryDisplayName(Uri u) {
+        try (android.database.Cursor c = getContentResolver().query(u, null, null, null, null)) {
+            if (c != null && c.moveToFirst()) {
+                int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (idx >= 0) return c.getString(idx);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     private void startServer() {
         try {
             /* server dianggap hidup jika ada respons HTTP apa pun (200/401/404...) —
@@ -705,6 +739,23 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void newChat() {
             sessionId = null;
+        }
+
+        @JavascriptInterface
+        public void pickFile() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                        i.addCategory(Intent.CATEGORY_OPENABLE);
+                        i.setType("*/*");
+                        startActivityForResult(Intent.createChooser(i, "Lampirkan file"), REQ_PICK);
+                    } catch (Exception e) {
+                        push("window.onFileError(" + jq(String.valueOf(e)) + ")");
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

@@ -8,3 +8,5 @@ local.properties
 *.keystore
 node_modules/
 package-lock.json
+
+autodev-*.md

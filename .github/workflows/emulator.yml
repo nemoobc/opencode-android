@@ -64,16 +64,16 @@ jobs:
           mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
           printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
           chmod +x staging/rootfs/usr/bin/oc
-          python3 -c "
-import json
-cfg = {'\$schema': 'https://opencode.ai/config.json',
-       'provider': {'zen': {'npm': '@ai-sdk/openai-compatible', 'name': 'Zen',
-                     'options': {'baseURL': 'https://opencode.ai/zen/v1'},
-                     'models': {'big-pickle': {}, 'x-preview-f-free': {}}}},
-       'model': 'zen/big-pickle'}
-with open('staging/rootfs/root/.config/opencode/opencode.json','w') as f:
-    json.dump(cfg, f, indent=2)
-"
+          python3 - <<'PY'
+          import json
+          cfg = {'$schema': 'https://opencode.ai/config.json',
+                 'provider': {'zen': {'npm': '@ai-sdk/openai-compatible', 'name': 'Zen',
+                                'options': {'baseURL': 'https://opencode.ai/zen/v1'},
+                                'models': {'big-pickle': {}}}},
+                 'model': 'zen/big-pickle'}
+          with open('staging/rootfs/root/.config/opencode/opencode.json', 'w') as f:
+              json.dump(cfg, f, indent=2)
+          PY
           tar -czf assets/payload/rootfs.bin -C staging/rootfs .
           cp dl/termux/proot.bin jniLibs/x86_64/libproot.so
           cp dl/termux/loader.bin jniLibs/x86_64/libproot_loader.so

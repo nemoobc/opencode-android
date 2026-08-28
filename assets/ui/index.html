@@ -273,7 +273,7 @@
 
 <header>
   <button class="hbtn" id="bmenu">&#9776;</button>
-  <button id="mchip"><span class="lbl" id="mname">x-preview-f-free</span><span class="car">&#9662;</span></button>
+  <button id="mchip"><span class="lbl" id="mname">Big Pickle</span><span class="car">&#9662;</span></button>
   <div style="flex:1"></div>
   <div id="dot"></div>
   <button class="hbtn" id="bnew" title="obrolan baru">&#10010;</button>
@@ -352,7 +352,7 @@
     <input id="ckey" type="password" placeholder="kosongkan untuk model gratis">
     <div class="hint">Default sudah pakai model gratis tanpa key. Key lain: <a href="#" onclick="Android.openUrl('https://console.opencode.ai');return false">console.opencode.ai</a></div>
     <label>Model</label>
-    <input id="cmodel" placeholder="default: opencode/x-preview-f-free">
+    <input id="cmodel" placeholder="default: opencode/big-pickle">
     <div class="acts">
       <button class="bb ghost" id="closem">tutup</button>
       <button class="bb" id="save">simpan</button>
@@ -761,7 +761,6 @@ var MODELS = [
   {id:'opencode/big-pickle',                  nm:'Big Pickle (lama)',     ds:'jalur cadangan', tag:'GRATIS'},
   {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~6 dtk', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'terverifikasi ~9 dtk', tag:'GRATIS'},
-  {id:'zen/x-preview-f-free',                 nm:'0x Alpha Free (Unlimited)', ds:'tanpa auth — unlimited', tag:'GRATIS'},
   {id:'opencode/mimo-v2.5-free',              nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/muse-spark-1.2-contributor-free', nm:'Muse Spark 1.2',    ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3-ultra-free',       nm:'Nemotron 3 Ultra',      ds:'katalog resmi relay', tag:'GRATIS'},
@@ -815,7 +814,7 @@ function openConfig() {
     if (c.cfg) {
       try {
         var m = JSON.parse(c.cfg);
-        document.getElementById('cmodel').value = (m.model === 'opencode/x-preview-f-free') ? '' : (m.model || '');
+        document.getElementById('cmodel').value = (m.model === 'opencode/big-pickle') ? '' : (m.model || '');
       } catch (e) {}
     }
   } catch (e) {}
@@ -823,7 +822,7 @@ function openConfig() {
 }
 document.getElementById('closem').onclick = function() { document.getElementById('mconfig').classList.remove('show'); };
 document.getElementById('save').onclick = function() {
-  var m = document.getElementById('cmodel').value.trim() || 'opencode/x-preview-f-free';
+  var m = document.getElementById('cmodel').value.trim() || 'opencode/big-pickle';
   curModel = m;
   document.getElementById('mname').textContent = modelName(m);
   Android.saveConfig(

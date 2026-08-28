@@ -1,5 +1,5 @@
-const { JSDOM } = require('jsdom');
-const fs = require('fs');
+import { JSDOM } from 'jsdom';
+import fs from 'fs';
 
 const html = fs.readFileSync('assets/ui/index.html', 'utf8');
 
@@ -17,7 +17,7 @@ const dom = new JSDOM(html, {
       copyText: (t) => calls.copyText.push(t),
       openUrl: (u) => calls.openUrl.push(u),
       checkUpdate: () => calls.checkUpdate++,
-      readConfig: () => JSON.stringify({ auth: '{"opencode":{"type":"api","key":"KEY123"}}', cfg: '{"model":"opencode/x-preview-f-free"}' }),
+      readConfig: () => JSON.stringify({ auth: '{"opencode":{"type":"api","key":"KEY123"}}', cfg: '{"model":"opencode/big-pickle"}' }),
       appInfo: () => '1.2.4',
       toast: () => {},
     };
@@ -118,9 +118,9 @@ $('#go').click();
 ok('bisa kirim lagi setelah new chat', calls.send.length >= 2);
 
 console.log('== 8. GANTI MODEL ==');
-window.setModel('zen/x-preview-f-free');
-ok('chip nama model 0x Alpha Free (Unlimited)', $('#mname').textContent === '0x Alpha Free (Unlimited)');
-ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'zen/x-preview-f-free'));
+window.setModel('zen/big-pickle');
+ok('chip nama model big-pickle', $('#mname').textContent === 'Big Pickle');
+ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'zen/big-pickle'));
 ok('preset grok-code mati sudah dihapus', !doc.body.innerHTML.includes('grok-code'));
 
 console.log('== 9. MODAL CONFIG ==');

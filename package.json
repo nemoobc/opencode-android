@@ -1,0 +1,12 @@
+{
+  "name": "opencode-android-test",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/ui.test.js"
+  },
+  "dependencies": {
+    "jsdom": "^30.0.1"
+  }
+}

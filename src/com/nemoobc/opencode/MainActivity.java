@@ -303,6 +303,13 @@ public class MainActivity extends Activity {
                     Diagnostics.step("newchat", "welcomeKembali=" + hello);
                     Diagnostics.shot("5-newchat", capture());
 
+                    // selalu dump output 'opencode serve' (termasuk error koneksi ke zen
+                    // dari dalam rootfs proot) supaya akar respon lambat terlihat
+                    synchronized (serverLog) {
+                        String sl = serverLog.toString();
+                        Diagnostics.extra("server-log", sl.length() > 3000 ? sl.substring(sl.length() - 3000) : sl);
+                    }
+
                     Diagnostics.extra("selesai", "true");
                     Diagnostics.step("selesai", "semua tahap dijalankan");
                 } catch (Exception e) {

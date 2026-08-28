@@ -136,7 +136,7 @@ with open('staging/rootfs/root/.config/opencode/opencode.json','w') as f:
             sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.serveo\.net' serveo.log | head -1)
             if [ -z "$LIVE_URL" ]; then nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 nokey@localhost.run > lhr.log 2>&1 & sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.lhr\.life' lhr.log | head -1); fi
             echo "LIHAT LIVE: ${LIVE_URL:-tidak-tersedia}"
-            [ -n "$LIVE_URL" ] && echo "🔗 **EMULATOR LIVE (buka di HP): $LIVE_URL**" >> $GITHUB_STEP_SUMMARY || true
+            [ -n "$LIVE_URL" ] && echo "EMULATOR LIVE (buka di HP): $LIVE_URL" >> $GITHUB_STEP_SUMMARY || true
             echo "=== menunggu autotest (maks 4 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
@@ -146,7 +146,7 @@ with open('staging/rootfs/root/.config/opencode/opencode.json','w') as f:
             echo "=== PANEN CRASH ==="
             adb shell dumpsys dropbox --print 2>/dev/null | grep -E 'Process: com.nemoobc|Crash|FATAL' | head -20 || true
             adb logcat -d 2>/dev/null | grep -E 'FATAL EXCEPTION|AndroidRuntime.*com.nemoobc|E AndroidRuntime' | head -30 > crash-report.txt || true
-            grep -q . crash-report.txt && echo "⚠️ ADA CRASH (lihat crash-report.txt)" || echo "✓ tidak ada crash"
+            grep -q . crash-report.txt && echo "ADA CRASH (lihat crash-report.txt)" || echo "tidak ada crash"
             adb exec-out screencap -p > shot-after-monkey.png
             echo "=== STATE APP ==="
             adb shell ps -A | grep -i 'opencod\|nemoob' || echo "(proses app tidak ada)"

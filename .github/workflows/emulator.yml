@@ -124,8 +124,8 @@ jobs:
             adb root || true; sleep 3; adb wait-for-device
             adb push app-x86.apk /data/local/tmp/app.apk
             OK=false; i=0; while [ $i -lt 12 ]; do adb wait-for-device 2>/dev/null; OUT=$(adb shell pm install -r /data/local/tmp/app.apk 2>&1); echo "$OUT"; echo "$OUT" | grep -q Success && OK=true && break; echo "tunggu device pulih..."; sleep 40; i=$((i+1)); done; [ "$OK" = "true" ] || { echo "=== DIAGNOSTIK ==="; adb shell getprop init.svc.system_server; adb logcat -d -t 600 2>/dev/null | grep -iE 'FATAL|crash_|installd' | tail -25 || true; exit 1; }
-            echo "=== REKAM VIDEO interaksi (screenrecord MP4) ==="
-            adb shell screenrecord --bit-rate 4000000 --size 720x1280 /data/local/tmp/interaksi.mp4 >/dev/null 2>&1 &
+            echo "=== REKAM VIDEO interaksi (screenrecord MP4, ringan) ==="
+            adb shell "screenrecord --bit-rate 1500000 --size 540x960 --time-limit 240 /data/local/tmp/interaksi.mp4" >/dev/null 2>&1 &
             SRPID=$!
             sleep 3
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
@@ -163,10 +163,8 @@ jobs:
             for s in 1-buka 2-kirim 3-jawaban 4-cancel 5-newchat; do curl -s -m 10 "http://127.0.0.1:18096/shot/$s" -o "diag-$s.png" || true; done
             adb exec-out screencap -p > shot-final-layar.png
             adb logcat -d > logcat.txt || true
-            echo "=== AKHIRI REKAM VIDEO & TARIK MP4 ==="
-            kill $SRPID 2>/dev/null || true; sleep 2
-            adb shell "timeout 5 killall -INT screenrecord 2>/dev/null" || true
-            sleep 2
+            echo "=== AKHIRI REKAM VIDEO & TARIK MP4 (aman, tanpa killall yang bisa hang) ==="
+            wait $SRPID 2>/dev/null || true
             adb exec-out "cat /data/local/tmp/interaksi.mp4" > video-interaksi.mp4 2>/dev/null || true
             ls -la video-interaksi.mp4 2>/dev/null && (file video-interaksi.mp4 || true)
             echo "=== DIAGNOSA JARINGAN KE MODEL (dari dalam app via server) ==="

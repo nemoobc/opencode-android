@@ -272,7 +272,7 @@ public class MainActivity extends Activity {
 
                     // tunggu jawaban selesai
                     int wait = 0;
-                    while (!sawIdle && wait < 150000) { Thread.sleep(2000); wait += 2000; }
+                    while (!sawIdle && wait < 90000) { Thread.sleep(2000); wait += 2000; }
                     String stopState = evalSync("document.getElementById('go').classList.contains('stop')");
                     Diagnostics.step("jawaban", "delta=" + deltaCount
                             + ", deltaPertama=" + firstDeltaMs + "ms"

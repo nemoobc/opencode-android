@@ -50,7 +50,12 @@ public final class Diagnostics {
     }
 
     public static void shot(String nama, byte[] png) {
-        if (png == null || png.length == 0) return;
+        /* tolak screenshot kosong/junk (mis. layar masih loading saat capture) agar
+           hasil autotest tidak menyimpan file 9-byte yang menyesatkan */
+        if (png == null || png.length < 1024) {
+            step("skip-screenshot:" + nama, "kosong/" + (png == null ? 0 : png.length) + " byte");
+            return;
+        }
         synchronized (LOCK) { SHOTS.put(nama, png); }
         step("screenshot:" + nama, png.length + " byte");
     }

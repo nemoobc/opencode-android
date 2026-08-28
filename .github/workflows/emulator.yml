@@ -129,20 +129,15 @@ jobs:
             SRPID=$!
             sleep 3
             adb shell am start -n com.nemoobc.opencode/.MainActivity --ez autotest true
-            sleep 10
+            sleep 12
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
-            echo "=== live view ==="
-            mkdir -p live && printf '<!doctype html><meta charset=utf-8><meta http-equiv=refresh content=2><body style="margin:0;background:#000"><img src="screen.png" style="width:100%%" alt=emulator></body>' > live/index.html
-            nohup bash -c 'while true; do adb exec-out screencap -p > live/screen.png 2>/dev/null; sleep 2; done' >/dev/null 2>&1 &
-            nohup python3 -m http.server 8080 --directory live >/dev/null 2>&1 &
-            nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 serveo.net > serveo.log 2>&1 &
-            sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.serveo\.net' serveo.log | head -1)
-            if [ -z "$LIVE_URL" ]; then nohup ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 nokey@localhost.run > lhr.log 2>&1 & sleep 12; LIVE_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.lhr\.life' lhr.log | head -1); fi
-            echo "LIHAT LIVE: ${LIVE_URL:-tidak-tersedia}"
-            [ -n "$LIVE_URL" ] && echo "EMULATOR LIVE (buka di HP): $LIVE_URL" >> $GITHUB_STEP_SUMMARY || true
-            echo "=== menunggu autotest (maks 4 menit) ==="
-            SELESAI=false; LOGGED=0; i=0; while [ $i -lt 150 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 160)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
+            # CATATAN: TIDAK ADA TUNNEL serveo/localhost.run + live view di sini.
+            # SSH keluar ke tunnel terbukti HANG (di Termux & runner) dan menahan job
+            # sampai timeout 60 menit, sehingga video tak pernah tertarik. Semua dihapus
+            # agar job cepat selesai dan MP4 pasti ter-tarik ke artifact.
+            echo "=== menunggu autotest (maks 3 menit) ==="
+            SELESAI=false; LOGGED=0; i=0; while [ $i -lt 18 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 200)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
             adb logcat -G 16M || true
             adb shell monkey -p com.nemoobc.opencode --throttle 250 --pct-touch 60 --pct-motion 20 --pct-app-switch 10 --pct-flip 5 -v 500 > monkey.log 2>&1 || true

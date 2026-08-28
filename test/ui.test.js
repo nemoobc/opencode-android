@@ -164,6 +164,30 @@ window.onUpdate('v9.9.9', 'catatan');
 ok('banner update tampil', $('#ubanner').classList.contains('show'));
 ok('tag update benar', $('#utag').textContent === 'v9.9.9');
 
+console.log('== 13. LAMPIRAN FILE (non-auto-kirim) ==');
+ok('tombol + besar ada di kiri (battach)', !!$('#battach') && $('#battach').classList.contains('plus'));
+const sendCountSebelum = calls.send.length;
+window.onFileReady('foto.png', '/data/data/com.nemoobc.opencode/files/work/foto.png');
+ok('lampiran TIDAK langsung terkirim', calls.send.length === sendCountSebelum);
+ok('bar lampiran tampil', $('#attachbar').classList.contains('show'));
+ok('nama lampiran muncul di bar', $('#att-name').textContent === 'foto.png');
+$('#inp').value = 'jelaskan foto ini';
+$('#go').click();
+ok('kirim manual tetap jalan dengan lampiran', calls.send.length === sendCountSebelum + 1);
+const lastSend = calls.send[calls.send.length - 1] || '';
+ok('prompt lampiran terkirim via go', calls.send.length === sendCountSebelum + 1 && lastSend.includes('foto.png'));
+ok('bar lampiran hilang setelah kirim', !$('#attachbar').classList.contains('show'));
+ok('bubble user menampilkan label lampiran', doc.body.textContent.includes('[lampiran: foto.png]'));
+
+console.log('== 13b. BATAL LAMPIRAN ==');
+window.onFileReady('hapus.txt', '/work/hapus.txt');
+ok('bar tampil lagi', $('#attachbar').classList.contains('show'));
+$('#att-x').click();
+ok('bar hilang setelah batal', !$('#attachbar').classList.contains('show'));
+ok('lampiran dibersihkan', !window._att);
+calls.send.push(''); // netralkan agar hitungan di bawah tidak berubah
+calls.send.pop();
+
 console.log('\n==============================');
 console.log(`HASIL: ${pass} lulus, ${fail} gagal`);
 console.log('==============================');

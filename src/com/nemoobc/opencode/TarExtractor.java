@@ -9,7 +9,10 @@ import java.util.zip.GZIPInputStream;
 
 public final class TarExtractor {
 
-    public interface Progress { void onEntry(int count); }
+    public interface Progress {
+        void onEntry(int count);
+        default void onBytes(long total) {}
+    }
 
     public static void extractGz(InputStream raw, File dest, Progress p) throws IOException {
         // Auto-detect format payload: kalau tar POLOS (bukan gzip), jangan dibungkus
@@ -27,6 +30,8 @@ public final class TarExtractor {
         byte[] buf = new byte[65536];
         String longName = null;
         int count = 0;
+        long bytesWritten = 0;
+        long bytesReported = 0;
 
         while (true) {
             int got = readFull(in, head, 0, 512);
@@ -103,6 +108,11 @@ public final class TarExtractor {
                                 if (r < 0) throw new IOException("EOF di tengah file " + name);
                                 fo.write(buf, 0, r);
                                 left -= r;
+                                bytesWritten += r;
+                                if (p != null && bytesWritten - bytesReported >= 262144) {
+                                    bytesReported = bytesWritten;
+                                    p.onBytes(bytesWritten);
+                                }
                             }
                         }
                         skipPad(in, size);

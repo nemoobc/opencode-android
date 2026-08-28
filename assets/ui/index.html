@@ -151,15 +151,25 @@
   #bar { flex:0 0 auto; padding:8px 14px 16px; background:linear-gradient(180deg,#0C100E00,#0C100E 35%); }
   #pill {
     display:flex; align-items:flex-end; gap:9px; max-width:760px; margin:0 auto;
-    background:#141814; border:1px solid #262E28; border-radius:26px; padding:8px 8px 8px 18px;
+    background:#141814; border:1px solid #262E28; border-radius:26px; padding:8px 8px 8px 10px;
     box-shadow:0 4px 24px #0006;
   }
   #pill:focus-within { border-color:#3A4A40; box-shadow:0 4px 24px #0008; }
   #inp { flex:1; background:none; border:none; color:#ECEEEC; font-size:15.5px; resize:none; max-height:120px; outline:none; padding:8px 0; line-height:1.5; font-family:inherit; }
   #inp::placeholder { color:#5E7568; }
+  /* tombol + besar — pola Bumble: lampiran di sisi kiri, menonjol */
+  #battach {
+    width:52px; height:52px; border-radius:50%; flex:0 0 auto; border:1px solid #2A4436;
+    background:#1C2A22; color:#7FCF9F; font-size:26px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .18s cubic-bezier(.3,1.4,.4,1), background .2s;
+  }
+  #battach:active { transform:scale(.86); background:#24382C; }
+  #battach:disabled { opacity:.35; }
+  #battach.busy { border-color:#3A3A2A; color:#C9A227; }
   #go {
-    width:38px; height:38px; border-radius:50%; border:none; flex:0 0 auto;
-    background:#ECEEEC; color:#0C100E; font-size:17px;
+    width:52px; height:52px; border-radius:50%; border:none; flex:0 0 auto;
+    background:#ECEEEC; color:#0C100E; font-size:20px;
     display:flex; align-items:center; justify-content:center;
     transition:transform .18s cubic-bezier(.3,1.4,.4,1), background .2s, color .2s;
   }
@@ -167,6 +177,20 @@
   #go:disabled { opacity:.3; }
   #go.stop { background:#E05545; color:#FFF; animation:gopop .28s cubic-bezier(.3,1.6,.4,1); }
   @keyframes gopop { 0% { transform:scale(.55) rotate(-90deg) } 100% { transform:scale(1) rotate(0) } }
+  /* bar lampiran — muncul setelah pilih file, sebelum dikirim */
+  #attachbar {
+    display:none; align-items:center; gap:9px; max-width:760px; margin:9px auto 0;
+    background:#101A13; border:1px solid #24402E; border-radius:14px; padding:7px 10px;
+    font-size:13px; color:#8AA396;
+  }
+  #attachbar.show { display:flex; }
+  #attachbar b { color:#ECEEEC; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:52%; }
+  #attachbar button {
+    width:34px; height:34px; border-radius:50%; border:none; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  #attachbar #att-x { background:#1A150F; color:#E08A7B; }
+  #attachbar #att-send { margin-left:auto; background:#1C2A22; color:#7FCF9F; border:1px solid #2A4436; }
   #hint { text-align:center; font-size:11.5px; color:#5E7568; margin-top:9px; max-width:760px; margin-left:auto; margin-right:auto; }
   #hint b { color:#C9A227; font-weight:500; }
 
@@ -180,8 +204,12 @@
   #ov .mark { width:86px; height:86px; margin-bottom:24px; animation:breathe 2.4s ease-in-out infinite; }
   #ov h2 { font-size:16px; font-weight:600; letter-spacing:.5px; margin-bottom:8px; }
   #ov p { font-size:13px; color:#8AA396; margin-bottom:24px; }
-  #pbar { width:260px; height:7px; background:#131713; border-radius:4px; overflow:hidden; }
-  #pfill { height:100%; width:3%; background:linear-gradient(90deg,#3DDC84,#C9A227); transition:width .3s; }
+  #pbar { width:280px; height:8px; background:#131713; border-radius:5px; overflow:hidden; position:relative; }
+  #pfill { height:100%; width:0%; background:linear-gradient(90deg,#3DDC84,#C9A227); transition:width .25s; border-radius:5px; }
+  /* bayangan bergerak di progress bar — biar kelihatan "kerja" walau angka belum berubah */
+  #pbar::after { content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 20%,#ffffff22 50%,transparent 80%); transform:translateX(-100%); animation:barflow 1.15s linear infinite; }
+  @keyframes barflow { to { transform:translateX(280px); } }
+  #pnum { margin-top:10px; font-variant-numeric:tabular-nums; }
 
   /* ===== modal ===== */
   .modal { position:fixed; inset:0; background:#000B; z-index:60; display:none; align-items:flex-end; justify-content:center; }
@@ -312,10 +340,11 @@
 
 <div id="bar">
   <div id="pill">
+    <button id="battach" class="plus" title="lampirkan file">+</button>
     <textarea id="inp" rows="1" placeholder="Tanya apa aja..."></textarea>
-    <button id="battach" title="lampirkan file">+</button>
     <button id="go">&#8593;</button>
   </div>
+  <div id="attachbar"><span>lampiran:</span> <b id="att-name"></b><button id="att-x" title="hapus lampiran">&#10005;</button><button id="att-send" title="kirim lampiran">&#8593;</button></div>
   <div id="hint">agent bisa baca/tulis file di folder kerjanya &#8226; obrolan nyambung otomatis</div>
 </div>
 
@@ -641,14 +670,16 @@ window.onReady = function(ok, free) {
     dot.className = 'ok';
   } else window.onError('payload tidak lengkap - uninstall lalu install ulang');
 };
+window.PAYLOAD_TOTAL = 16332800;
 window.setProgress = function(n) {
-  document.getElementById('pfill').style.width = (70 + Math.min(25, n / 60)) + '%';
-  document.getElementById('pnum').textContent = n + ' file';
+  /* hanya update teks jumlah file — progress batang memakai byte (akurat & halus) */
+  document.getElementById('pnum').textContent = n + ' / 555 file';
 };
 window.setProgressBytes = function(b) {
   var mb = b / 1048576;
-  document.getElementById('pfill').style.width = Math.min(68, mb / 2.9) + '%';
-  document.getElementById('pnum').textContent = mb.toFixed(0) + ' MB / ±190 MB';
+  var pct = Math.min(100, (b / PAYLOAD_TOTAL) * 100);
+  document.getElementById('pfill').style.width = pct + '%';
+  document.getElementById('pnum').textContent = mb.toFixed(1) + ' / 16 MB (' + Math.round(pct) + '%)';
 };
 window.setStage = function(t) {
   var p = document.getElementById('ovp');
@@ -666,14 +697,14 @@ window.onUpdate = function(tag, body) {
 };
 
 /* ===== kirim ===== */
-function send(t) {
+function send(t, label) {
   if (busy || !t) return;
   window._lastPrompt = t;
   /* pastikan auto-scroll aktif saat mengirim pesan baru */
   userHold = false;
   document.getElementById('down').classList.remove('show');
   window._flushAt = 0;
-  addMsg('user').textContent = t;
+  addMsg('user').textContent = label || t;
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
   window._suggested = false;
   var body = addMsg('ai');
@@ -691,7 +722,7 @@ function send(t) {
       window._suggested = true;
       var h = document.getElementById('hint');
       h.innerHTML = 'lambat? lompat ke model cepat: ';
-      [['big-pickle','Big Pickle ~5s'],['hy3-free','Hy3 ~6s'],['nemotron-3.5-lightning-free','Lightning ~9s']].forEach(function(m) {
+      [['big-pickle','Big Pickle ~5s'],['hy3-free','Hy3 ~6s']].forEach(function(m) {
         var b = document.createElement('button');
         b.textContent = m[1];
         b.style.cssText = 'background:#1C2A22;border:1px solid #2A4436;color:#7FCF9F;border-radius:8px;padding:4px 10px;margin:3px 4px 0 0;font-size:12px;font-family:inherit';
@@ -745,9 +776,19 @@ go.onclick = function() {
     return;
   }
   var t = inp.value.trim();
-  if (!t) return;
+  var att = window._att;
+  if (!t && !att) return;
   inp.value = ''; inp.style.height = 'auto';
-  send(t);
+  if (att) {
+    var prompt = '(file dilampirkan ke folder kerja)\n\nNama: ' + att.name + '\nPath kerja: ' + att.path + '\n\n' +
+      (t ? 'Pesan: ' + t + '\n\n' : '') +
+      'Baca/buka isi file ini. Kalau ada pertanyaan, jawab; kalau tidak, buatkan rangkuman singkat isinya.';
+    var lbl = (t ? t + '\n' : '') + '[lampiran: ' + att.name + ']';
+    attHide();
+    send(prompt, lbl);
+  } else {
+    send(t);
+  }
 };
 function bindChips() {
   document.querySelectorAll('.chip').forEach(function(c) {
@@ -772,6 +813,7 @@ chat.addEventListener('click', function(e) {
 function newChat() {
   if (busy) { window._aborted = true; window._canceling = true; Android.cancel(); }
   clearTimeout(window._cw);
+  attHide();
   Android.newChat();
   window._langDetected = null;
   window._cur = null; window._plain = '';
@@ -795,9 +837,9 @@ document.getElementById('scrim').onclick = closeDrawer;
 
 /* ===== model switcher ===== */
 var MODELS = [
-  {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'tercepat terverifikasi ~5 dtk', tag:'GRATIS'},
-  {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~6 dtk', tag:'GRATIS'},
-  {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'terverifikasi ~9 dtk', tag:'GRATIS'},
+  {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
+  {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
+  {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.5-free',              nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/muse-spark-1.2-contributor-free', nm:'Muse Spark 1.2',    ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3-ultra-free',       nm:'Nemotron 3 Ultra',      ds:'katalog resmi relay', tag:'GRATIS'},
@@ -944,27 +986,26 @@ document.getElementById('battach').onclick = function () {
   if (typeof Android.pickFile === 'function') Android.pickFile();
   else toast('upload file belum didukung di versi ini');
 };
+function attHide() {
+  window._att = null;
+  document.getElementById('attachbar').classList.remove('show');
+}
+document.getElementById('att-x').onclick = function () {
+  attHide();
+  toast('lampiran dibatalkan');
+};
+document.getElementById('att-send').onclick = function () {
+  if (busy) { toast('tunggu balasan selesai dulu'); return; }
+  go.onclick();
+};
+/* file selesai dipilih: tampilkan bar lampiran — TIDAK langsung kirim.
+   User menulis pesan (opsional) lalu tekan kirim manual. */
 window.onFileReady = function (name, path) {
-  addMsg('user').textContent = '[Lampiran] ' + name;
-  window._lastPrompt = 'baca file ' + name;
-  window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
-  window._suggested = false;
-  var body = addMsg('ai');
-  body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
-    '<span class="elapsed">membaca file...</span>';
-  window._cur = body;
-  var t0 = Date.now();
-  clearInterval(window._tm);
-  window._tm = setInterval(function() {
-    var el = window._cur ? window._cur.querySelector('.elapsed') : null;
-    var sec = Math.round((Date.now() - t0) / 1000);
-    if (el) el.textContent = 'membaca file... ' + sec + 's';
-  }, 1000);
-  busy = true;
-  dot.className = 'work';
-  go.innerHTML = '&#9632;';
-  go.classList.add('stop');
-  Android.send(langPromp('(file dilampirkan)\n\nNama: ' + name + '\nPath kerja: ' + path + '\n\nBaca/buka isi file ini. Kalau ada pertanyaan, jawab; kalau tidak, buatkan rangkuman singkat isinya.'));
+  window._att = { name: name, path: path };
+  document.getElementById('att-name').textContent = name;
+  document.getElementById('attachbar').classList.add('show');
+  toast('file siap — tulis pesan lalu kirim');
+  inp.focus();
 };
 window.onFileError = function (m) { var n = addNote('gagal lampirkan file: ' + m, true); setTimeout(function(){ if(n&&n.parentNode)n.parentNode.removeChild(n); }, 6000); };
 

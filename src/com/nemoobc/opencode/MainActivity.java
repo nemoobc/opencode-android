@@ -59,6 +59,10 @@ public class MainActivity extends Activity {
     private volatile boolean sawIdle = false;
     private static final int PORT = 4096;
     private static final int REQ_PICK = 7001;
+    /* marker ekstraksi rootfs SELESAI & valid — dicek biar app tidak
+       ekstrak ulang tiap buka (keluar-masuk/update) dan tidak memakai
+       rootfs parsial dari ekstraksi yang terputus */
+    private static final String EXT_OK = ".oc-ok";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,41 +112,75 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try { ensureNativeLibs(); } catch (Exception e) { push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); return; }
-                boolean ready = (new File(rootFs, "bin/busybox").exists()
-                        || new File(rootFs, "usr/bin/busybox").exists())
-                        && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
+                boolean ready = readyOk();
                 if (!ready) {
+                    push("window.setStage(\"menyiapkan sistem — memeriksa sisa sistem lama...\")");
+                    File old = new File(getFilesDir(), "rootfs.old");
+                    File tmp = new File(getFilesDir(), "rootfs.tmp");
                     try {
-                        InputStream raw = getAssets().open("payload/rootfs.bin");
-                        TarExtractor.Progress cb = new TarExtractor.Progress() {
-                            @Override
-                            public void onEntry(int n) {
-                                if (n % 40 == 0) push("window.setProgress(" + n + ")");
-                            }
-                        };
-                        TarExtractor.extractGz(new BufferedInputStream(raw, 1 << 16), rootFs, cb);
-                        for (String p : new String[]{"usr/bin/oc"}) {
-                            File f = new File(rootFs, p);
-                            if (f.exists()) f.setExecutable(true, false);
+                        if (tmp.exists()) {
+                            push("window.setStage(\"menyiapkan sistem — membersihkan ekstrak lama...\")");
+                            delTree(tmp);
                         }
-                        push("window.setStage(\"menyalakan server AI...\")");
-                        ready = readyOk();
-                        if (!ready) {
-                            delTree(rootFs);
-                            InputStream raw2 = getAssets().open("payload/rootfs.bin");
-                            TarExtractor.extractGz(new BufferedInputStream(raw2, 1 << 16), rootFs, cb);
-                            push("window.setStage(\"menyalakan server AI...\")");
-                        ready = readyOk();
+                        /* Sisa percobaan yang ditutup paksa: rootfs belum ada, .old ada.
+                           Pulihkan dulu — kalau ternyata valid, tidak perlu ekstrak ulang. */
+                        if (!rootFs.exists() && old.exists()) moveTree(old, rootFs);
+                        if (readyOk()) {
+                            ready = true;
+                        } else {
+                            /* Kalau rootfs lama ada, BACKUP dulu (jangan hapus):
+                               ekstrak baru batal/gagal di tengah → rootfs lama dipulihkan. */
+                            if (rootFs.exists()) {
+                                push("window.setStage(\"menyiapkan sistem — memindahkan sistem lama...\")");
+                                if (!rootFs.renameTo(old)) moveTree(rootFs, old);
+                            }
+                            push("window.setStage(\"menyiapkan sistem — mengekstrak sistem baru...\")");
+                            tmp.mkdirs();
+                            InputStream raw = getAssets().open("payload/rootfs.bin");
+                            TarExtractor.Progress cb = new TarExtractor.Progress() {
+                                @Override
+                                public void onEntry(int n) {
+                                    if (n % 10 == 0) push("window.setProgress(" + n + ")");
+                                }
+                                @Override
+                                public void onBytes(long b) {
+                                    push("window.setProgressBytes(" + b + ")");
+                                }
+                            };
+                            TarExtractor.extractGz(new BufferedInputStream(raw, 1 << 16), tmp, cb);
+                            for (String p : new String[]{"usr/bin/oc"}) {
+                                File f = new File(tmp, p);
+                                if (f.exists()) f.setExecutable(true, false);
+                            }
+                            new File(tmp, EXT_OK).createNewFile();
+                            if (!tmp.renameTo(rootFs)) moveTree(tmp, rootFs);
+                            ready = readyOk();
+                            /* rootfs baru sudah aktif. Hapus backup lama DI LATAR BELAKANG
+                               (jangan blokir start server — inilah yang bikin "stuck"). */
+                            final File oldDel = old;
+                            Thread bg = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (oldDel.exists()) delTree(oldDel);
+                                }
+                            });
+                            bg.setDaemon(true);
+                            bg.start();
                         }
                     } catch (Exception e) {
+                        /* gagal/batal di tengah: kembalikan rootfs lama biar app tetap jalan */
+                        if (!rootFs.exists() && old.exists()) moveTree(old, rootFs);
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
                         return;
                     }
+                    push("window.setStage(\"menyalakan server AI...\")");
                 }
                 if (!ready) {
                     String miss = "";
                     if (!new File(rootFs, "bin/busybox").exists() && !new File(rootFs, "usr/bin/busybox").exists()) miss += "busybox ";
-                    if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
+                    if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
+                            && !new File(rootFs, "usr/lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
+                    if (!new File(rootFs, "usr/bin/oc").exists() && !new File(rootFs, "bin/oc").exists()) miss += "oc ";
                     push("window.onError(" + jq("payload tidak lengkap, kurang: " + miss) + ")");
                     return;
                 }
@@ -216,16 +254,48 @@ public class MainActivity extends Activity {
     }
 
     private boolean readyOk() {
+        /* Tolak layout lama & varian: busybox bisa di bin/ atau usr/bin/, musl bisa
+           di lib/ atau usr/lib/, oc pasti ada di usr/bin/. Kalau rootfs lama valid
+           tapi belum ada marker → tandai sekarang, jangan sampai ekstrak ulang penuh
+           (inilah yang bikin "stuck extract" saat update tanpa uninstall). */
         boolean bb = new File(rootFs, "bin/busybox").exists()
                 || new File(rootFs, "usr/bin/busybox").exists();
-        boolean musl = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
-        return bb && musl;
+        boolean musl = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
+                || new File(rootFs, "usr/lib/ld-musl-aarch64.so.1").exists()
+                || new File(rootFs, "lib/aarch64-linux-gnu/ld-linux-aarch64.so.1").exists();
+        boolean oc = new File(rootFs, "usr/bin/oc").exists()
+                || new File(rootFs, "bin/oc").exists();
+        boolean core = bb && musl && oc;
+        if (core && !new File(rootFs, EXT_OK).exists()) {
+            try { new File(rootFs, EXT_OK).createNewFile(); } catch (Exception ignored) {}
+        }
+        return core && new File(rootFs, EXT_OK).exists();
     }
 
     private void delTree(File f) {
         File[] k = f.listFiles();
         if (k != null) for (File x : k) delTree(x);
         f.delete();
+    }
+
+    /* pindahkan pohon direktori (fallback saat renameTo gagal) */
+    private void moveTree(File src, File dst) {
+        if (src.isDirectory()) {
+            dst.mkdirs();
+            File[] kids = src.listFiles();
+            if (kids != null) for (File k : kids) moveTree(k, new File(dst, k.getName()));
+            src.delete();
+        } else {
+            File p = dst.getParentFile();
+            if (p != null) p.mkdirs();
+            try (java.io.FileInputStream fi = new java.io.FileInputStream(src);
+                 java.io.FileOutputStream fo = new java.io.FileOutputStream(dst)) {
+                byte[] b = new byte[65536];
+                int r;
+                while ((r = fi.read(b)) > 0) fo.write(b, 0, r);
+            } catch (Exception ignored) {}
+            src.delete();
+        }
     }
 
     private void setupLibLinks() {
@@ -610,6 +680,33 @@ public class MainActivity extends Activity {
             String sid = pr.optString("sessionID", "");
             if (sessionId != null && !sessionId.equals(sid)) return;
 
+            /* Event error dari server (mis. model tidak diserve relay / gagal load):
+               langsung kabari UI — jangan biarkan user nunggu timeout 180 detik. */
+            boolean err = false;
+            String errMsg = "";
+            if (type.contains("error")) {
+                err = true;
+                errMsg = pr.optString("message", type);
+                JSONObject part = ev.optJSONObject("part");
+                if (part != null && errMsg.length() == 0) errMsg = part.optString("error", type);
+            } else {
+                JSONObject part = pr.optJSONObject("part");
+                if (part != null && Boolean.parseBoolean(String.valueOf(part.opt("isError")))) {
+                    err = true;
+                    errMsg = part.optString("error", "model gagal merespons");
+                }
+            }
+            if (err) {
+                if (busy) {
+                    busy = false;
+                    wakeFree();
+                    String clean = errMsg == null || errMsg.length() == 0 ? "model gagal merespons" : errMsg.trim();
+                    if (clean.length() > 200) clean = clean.substring(0, 200);
+                    push("window.onError(" + jq("Model error: " + clean) + ")");
+                }
+                return;
+            }
+
             if ("message.part.delta".equals(type)) {
                 if ("text".equals(pr.optString("field", ""))) {
                     String delta = pr.optString("delta", "");
@@ -650,13 +747,35 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void send(final String prompt) {
-            if (busy || !serverUp) return;
-            busy = true;
+            synchronized (this) {
+                if (msgConn != null) return;   /* masih ada HTTP aktif — jangan tumpuk */
+                if (busy) {
+                    /* busy macet (mis. SSE putus sebelum session.idle datang).
+                       Pulihkan dulu biar kirim kedua/berikutnya tidak ditolak senyap. */
+                    busy = false;
+                }
+                busy = true;
+            }
             wakeHold();
             sawIdle = false;
             deltaCount = 0;
             firstDeltaMs = -1;
             tSendMs = System.currentTimeMillis();
+            /* watchdog: kalau session.idle tidak pernah datang (stream putus parah),
+               reset UI otomatis agar tombol tidak nyangkut & pesan berikut tetap bisa dikirim */
+            Thread wd = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try { Thread.sleep(180000); } catch (InterruptedException e) { return; }
+                    if (busy && !sawIdle) {
+                        busy = false;
+                        wakeFree();
+                        push("window.onDone(-1)");
+                    }
+                }
+            });
+            wd.setDaemon(true);
+            wd.start();
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -698,7 +817,7 @@ public class MainActivity extends Activity {
                             OutputStream os = mc.getOutputStream();
                             os.write(body.toString().getBytes(StandardCharsets.UTF_8));
                             os.close();
-                            msgConn = mc;
+                            synchronized (MainActivity.this) { msgConn = mc; }
                             int code = mc.getResponseCode();
                             InputStream is = code >= 400 ? mc.getErrorStream() : mc.getInputStream();
                             BufferedReader rr = new BufferedReader(
@@ -707,9 +826,13 @@ public class MainActivity extends Activity {
                             String l2;
                             while ((l2 = rr.readLine()) != null) sb2.append(l2);
                             rr.close();
-                            msgConn = null;
+                            synchronized (MainActivity.this) { msgConn = null; }
                             if (autotest) Diagnostics.step("post-selesai", "HTTP " + code + " panjang=" + sb2.length());
-                            if (code >= 400) throw new Exception("HTTP " + code);
+                            if (code >= 400) {
+                                /* sesi mungkin rusak/abort — paksa sesi baru untuk kiriman berikut */
+                                sessionId = null;
+                                throw new Exception("HTTP " + code);
+                            }
                             String res = sb2.toString();
                             if (res.length() == 0 || res.startsWith("<")) {
                                 if (autotest) Diagnostics.step("post-aneh", res.substring(0, Math.min(80, res.length())));
@@ -717,11 +840,12 @@ public class MainActivity extends Activity {
                             }
                             if (autotest) Diagnostics.step("post-ok", "pesan masuk antrian selesai");
                         } finally {
-                            msgConn = null;
+                            synchronized (MainActivity.this) { msgConn = null; }
                             if (mc != null) mc.disconnect();
                         }
                         // teks mengalir via SSE; session.idle yang menutup
                     } catch (Exception e) {
+                        sessionId = null;   /* pastikan kiriman berikut buat sesi baru yang sehat */
                         busy = false;
                         wakeFree();
                         if (autotest) Diagnostics.step("post-error", String.valueOf(e));
@@ -739,6 +863,24 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void newChat() {
             sessionId = null;
+            /* warm-up sesi: buat sesi baru di background supaya kiriman pertama
+               setelah "obrolan baru" langsung nyasar, tidak nunggu bikin sesi dulu */
+            if (serverUp && !busy) {
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String r = httpPost("http://127.0.0.1:" + PORT + "/session",
+                                    "{\"title\":\"obrolan\"}");
+                            if (sessionId == null) {
+                                sessionId = new JSONObject(r).optString("id", null);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                });
+                t.setDaemon(true);
+                t.start();
+            }
         }
 
         @JavascriptInterface

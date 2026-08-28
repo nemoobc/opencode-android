@@ -31,7 +31,7 @@ jobs:
           mkdir -p dl
           curl -sL -o dl/platform-34.zip "https://dl.google.com/android/repository/platform-34-ext7_r02.zip"
           unzip -oq dl/platform-34.zip "*/android.jar" -d dl/
-          curl -sL -o dl/oc.tgz "https://registry.npmjs.org/opencode-linux-x64-musl/-/opencode-linux-x64-musl-1.18.21.tgz"
+          curl -sL -o dl/oc.tgz "https://registry.npmjs.org/opencode-linux-x64-musl/-/opencode-linux-x64-musl-1.18.25.tgz"
           curl -sL -o dl/minirootfs.tar.gz "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-minirootfs-3.21.3-x86_64.tar.gz"
           curl -sL -o dl/libgcc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/libgcc-14.2.0-r4.apk"
           curl -sL -o dl/libstdc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/libstdc%2B%2B-14.2.0-r4.apk"

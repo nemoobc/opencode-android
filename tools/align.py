@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# zipalign mini: resources.arsc + .so disimpan uncompressed + align 4-byte (wajib Android R+)
+# zipalign mini: resources.arsc wajib stored uncompressed; .so dikompresi penuh
+# (krn extractNativeLibs=true => Android mengekstrak saat install, jadi kompresi .so
+#  aman & mengecilkan APK drastis); semua entry di-align 4-byte (wajib Android R+)
 import zipfile, struct, zlib, sys, os
 
 if len(sys.argv) < 3:
@@ -17,13 +19,13 @@ try:
     for item in items:
         data = zin.read(item.filename)
         name = item.filename.encode('utf-8')
-        # .arsc DAN .so harus stored uncompressed (wajib Android)
-        stored = item.filename.endswith('.arsc') or item.filename.endswith('.so')
+        # .arsc wajib stored uncompressed (Android); sisanya (.so, dll) DEFLATE level 9
+        stored = item.filename.endswith('.arsc')
         if stored:
             method, cdata = 0, data
         else:
             method = 8
-            co = zlib.compressobj(1, zlib.DEFLATED, -15)  # level 1 = faster build
+            co = zlib.compressobj(9, zlib.DEFLATED, -15)  # level 9 = ukuran minimal
             cdata = co.compress(data) + co.flush()
         crc = zlib.crc32(data) & 0xffffffff
         hdr = 30 + len(name)

@@ -17,34 +17,36 @@ Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 
 ---
 
-## ✨ Apa yang bisa dilakukan
+## ✨ Yang bisa dilakukan
 
 | | |
 |---|---|
-| 💬 **Obrolan nyambung** | Agent mengingat konteks percakapan — tombol **+** untuk mulai baru |
-| ⚡ **Respons cepat** | Server opencode berjalan persisten — tanpa startup ulang di tiap pesan |
-| 🌊 **Jawaban mengalir** | Teks muncul kata-per-kata saat model menulis |
-| 🛠️ **Agent penuh** | Membaca & menulis file di folder kerja, menjalankan perintah, analisis masalah |
+| 💬 **Obrolan nyambung** | Agent mengingat konteks — tombol **+** untuk percakapan baru |
+| ⚡ **Respons cepat** | Server opencode persisten di `127.0.0.1:4096`, tanpa startup ulang tiap pesan |
+| 🌊 **Jawaban mengalir** | Teks muncul token-per-token real-time via event stream |
+| 🛠️ **Agent penuh** | Baca/tulis file di folder kerja, jalankan perintah, analisis masalah |
 | 📝 **Jawaban rapi** | Render markdown: code block + tombol salin, tabel, list, heading |
-| ⚡ **Ganti model sekali tap** | Langsung dari header — 7 model gratis terverifikasi, atau model kustom |
-| 🔒 **Privat** | Semua berjalan di sandbox aplikasi; hanya izin internet |
-| 🔄 **Deteksi update** | Pemberitahuan otomatis saat ada versi baru |
+| ⚙️ **Ganti model sekali tap** | Dari header — beberapa model gratis + model kustom/API key |
+| 🔒 **Privat** | Semua di sandbox aplikasi; hanya izin internet |
+| 🔄 **Deteksi update** | Pemberitahuan saat ada versi baru |
+| 🪄 **Splash 10 detik** | Animasi logo opencode yang lambat & dramatis saat buka |
 
 ## 🆓 Gratis, tanpa API key
 
-Model default **`opencode/x-preview-f-free`** berjalan tanpa kunci apa pun —
-pasang aplikasi, buka, langsung pakai.
+Model default **`opencode/big-pickle`** berjalan tanpa kunci apa pun —
+pasang, buka, langsung pakai. Beberapa model gratis lain tersedia
+(mis. `opencode/hy3-free`) dan bisa dipilih sekali tap dari header.
 
-> Kecepatan akhir tetap ditentukan relay model gratis di sisi server —
-> kadang butuh beberapa detik ekstra. Mau lebih cepat? Tempel API key
-> provider lain lewat menu **config**.
+> Kecepatan akhir tetap ditentukan relay model gratis di sisi server.
+> Mau lebih cepat / model tertentu? Tempel API key provider lewat menu
+> **config** (model: `provider/nama-model`, mis. `anthropic/claude-sonnet-4`).
 
 ## 🚀 Pasang
 
 1. Unduh APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
 2. Izinkan instalasi dari sumber tidak dikenal
-3. Buka — ekstraksi awal hanya sekali (±1 menit), setelah itu server langsung siap
-4. Ketuk nama model di header untuk ganti model, atau langsung bertanya
+3. Buka — ekstraksi awal cuma sekali (progress berjalan), setelah itu langsung siap
+4. Pilih model di header, atau langsung bertanya
 
 Hasil kerja agent tersimpan di
 `Android/data/com.nemoobc.opencode/files` — terlihat di file manager mana pun.
@@ -52,30 +54,30 @@ Hasil kerja agent tersimpan di
 ## ⚙️ Cara kerja
 
 ```
-OpenCode.apk
- ├─ lib/arm64-v8a/
- │   ├─ libopencode.so        binary opencode resmi (ekstrak sistem saat instalasi)
- │   ├─ libproot.so           menjalankan rootfs tanpa root
- │   └─ ...                   loader, libtalloc, libandroid-shmem
- └─ assets/payload/rootfs.bin Alpine minirootfs ±4 MB (diekstrak saat pertama dibuka)
+OpenCode-v1.5.4.apk
+ ├─ lib/arm64-v8a/libopencode.so   binary opencode resmi (dikompresi di APK)
+ ├─ lib/arm64-v8a/libproot.so      jalankan rootfs tanpa root
+ ├─ lib/arm64-v8a/...              loader, libtalloc, libandroid-shmem
+ └─ assets/payload/rootfs.bin      Alpine minirootfs ±4 MB (diekstrak saat buka pertama)
 ```
 
-Saat aplikasi dibuka, `opencode serve` dijalankan sebagai server lokal
-persisten di `127.0.0.1:4096`. Setiap pertanyaan dikirim lewat HTTP API —
-karena itu tanpa startup ulang, dan jawaban mengalir real-time lewat
-event stream.
+Saat dibuka, `opencode serve` dijalankan sebagai server lokal persisten di
+`127.0.0.1:4096`. Pertanyaan dikirim lewat HTTP API dan jawaban mengalir
+real-time lewat event stream. Cleartext ke `127.0.0.1` diizinkan lewat
+network security config, dan kesiapan server dideteksi dari log
+`listening` — bukan permisif terhadap kode HTTP palsu.
 
 ## 🛠️ Build dari sumber
 
-Butuh perangkat arm64 dengan JDK 21, `aapt`, `d8`, `apksigner`
+Butuh perangkat arm64 dengan JDK, `aapt`, `d8`, `apksigner`
 (semua tersedia di repo paket Termux):
 
 ```bash
 git clone https://github.com/nemoobc/opencode-android && cd opencode-android
 
-# 1. unduh bahan ke dl/ — daftar URL ada di komentar build.yml di riwayat git
+# 1. unduh bahan ke dl/
 #    - platform-34 android.jar (dl.google.com)
-#    - opencode-linux-arm64-musl (npm)  → jniLibs/arm64-v8a/libopencode.so
+#    - opencode-linux-arm64-musl (npm)   → jniLibs/arm64-v8a/libopencode.so
 #    - alpine-minirootfs 3.21 + libgcc + libstdc++ (dl-cdn.alpinelinux.org)
 
 # 2. rakit payload (tanpa prefix folder!) + salin binary
@@ -85,18 +87,20 @@ cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
 #    + libstdc++/libgcc ke usr/lib, resolv.conf, wrapper usr/bin/oc, config model gratis
 tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
-# 3. bangun
-./build.sh          # → build/OpenCode-vX.Y.Z.apk (signed + verified)
+# 3. bangun (kompresi .so level 9 → APK kecil)
+./build.sh          # → build/OpenCode-v1.5.4.apk (signed + verified)
 ```
 
 ## 📜 Riwayat versi
 
 | Versi | Isi |
 |---|---|
-| v1.5.1 | Fix tombol cancel benar-benar tidak nyangkut (watchdog ganda JS+Java), render streaming anti-lag (throttle 120ms), auto-scroll pasti turun saat kirim, ABI build diperbaiki |
-| v1.5.2 | Fix "server gagal start" palsu — deteksi siap kini terima respons HTTP apa pun (tidak menuntut 200 di /), sekaligus UI v2: splash logo tergambar + glow, avatar AI, aurora welcome, tombol spring |
-| v1.5.3 | Install instan (native libs tidak diekstrak saat instal — pindah ke buka pertama dengan progress MB nyata), tanpa notifikasi background, tanpa toast |
-| v1.2.3 | Fix tombol cancel stuck merah (onError kini mereset UI + watchdog tanpa syarat), welcome screen kosong saat buka pertama, auto-scroll, streaming ringan, anti white-flash |
+| v1.5.5 | **APK sekarang ±64 MB** (libopencode dikompresi level 9, turun dari ±190 MB); splash logo **10 detik**; streaming token-per-token mulus (throttle 40 ms + append-tail, anti-crash); fix ekstrak ulang tiap buka; model default `opencode/big-pickle`; banyak perbaikan sebelumnya tetap |
+| v1.5.4 | Perombakan internal & penuh perbaikan dari v1.5.3 |
+| v1.5.3 | Upaya install instan (native libs tidak diekstrak saat instal) |
+| v1.5.2 | Fix "server gagal start" palsu — deteksi siap terima respons HTTP apa pun; UI v2 splash |
+| v1.5.1 | Fix tombol cancel tidak nyangkut (watchdog ganda), streaming anti-lag, auto-scroll |
+| v1.2.3 | Fix tombol cancel stif stuck, welcome kosong saat buka pertama, anti white-flash |
 
 ## 📄 Lisensi
 

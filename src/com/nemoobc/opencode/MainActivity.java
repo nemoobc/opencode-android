@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -106,7 +107,8 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try { ensureNativeLibs(); } catch (Exception e) { push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); return; }
-                boolean ready = new File(rootFs, "usr/bin/busybox").exists()
+                boolean ready = (new File(rootFs, "bin/busybox").exists()
+                        || new File(rootFs, "usr/bin/busybox").exists())
                         && new File(rootFs, "lib/ld-musl-aarch64.so.1").exists();
                 if (!ready) {
                     try {
@@ -231,12 +233,26 @@ public class MainActivity extends Activity {
         mkLink("libtalloc.so", "libtalloc.so.2");
         mkLink("libshmem.so", "libandroid-shmem.so");
     }
+    /* Jalur binary native yang PASTI bisa dieksekusi. extractNativeLibs=true
+       membuat Android mengekstrak lib/*.so ke nativeLibraryDir saat install
+       (dijamin executable oleh sistem) — lebih andal daripada ekstrak manual
+       ke files/native yang bisa gagal setExecutable (error=13 Permission denied). */
+    private String nativeExec(String name) {
+        File f = new File(getApplicationInfo().nativeLibraryDir, name);
+        if (f.exists()) return f.getAbsolutePath();
+        return new File(natLib, name).getAbsolutePath();
+    }
 
     private void mkLink(String src, String dst) {
         File d = new File(linkDir, dst);
         if (d.exists()) return;
+        /* target: nativeLibraryDir (sudah diekstrak Android saat install) lebih dulu,
+           fallback files/native (ekstrak manual). Symlink HARUS mengarah ke lokasi yang
+           benar biar libtalloc.so.2 / libandroid-shmem.so resolve. */
+        File nd = new File(getApplicationInfo().nativeLibraryDir, src);
+        File srcFile = nd.exists() ? nd : new File(natLib, src);
         try {
-            Os.symlink(new File(natLib, src).getAbsolutePath(), d.getAbsolutePath());
+            Os.symlink(srcFile.getAbsolutePath(), d.getAbsolutePath());
         } catch (Exception ignored) {}
     }
 
@@ -327,15 +343,18 @@ public class MainActivity extends Activity {
     /* ekstrak native libs dari APK ke filesDir/native — dipakai saat
        extractNativeLibs=false supaya install tetap instan */
     private void ensureNativeLibs() throws IOException {
-        /* cek marker + versi APK — kalau APK update, ekstrak ulang */
-        File marker = new File(natLib, "libopencode.so");
-        String curVer = appInfoSafe();
-        File verFile = new File(natLib, ".version");
-        if (marker.exists() && marker.length() > 0 && verFile.exists()) {
-            try {
-                if (curVer.equals(new String(java.nio.file.Files.readAllBytes(verFile.toPath())).trim())) return;
-            } catch (Exception ignored) {}
+        /* extractNativeLibs=true => Android SUDAH mengekstrak semua lib/*.so ke
+           nativeLibraryDir saat install (termasuk libopencode 195MB). Ekstrak manual ke
+           files/native = duplikasi yang bikin buka app LAMBAT. Karena itu, kalau
+           nativeLibraryDir sudah lengkap, langsung anggap siap (cepat, tanpa progress 195MB). */
+        File ndir = new File(getApplicationInfo().nativeLibraryDir);
+        if (ndir.exists() && new File(ndir, "libproot.so").exists()
+                && new File(ndir, "libopencode.so").exists()
+                && new File(ndir, "libtalloc.so").exists()) {
+            writeVersionMarker();
+            return;
         }
+        /* fallback (jarang): nativeLibraryDir kosong — ekstrak manual dari APK */
         natLib.mkdirs();
         long total = 0, lastPush = 0;
         try (ZipInputStream z = new ZipInputStream(new BufferedInputStream(
@@ -358,11 +377,23 @@ public class MainActivity extends Activity {
                     }
                 }
                 out.setExecutable(true, false);
+                out.setReadable(true, false);
+                /* fallback: beberapa perangkat menolak setExecutable langsung — paksa via mod */
+                if (!out.canExecute() && new File("/system/bin/chmod").exists()) {
+                    try {
+                        Runtime.getRuntime().exec(new String[]{"/system/bin/chmod", "755", out.getAbsolutePath()}).waitFor();
+                    } catch (Exception ignored) {}
+                }
             }
         }
         push("window.setProgressBytes(" + total + ")");
-        /* tulis versi APK ke marker agar ekstrak ulang saat update */
-        try (FileOutputStream fv = new FileOutputStream(verFile)) { fv.write(curVer.getBytes()); }
+        writeVersionMarker();
+    }
+
+    private void writeVersionMarker() throws IOException {
+        File verFile = new File(natLib, ".version");
+        natLib.mkdirs();
+        try (FileOutputStream fv = new FileOutputStream(verFile)) { fv.write(appInfoSafe().getBytes()); }
     }
 
     private void startServer() {
@@ -376,8 +407,8 @@ public class MainActivity extends Activity {
                 startEventStream();
                 return;
             }
-            String proot = new File(natLib, "libproot.so").getAbsolutePath();
-            String loader = new File(natLib, "libproot_loader.so").getAbsolutePath();
+            String proot = nativeExec("libproot.so");
+            String loader = nativeExec("libproot_loader.so");
 
             java.util.List<String> c = new java.util.ArrayList<>();
             c.add(proot);
@@ -387,7 +418,7 @@ public class MainActivity extends Activity {
             c.add("-b"); c.add("/dev");
             c.add("-b"); c.add("/proc");
             c.add("-b"); c.add("/sys");
-            c.add("-b"); c.add(new File(natLib, "libopencode.so").getAbsolutePath() + ":/usr/bin/opencode");
+            c.add("-b"); c.add(nativeExec("libopencode.so") + ":/usr/bin/opencode");
             c.add("-b"); c.add(cacheDir.getAbsolutePath() + ":/tmp");
             c.add("-b"); c.add(extWork.getAbsolutePath() + ":/work");
             c.add("-w"); c.add("/work");
@@ -399,7 +430,7 @@ public class MainActivity extends Activity {
             ProcessBuilder pb = new ProcessBuilder(c);
             pb.redirectErrorStream(true);
             pb.environment().clear();
-            pb.environment().put("LD_LIBRARY_PATH", linkDir.getAbsolutePath() + ":" + natLib.getAbsolutePath());
+            pb.environment().put("LD_LIBRARY_PATH", getApplicationInfo().nativeLibraryDir + ":" + linkDir.getAbsolutePath() + ":" + natLib.getAbsolutePath());
             pb.environment().put("PROOT_LOADER", loader);
             pb.environment().put("PROOT_TMP_DIR", cacheDir.getAbsolutePath());
             pb.environment().put("PROOT_NO_SECCOMP", "1");
@@ -427,8 +458,20 @@ public class MainActivity extends Activity {
             }).start();
 
             int waited = 0;
-            while (running && waited < 90000) {
-                if (httpCode("http://127.0.0.1:" + PORT + "/", 1500) > 0) {
+            /* Deteksi siap berbasis LOG + proses, bukan HTTP connect. Beberapa perangkat
+               memblokir HttpURLConnection walaupun server lokal sudah live (proxy/loopback/
+               ipv6), yang bikin "server gagal start" palsu. Selama proses opencode masih
+               hidup dan sudah mencetak "listening", server dianggap siap. */
+            while (running && waited < 120000) {
+                boolean alive = true;
+                try { serverProc.exitValue(); alive = false; } catch (IllegalThreadStateException e) { /* masih berjalan */ }
+                String log;
+                synchronized (serverLog) { log = serverLog.toString(); }
+                if (!alive) break;                                 // proses mati = gagal
+                if (log.contains("listening")) { serverUp = true; break; }  // siap
+                /* fallback: proses hidup tapi belum "listening" lama — coba HTTP sekali saja
+                   (best effort, jangan jadi blokir utama) */
+                if (waited > 5000 && httpCode("http://127.0.0.1:" + PORT + "/", 800) > 0) {
                     serverUp = true;
                     break;
                 }
@@ -473,7 +516,7 @@ public class MainActivity extends Activity {
     private int httpCode(String url, int timeout) {
         HttpURLConnection c = null;
         try {
-            c = (HttpURLConnection) new URL(url).openConnection();
+            c = (HttpURLConnection) new URL(url).openConnection(Proxy.NO_PROXY);
             c.setConnectTimeout(timeout);
             c.setReadTimeout(timeout);
             return c.getResponseCode();
@@ -496,7 +539,7 @@ public class MainActivity extends Activity {
                     HttpURLConnection c = null;
                     try {
                         c = (HttpURLConnection)
-                                new URL("http://127.0.0.1:" + PORT + "/event").openConnection();
+                                new URL("http://127.0.0.1:" + PORT + "/event").openConnection(Proxy.NO_PROXY);
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(0);
                         if (autotest) Diagnostics.step("sse-connect", "terhubung");
@@ -594,6 +637,9 @@ public class MainActivity extends Activity {
                         int sl = model.indexOf('/');
                         String prov = sl > 0 ? model.substring(0, sl) : "opencode";
                         String mid = sl > 0 ? model.substring(sl + 1) : model;
+                        /* sanitasi: provider 'zen' tidak terdaftar di server opencode
+                           => 500 'Model not found'. Alihkan ke provider 'opencode' yang valid. */
+                        if ("zen".equalsIgnoreCase(prov)) prov = "opencode";
                         JSONObject body = new JSONObject();
                         org.json.JSONArray parts = new org.json.JSONArray();
                         JSONObject tp = new JSONObject();
@@ -609,7 +655,7 @@ public class MainActivity extends Activity {
                         try {
                             mc = (HttpURLConnection)
                                     new URL("http://127.0.0.1:" + PORT + "/session/"
-                                    + sessionId + "/message").openConnection();
+                                    + sessionId + "/message").openConnection(Proxy.NO_PROXY);
                             mc.setRequestMethod("POST");
                             mc.setConnectTimeout(8000);
                             mc.setReadTimeout(180000);
@@ -653,27 +699,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void cancel() {
-            final String sid = sessionId;
-            final HttpURLConnection cc = msgConn;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
-                    if (sid != null) {
-                        try {
-                            httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}");
-                        } catch (Exception ignored) {}
-                        try {
-                            httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}");
-                        } catch (Exception ignored) {}
-                    }
-                    /* watchdog: sesi null pun UI harus selalu di-reset */
-                    try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
-                    busy = false;
-                    wakeFree();
-                    push("window.onDone(-2)");
-                }
-            }).start();
+            doCancel(sessionId, msgConn);
         }
 
         @JavascriptInterface
@@ -753,7 +779,7 @@ public class MainActivity extends Activity {
                 try {
                     java.net.URL u = new java.net.URL(
                         "https://api.github.com/repos/nemoobc/opencode-android/releases/latest");
-                    java.net.HttpURLConnection cx = (java.net.HttpURLConnection) u.openConnection();
+                    java.net.HttpURLConnection cx = (java.net.HttpURLConnection) u.openConnection(Proxy.NO_PROXY);
                     try {
                         cx.setConnectTimeout(8000); cx.setReadTimeout(8000);
                         cx.setRequestProperty("User-Agent", "opencode-android");
@@ -801,7 +827,7 @@ public class MainActivity extends Activity {
     private String httpPost(String urlStr, String body) throws Exception {
         HttpURLConnection c = null;
         try {
-            c = (HttpURLConnection) new URL(urlStr).openConnection();
+            c = (HttpURLConnection) new URL(urlStr).openConnection(Proxy.NO_PROXY);
             c.setRequestMethod("POST");
             c.setConnectTimeout(8000);
             c.setReadTimeout(120000);
@@ -833,7 +859,7 @@ public class MainActivity extends Activity {
                 if (m.length() > 0) return m;
             }
         } catch (Exception ignored) {}
-        return "zen/big-pickle";
+        return "opencode/big-pickle";
     }
 
     private void write(File f, String s) throws Exception {
@@ -851,26 +877,30 @@ public class MainActivity extends Activity {
         }
     }
 
+    /* cancel bersama yang dipakai oleh Bridge.cancel() dan onBackPressed() —
+       watchdog: sesi null pun UI harus selalu di-reset */
+    private void doCancel(final String sid, final HttpURLConnection cc) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
+                if (sid != null) {
+                    try { httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}"); } catch (Exception ignored) {}
+                    try { httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}"); } catch (Exception ignored) {}
+                }
+                try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
+                busy = false;
+                wakeFree();
+                push("window.onDone(-2)");
+            }
+        }).start();
+    }
+
     @Override
     public void onBackPressed() {
         if (busy) {
             /* cancel via bridge langsung — jangan buat Bridge() baru */
-            final String sid = sessionId;
-            final HttpURLConnection cc = msgConn;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (cc != null) { try { cc.disconnect(); } catch (Exception ignored) {} }
-                    if (sid != null) {
-                        try { httpPost("http://127.0.0.1:" + PORT + "/api/session/" + sid + "/interrupt", "{}"); } catch (Exception ignored) {}
-                        try { httpPost("http://127.0.0.1:" + PORT + "/session/" + sid + "/abort", "{}"); } catch (Exception ignored) {}
-                    }
-                    try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
-                    busy = false;
-                    wakeFree();
-                    push("window.onDone(-2)");
-                }
-            }).start();
+            doCancel(sessionId, msgConn);
             return;
         }
         super.onBackPressed();

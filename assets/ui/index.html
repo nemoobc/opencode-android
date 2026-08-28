@@ -131,8 +131,8 @@
   #hello { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; position:relative; }
   #hello::before { content:""; position:absolute; width:280px; height:280px; top:6%; left:50%; margin-left:-140px; border-radius:50%;
     background:radial-gradient(circle at 32% 32%,#3DDC8422,transparent 62%),radial-gradient(circle at 68% 68%,#C9A22718,transparent 62%);
-    filter:blur(8px); animation:aurora 6s ease-in-out infinite alternate; pointer-events:none; }
-  @keyframes aurora { from { transform:scale(1) translateY(0) } to { transform:scale(1.16) translateY(12px) } }
+    animation:aurora 6s ease-in-out infinite alternate; pointer-events:none; }
+  @keyframes aurora { from { transform:scale(1) translateY(0) } to { transform:scale(1.1) translateY(8px) } }
   #hello .mark { width:80px; height:80px; margin-bottom:26px; animation:breathe 3.4s ease-in-out infinite; position:relative; }
   @keyframes breathe { 0%,100% { transform:scale(1); opacity:.92 } 50% { transform:scale(1.05); opacity:1 } }
   #greet { font-size:13px; color:#7FCF9F; letter-spacing:.6px; margin-bottom:6px; animation:nmup .5s .1s both; }
@@ -224,9 +224,15 @@
   #splash .sub { margin-top:6px; font-size:12px; color:#6E8478; animation:nmup .5s .95s both; }
   #toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%) translateY(16px); background:#1A211C; border:1px solid #2A332E; color:#ECEEEC; padding:10px 18px; border-radius:12px; font-size:13px; opacity:0; transition:.3s; z-index:70; pointer-events:none; }
   #toast.show { opacity:1; transform:translateX(-50%); }
-  @media (prefers-reduced-motion: reduce) {
+   /* Animasi logo saat buka app (splash) dibuat 10 detik — lambat & dramatis.
+      Pasti dibatasi HANYA di dalam #splash, supaya animasi lain (typing, dsb) normal. */
+   #splash *, #splash *::before, #splash *::after {
+     animation-duration: 10s !important;
+   }
+   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
+
 </style>
 </head>
 <body>
@@ -378,7 +384,7 @@ window._helloHTML = document.getElementById('hello').outerHTML;
 setTimeout(function() {
   var sp = document.getElementById('splash');
   if (sp) { sp.classList.add('out'); setTimeout(function(){ sp.remove(); }, 600); }
-}, 2000);
+}, 10000);
 chat.innerHTML = window._helloHTML;
 bindChips();
 var wrap = document.getElementById('chatwrap');
@@ -387,7 +393,7 @@ var go = document.getElementById('go');
 var dot = document.getElementById('dot');
 var ov = document.getElementById('ov');
 var busy = false;
-var curModel = 'zen/big-pickle';
+var curModel = 'opencode/big-pickle';
 document.getElementById('mname').textContent = 'Big Pickle';
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -511,9 +517,12 @@ function addActions(body, plain) {
 
 window.appendOut = function(t) {
   if (window._aborted) return;
+  if (window._done) return;                 /* jangan render lagi setelah selesai */
+  if (window._rend === undefined) window._rend = '';   /* amankan state lama */
   killHello();
   if (!window._cur) {
     window._plain = '';
+    window._rend = '';
     var body = addMsg('ai');
     body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
     body.classList.add('caret');
@@ -524,13 +533,19 @@ window.appendOut = function(t) {
     if (d) d.remove();
   }
   window._plain += t;
-  /* throttle render: maksimal tiap 120ms — cegah lag saat stream panjang */
+  /* throttle render kecil (~40ms) biar terasa MENGALIR token per token,
+     bukan menumpuk lalu muncul mendadak. Hanya tail yang belum dirender
+     yang di-append, supaya ringan & tidak re-flow seluruh string. */
   var now = Date.now();
-  if (!window._flushAt || now - window._flushAt >= 120) {
+  if (!window._flushAt || now - window._flushAt >= 40) {
     window._flushAt = now;
-    window._cur.textContent = window._plain;
-    window._cur.classList.add('caret');
-    follow();
+    var tail = window._plain.substring(window._rend.length);
+    window._rend = window._plain;
+    if (tail.length && window._cur && window._cur.isConnected) {
+      window._cur.textContent += tail;
+      window._cur.classList.add('caret');
+      follow();
+    }
   }
 };
 /* paksa render buffer sekarang (dipakai sebelum pengukuran/tes) */
@@ -757,8 +772,8 @@ document.getElementById('scrim').onclick = closeDrawer;
 
 /* ===== model switcher ===== */
 var MODELS = [
-  {id:'zen/big-pickle',                       nm:'Big Pickle',            ds:'tercepat terverifikasi ~5 dtk (zen)', tag:'GRATIS'},
-  {id:'opencode/big-pickle',                  nm:'Big Pickle (lama)',     ds:'jalur cadangan', tag:'GRATIS'},
+  {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'tercepat terverifikasi ~5 dtk', tag:'GRATIS'},
+  {id:'opencode/hy3-free',                    nm:'Hy3',                   ds:'jalur cadangan cepat', tag:'GRATIS'},
   {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~6 dtk', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'terverifikasi ~9 dtk', tag:'GRATIS'},
   {id:'opencode/mimo-v2.5-free',              nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},

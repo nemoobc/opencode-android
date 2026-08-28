@@ -118,9 +118,9 @@ $('#go').click();
 ok('bisa kirim lagi setelah new chat', calls.send.length >= 2);
 
 console.log('== 8. GANTI MODEL ==');
-window.setModel('zen/big-pickle');
+window.setModel('opencode/big-pickle');
 ok('chip nama model big-pickle', $('#mname').textContent === 'Big Pickle');
-ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'zen/big-pickle'));
+ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'opencode/big-pickle'));
 ok('preset grok-code mati sudah dihapus', !doc.body.innerHTML.includes('grok-code'));
 
 console.log('== 9. MODAL CONFIG ==');

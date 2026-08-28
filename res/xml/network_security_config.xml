@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Izinkan cleartext HTTP hanya ke loopback lokal (server opencode 127.0.0.1).
+         Android 9+ menghalang cleartext default; ini menyalakannya khusus
+         untuk 127.0.0.1 tanpa membuka semua traffic. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

@@ -85,8 +85,8 @@ jobs:
           mv build/OpenCode-*.apk out/app-x86.apk
           unzip -v out/app-x86.apk | grep resources.arsc | grep -q "Stored" && echo "arsc STORED OK" || exit 1
 
-      - name: emulator + adb remote (idup 4 jam, cancel utk stop)
-        timeout-minutes: 230
+      - name: emulator + adb remote (idup 15 menit utk tes; cancel utk stop)
+        timeout-minutes: 60
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -95,8 +95,10 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 2048 -cores 2
           script: |
+            echo "SCRIPT-START $(date -u +%H:%M:%S)"
             set +e
             adb wait-for-device || true
+            echo "T0 boot-poll $(date -u +%H:%M:%S)"
             i=0; while [ $i -lt 144 ]; do B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'); [ "$B" = "1" ] && echo boot-OK && break; sleep 5; i=$((i+1)); done
             i=0; while [ $i -lt 60 ]; do adb shell pm list packages >/dev/null 2>&1 && echo pm-OK && break; sleep 5; i=$((i+1)); done
             sleep 15
@@ -111,5 +113,5 @@ jobs:
             adb devices
             echo "READY — dari perangkat kamu:  adb connect $IP:5555"
             echo "lalu: adb devices (harus tampil emulator remote), scrcpy, dll"
-            # keepalive: job hidup sampai 4 jam / di-cancel
-            sleep 20000
+            # keepalive: job hidup; cancel utk stop sesi
+            sleep 900

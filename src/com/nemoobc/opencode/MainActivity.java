@@ -705,8 +705,12 @@ public class MainActivity extends Activity {
        → catat waktu + status. Hasil disimpan sebagai tabel JSON di Diagnostics. */
     private void testAllModels() throws Exception {
         Diagnostics.step("model-all", "mulai tes semua model");
-        String modelsJson = evalSync("JSON.stringify(MODELS.map(function(m){return m.id}))");
-        JSONArray models = new JSONArray(modelsJson);
+        /* Daftar model diambil dari MODELS di halaman (sinkron dengan UI).
+           CATATAN: jangan JSON.stringify di sini — evaluateJavascript sudah
+           JSON-encode hasilnya, jadi string yang di-quote ganda akan membuat
+           JSONArray() menolak ("String cannot be converted to JSONArray"). */
+        String modelsRaw = evalSync("MODELS.map(function(m){return m.id})");
+        JSONArray models = new JSONArray(modelsRaw);
         JSONArray hasil = new JSONArray();
 
         /* model yang sudah terbukti cepat → timeout pendek; sisanya diberi 75 dtk

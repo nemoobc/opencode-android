@@ -662,7 +662,22 @@ public class MainActivity extends Activity {
             public void run() {
                 try {
                     Thread.sleep(1500);
-                    Diagnostics.step("buka", "halaman + server siap");
+                    /* server boot bisa 2-3 menit di emulator lambat (ekstrak payload
+                       + init opencode). Jangan kirim sebelum server benar-benar
+                       listening — dulu 8 model pertama kena ConnectException palsu. */
+                    int w = 0;
+                    while (!serverUp && w < 240000) {
+                        Thread.sleep(2000);
+                        w += 2000;
+                        /* fallback: kalau serverUp tidak diset (mis. hanya HTTP yang
+                           benar-benar hidup), cek HTTP sekali-sekali */
+                        if (!serverUp && w % 8000 == 0
+                                && httpCode("http://127.0.0.1:" + PORT + "/", 1200) > 0) {
+                            serverUp = true;
+                        }
+                    }
+                    Diagnostics.step("buka", "server " + (serverUp ? "UP" : "TIMEOUT")
+                            + " setelah " + (w / 1000) + "s, halaman + server siap");
                     Diagnostics.shot("1-buka", capture());
 
                     // kirim via chip pertama

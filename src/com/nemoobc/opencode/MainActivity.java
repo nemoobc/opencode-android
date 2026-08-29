@@ -970,25 +970,29 @@ public class MainActivity extends Activity {
             }).start();
 
             int waited = 0;
-            /* Deteksi siap berbasis LOG + proses, bukan HTTP connect. Beberapa perangkat
-               memblokir HttpURLConnection walaupun server lokal sudah live (proxy/loopback/
-               ipv6), yang bikin "server gagal start" palsu. Selama proses opencode masih
-               hidup dan sudah mencetak "listening", server dianggap siap. */
-            while (running && waited < 120000) {
+            /* Deteksi siap: LOG "listening" (jalur perangkat yg blokir HttpURLConnection)
+               ATAU poll HTTP /session (paling andal — emulator membuktikan server up ~150-170s
+               tanpa pernah mencetak "listening"). Keduanya = server dinyatakan UP. */
+            String how = "log";
+            while (running && waited < 180000) {
                 boolean alive = true;
                 try { serverProc.exitValue(); alive = false; } catch (IllegalThreadStateException e) { /* masih berjalan */ }
                 String log;
                 synchronized (serverLog) { log = serverLog.toString(); }
                 if (!alive) break;                                 // proses mati = gagal
-                if (log.contains("listening")) { serverUp = true; break; }  // siap
-                /* fallback: proses hidup tapi belum "listening" lama — coba HTTP sekali saja
-                   (best effort, jangan jadi blokir utama) */
-                if (waited > 5000 && httpCode("http://127.0.0.1:" + PORT + "/", 800) > 0) {
+                if (log.contains("listening")) { serverUp = true; break; }  // siap (jalur log)
+                if (httpCode("http://127.0.0.1:" + PORT + "/", 1000) > 0) {  // siap (jalur HTTP)
                     serverUp = true;
+                    how = "http";
                     break;
                 }
-                Thread.sleep(1000);
-                waited += 1000;
+                Thread.sleep(1500);
+                waited += 1500;
+            }
+            /* jalan terakhir: HTTP sekali lagi sbg penentu kalau budget habis */
+            if (!serverUp && httpCode("http://127.0.0.1:" + PORT + "/", 2000) > 0) {
+                serverUp = true;
+                how = "http";
             }
             if (!serverUp) {
                 String tail;
@@ -1030,6 +1034,7 @@ public class MainActivity extends Activity {
                 return;
             }
             debugLog("startServer: serverUp, mem=" + readMemFree());
+            if (autotest) Diagnostics.step("server-up-detect", how);
             requestWeb();
             long free = rootFs.getFreeSpace() / (1024 * 1024);
             push("window.onReady(true," + free + ")");

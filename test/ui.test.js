@@ -122,6 +122,14 @@ ok('bubble tidak ditimpa "gagal (kode -2)"', !doc.body.textContent.includes('gag
 window.onDone(0, tokBaru);        // jawaban SAH untuk token ini
 ok('onDone token cocok -> tombol normal', !$('#go').classList.contains('stop'));
 
+console.log('== 6d. SPLASH CABUT SAAT SERVER SIAP (anti lock 10 detik) ==');
+const spSplash = doc.getElementById('splash');
+window.onReady(true, 300);
+const spAfter = doc.getElementById('splash');
+ok('onReady memicu fade splash (out/terhapus)', (spAfter === null) || spAfter.classList.contains('out'));
+ok('PAYLOAD_TOTAL fallback angka wajar', typeof window.PAYLOAD_TOTAL === 'number' && window.PAYLOAD_TOTAL > 0);
+ok('PAYLOAD_TOTAL bisa ditimpa nilai asli dari Java', (function(){ window.PAYLOAD_TOTAL = 19000000; return window.PAYLOAD_TOTAL === 19000000; })());
+
 console.log('== 7. NEW CHAT ==');
 $('#bnew').click();
 ok('Android.newChat terpanggil', calls.newChat >= 1);

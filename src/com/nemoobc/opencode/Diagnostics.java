@@ -135,8 +135,10 @@ public final class Diagnostics {
     private static String httpStatusText(int code) {
         switch (code) {
             case 200: return "OK";
+            case 400: return "Bad Request";
             case 404: return "Not Found";
-            default: return "OK";
+            case 500: return "Internal Server Error";
+            default: return "Unknown";
         }
     }
 

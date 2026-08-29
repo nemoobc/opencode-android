@@ -112,7 +112,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git config user.name "nemoobc"
-            git config user.email "nemoobc@users.noreply.github.com"
+            git config user.email "258114617+nemoobc@users.noreply.github.com"
             git add assets/ui/index.html
             git commit -m "chore(model): sync daftar model gratis dari relay opencode"
             git push
@@ -180,15 +180,18 @@ jobs:
           OCX_ABI=arm64-v8a bash build.sh
           ls -la build/OpenCode-*.apk
 
-      - name: perbarui release v1.5.5 (asset APK baru)
+      - name: perbarui release (asset APK baru)
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # nama tag & file APK mengikuti versi di manifest — jangan hardcode
+          VER="v$(grep -o 'android:versionName="[^"]*"' AndroidManifest.xml | head -1 | sed 's/.*="\([^"]*\)"/\1/')"
           # hapus asset APK lama supaya release cuma punya satu APK terkini
-          for a in $(gh api repos/${{ github.repository }}/releases/tags/v1.5.5 --jq '.assets[].name' | grep '^OpenCode-.*\.apk$'); do
+          for a in $(gh api repos/${{ github.repository }}/releases/tags/$VER --jq '.assets[].name' | grep '^OpenCode-.*\.apk$' || true); do
             echo "hapus asset lama: $a"
-            gh release delete-asset v1.5.5 "$a" --yes --repo ${{ github.repository }} || true
+            gh release delete-asset "$VER" "$a" --yes --repo ${{ github.repository }} || true
           done
-          gh release upload v1.5.5 build/OpenCode-v1.5.5.apk --clobber --repo ${{ github.repository }}
-          echo "APK arm64 v1.5.5 diperbarui di release (tag tidak berubah)."
+          APK=$(ls build/OpenCode-*.apk | head -1)
+          [ -n "$APK" ] && gh release upload "$VER" "$APK" --clobber --repo ${{ github.repository }}
+          echo "APK arm64 $VER diperbarui di release (tag tidak berubah)."

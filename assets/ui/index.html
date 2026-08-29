@@ -425,8 +425,7 @@ var chat = document.getElementById('chat');
 })();
 window._helloHTML = document.getElementById('hello').outerHTML;
 setTimeout(function() {
-  var sp = document.getElementById('splash');
-  if (sp) { sp.classList.add('out'); setTimeout(function(){ sp.remove(); }, 600); }
+  fadeSplash();
 }, 10000);
 chat.innerHTML = window._helloHTML;
 bindChips();
@@ -686,6 +685,9 @@ window.onError = function(m, tok) {
 window.onReady = function(ok, free) {
   if (ok) {
     ov.classList.remove('show');
+    /* server sudah siap — hilangkan splash SEGERA (jangan tunggu timeout 10s
+       dramatis: itu mengunci UI sampai 10 detik walau app sudah bisa dipakai) */
+    fadeSplash();
     if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
       chat.innerHTML = window._helloHTML;
       bindChips();
@@ -693,7 +695,14 @@ window.onReady = function(ok, free) {
     dot.className = 'ok';
   } else window.onError('payload tidak lengkap - uninstall lalu install ulang');
 };
-window.PAYLOAD_TOTAL = 16332800;
+function fadeSplash() {
+  var sp = document.getElementById('splash');
+  if (sp && !sp.classList.contains('out')) {
+    sp.classList.add('out');
+    setTimeout(function() { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600);
+  }
+}
+window.PAYLOAD_TOTAL = 16332800; /* fallback: di-update Java via PAYLOAD_TOTAL push saat ekstrak */
 window.setProgress = function(n) {
   /* hanya update teks jumlah file — progress batang memakai byte (akurat & halus) */
   document.getElementById('pnum').textContent = n + ' / 555 file';

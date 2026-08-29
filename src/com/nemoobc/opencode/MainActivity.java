@@ -62,6 +62,13 @@ public class MainActivity extends Activity {
        lama (mis. onDone(-2) cancel yang tertunda 6 detik) tidak membajak UI
        permintaan yang lebih baru. */
     private volatile int reqTok = 0;
+    /* token saat CANCEL dimulai — dipakai onDone(-2) dari doCancel. Beda dengan
+       reqTok (token TERAKHIR): kalau user cancel lalu langsung kirim pesan baru,
+       cancel lama memakai reqTok yang sudah naik → onDone(-2) yang tertunda
+       dianggap milik kiriman baru dan menimpa jawaban "gagal (kode -2)".
+       cancelTok di-freeze di awal doCancel sehingga callback cancel stale
+       selalu lebih kecil dari token kiriman baru → ditolak JS. */
+    private volatile int cancelTok = -1;
     private static final int PORT = 4096;
     private static final int REQ_PICK = 7001;
     /* marker ekstraksi rootfs SELESAI & valid — dicek biar app tidak
@@ -178,7 +185,11 @@ public class MainActivity extends Activity {
 
         if (!workDir.exists()) workDir.mkdirs();
         if (!extWork.exists()) extWork.mkdirs();
-        new File(rootFs, "root/.config/opencode").mkdirs();
+        /* JANGAN mkdir rootfs placeholder di sini: filesDir/rootfs yang ADA tapi
+           KOSONG membuat readyOk() membuang waktu & mengganggu jalur backup
+           (renameTo(rootfs→old) gagal karena rootfs placeholder menutupi old
+           yang berisi sistem lama yang bisa dipulihkan). Dir config dibuat
+           oleh saveConfig saat user menyimpan, dan oleh ekstraktor saat boot. */
         setupLibLinks();
         debugLog("dirs+libLinks: OK");
 
@@ -230,6 +241,17 @@ public class MainActivity extends Activity {
                 if (!ready) {
                     File old = new File(getFilesDir(), "rootfs.old");
                     File tmp = new File(getFilesDir(), "rootfs.tmp");
+                    /* total byte payload ASLI (untuk % progress yang akurat) —
+                       dulu hardcode 16332800 di Java & JS: begitu ukuran rootfs
+                       berubah, progress overshoot >100%. */
+                    long payloadLen = 0;
+                    try { payloadLen = getAssets().openFd("payload/rootfs.bin").getLength(); }
+                    catch (Exception ignored) {}
+                    if (payloadLen > 0) {
+                        final long pl = payloadLen;
+                        push("window.PAYLOAD_TOTAL = " + pl + ";");
+                        debugLog("bg: payload total=" + pl);
+                    }
                     push("window.setStage(\"menyiapkan sistem — memeriksa...\")");
                     stageUi("Menyiapkan sistem — memeriksa...");
                     try {
@@ -290,7 +312,6 @@ public class MainActivity extends Activity {
                                restore. Hapus old nanti, setelah server mulai hidup. */
                             if (ready && old.exists()) {
                                 push("window.setProgress(555)");
-                                push("window.setProgressBytes(16332800)");
                                 progressUi(100);
                                 Thread bg = new Thread(new Runnable() {
                                     @Override
@@ -1113,6 +1134,7 @@ public class MainActivity extends Activity {
             firstDeltaMs = -1;
             tSendMs = System.currentTimeMillis();
             final int myTok = ++reqTok;   /* callback SSE/cancel lama memakai token lama */
+            cancelTok = -1;               /* cancel berikutnya freeze token baru */
             /* watchdog: kalau session.idle tidak pernah datang (stream putus parah),
                reset UI otomatis agar tombol tidak nyangkut & pesan berikut tetap bisa dikirim */
             Thread wd = new Thread(new Runnable() {
@@ -1495,6 +1517,8 @@ public class MainActivity extends Activity {
     /* cancel bersama yang dipakai oleh Bridge.cancel() dan onBackPressed() —
        watchdog: sesi null pun UI harus selalu di-reset */
     private void doCancel(final String sid, final HttpURLConnection cc) {
+        if (cancelTok < 0) cancelTok = reqTok;   /* freeze token KIRIMAN YANG DI-CANCEL */
+        final int myTok = cancelTok;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1506,7 +1530,7 @@ public class MainActivity extends Activity {
                 try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
                 busy = false;
                 wakeFree();
-                push("window.onDone(-2," + reqTok + ")");
+                push("window.onDone(-2," + myTok + ")");
             }
         }).start();
     }

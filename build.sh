@@ -3,6 +3,10 @@ set -e
 cd "$(dirname "$0")"
 ABI="${OCX_ABI:-arm64-v8a}"
 AJ=dl/android-34/android.jar
+# nama APK mengikuti versionName di manifest — jangan hardcode (dulu selalu 1.5.5)
+VER_NAME=$(grep -o 'android:versionName="[^"]*"' AndroidManifest.xml | head -1 | sed 's/.*="\([^"]*\)"/\1/')
+[ -n "$VER_NAME" ] || VER_NAME="0.0.0"
+APK_OUT="build/OpenCode-v${VER_NAME}.apk"
 rm -rf build/classes build/gen build/*.apk build/classes.dex
 mkdir -p build/classes
 
@@ -57,6 +61,6 @@ fi
 
 echo "[6/6] sign + verify..."
 apksigner sign --ks build/ks.jks --ks-pass pass:opencode123 \
-  --out build/OpenCode-v1.5.5.apk build/base.apk
-apksigner verify build/OpenCode-v1.5.5.apk && echo "VERIFIED"
+  --out "$APK_OUT" build/base.apk
+apksigner verify "$APK_OUT" && echo "VERIFIED"
 ls -la build/*.apk

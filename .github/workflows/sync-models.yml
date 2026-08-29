@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  update-free-models:
+  sync-models:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,15 +88,91 @@ jobs:
               print("jumlah-model-gratis:", len(ordered))
           PY
 
-      - name: commit & push kalau ada perubahan
+      - name: commit & push + tanda perubahan
+        id: commit
         run: |
           if git diff --quiet -- assets/ui/index.html; then
             echo "tidak ada perubahan — selesai."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git config user.name "opencode-bot"
-            git config user.email "actions@users.noreply.github.com"
+            git config user.name "nemoobc"
+            git config user.email "nemoobc@users.noreply.github.com"
             git add assets/ui/index.html
             git commit -m "chore(model): sync daftar model gratis dari relay opencode"
             git push
-            echo "commit & push selesai."
+            echo "commit & push selesai (author: nemoobc)."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # ===== ada update model => build APK arm64 untuk HP & perbarui release v1.5.5 =====
+      - name: setup java (build APK)
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+
+      - name: alat build
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt apksigner unzip curl
+          curl -sL -o r8.jar "https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.5.35/r8-8.5.35.jar"
+          echo "D8_CMD=java -cp $PWD/r8.jar com.android.tools.r8.D8" >> "$GITHUB_ENV"
+
+      - name: unduh android.jar
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          mkdir -p dl
+          curl -sL -o dl/platform-34.zip "https://dl.google.com/android/repository/platform-34-ext7_r02.zip"
+          unzip -oq dl/platform-34.zip "*/android.jar" -d dl/
+
+      - name: build arm64-v8a (APK untuk HP)
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          mkdir -p dl/termux jniLibs/arm64-v8a assets/payload staging/rootfs
+          curl -sL -o dl/oc.tgz "https://registry.npmjs.org/opencode-linux-arm64-musl/-/opencode-linux-arm64-musl-1.18.25.tgz"
+          curl -sL -o dl/minirootfs.tar.gz "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/alpine-minirootfs-3.21.3-aarch64.tar.gz"
+          curl -sL -o dl/libgcc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/libgcc-14.2.0-r4.apk"
+          curl -sL -o dl/libstdc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/libstdc%2B%2B-14.2.0-r4.apk"
+          cd dl/termux
+          curl -sL -o Packages "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages"
+          for pkg in proot libtalloc libandroid-shmem; do
+            url=$(awk -v p="Package: $pkg" '$0==p{f=1} f&&/^Filename:/{print $2; exit}' Packages)
+            curl -sL -O "https://packages.termux.dev/apt/termux-main/${url}"
+          done
+          for d in *.deb; do dpkg-deb -x "$d" ex; done
+          find ex -name "proot" -type f -exec cp {} ./proot.bin \;
+          find ex -path "*libexec/proot/loader" -exec cp {} ./loader.bin \;
+          find ex -name "libtalloc.so*" -exec cp {} ./libtalloc.so \;
+          find ex -name "libandroid-shmem.so*" -exec cp {} ./libshmem.so \;
+          cd ../..
+          tar -xzf dl/minirootfs.tar.gz -C staging/rootfs
+          tar -xzf dl/oc.tgz -C staging/
+          cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
+          mkdir -p staging/apks && mv dl/libgcc.apk dl/libstdc.apk staging/apks/
+          tar -xzf staging/apks/libgcc.apk -C staging/apks/ || true
+          tar -xzf staging/apks/libstdc.apk -C staging/apks/ || true
+          cp -a staging/apks/usr/lib/. staging/rootfs/usr/lib/
+          printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > staging/rootfs/etc/resolv.conf
+          mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
+          printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
+          chmod +x staging/rootfs/usr/bin/oc
+          cp dl/termux/proot.bin jniLibs/arm64-v8a/libproot.so
+          cp dl/termux/loader.bin jniLibs/arm64-v8a/libproot_loader.so
+          cp dl/termux/libtalloc.so jniLibs/arm64-v8a/libtalloc.so
+          cp dl/termux/libshmem.so jniLibs/arm64-v8a/libshmem.so
+          tar -czf assets/payload/rootfs.bin -C staging/rootfs .
+          OCX_ABI=arm64-v8a bash build.sh
+          ls -la build/OpenCode-*.apk
+
+      - name: perbarui release v1.5.5 (asset APK baru)
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # hapus asset APK lama supaya release cuma punya satu APK terkini
+          for a in $(gh api repos/${{ github.repository }}/releases/tags/v1.5.5 --jq '.assets[].name' | grep '^OpenCode-.*\.apk$'); do
+            echo "hapus asset lama: $a"
+            gh release delete-asset v1.5.5 "$a" --yes --repo ${{ github.repository }} || true
+          done
+          gh release upload v1.5.5 build/OpenCode-v1.5.5.apk --clobber --repo ${{ github.repository }}
+          echo "APK arm64 v1.5.5 diperbarui di release (tag tidak berubah)."

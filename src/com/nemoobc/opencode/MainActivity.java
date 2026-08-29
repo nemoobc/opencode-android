@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
     private volatile String sessionId = null;
     private volatile HttpURLConnection msgConn = null;
     private boolean autotest = false;
+    private volatile boolean localMode = false;   /* MODE LOKAL: tanpa panggilan model remote (proot crash-safe) */
     private static PowerManager.WakeLock wakeLock;
     private volatile int deltaCount = 0;
     private volatile long tSendMs = 0;
@@ -1186,6 +1187,12 @@ public class MainActivity extends Activity {
     private class Bridge {
 
         @JavascriptInterface
+        public void setLocalMode(boolean b) { localMode = b; }
+
+        @JavascriptInterface
+        public boolean getLocalMode() { return localMode; }
+
+        @JavascriptInterface
         public String status() {
             JSONObject o = new JSONObject();
             try {
@@ -1206,6 +1213,14 @@ public class MainActivity extends Activity {
                 }
                 busy = true;
             }
+            if (localMode) {
+                /* MODE LOKAL — jangan panggil model remote (server proot bisa crash):
+                   kirim umpan balik instan tanpa koneksi keluar */
+                busy = false;
+                wakeFree();
+                push("window.appendOut(" + jq("(mode lokal) model remote nonaktif — toggle MODE LOKAL untuk memakai " + prompt + "") + ")");
+                return ++reqTok;   /* token baru sendiri (myTok belum dibuat di titik ini) */
+            }
             wakeHold();
             sawIdle = false;
             deltaCount = 0;
@@ -1218,7 +1233,7 @@ public class MainActivity extends Activity {
             Thread wd = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    try { Thread.sleep(180000); } catch (InterruptedException e) { return; }
+                    try { Thread.sleep(30000); } catch (InterruptedException e) { return; }
                     if (busy && !sawIdle) {
                         busy = false;
                         wakeFree();
@@ -1263,7 +1278,7 @@ public class MainActivity extends Activity {
                                     + sessionId + "/message").openConnection(Proxy.NO_PROXY);
                             mc.setRequestMethod("POST");
                             mc.setConnectTimeout(8000);
-                            mc.setReadTimeout(180000);
+                            mc.setReadTimeout(25000);
                             mc.setDoOutput(true);
                             mc.setRequestProperty("Content-Type", "application/json");
                             OutputStream os = mc.getOutputStream();

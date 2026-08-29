@@ -33,6 +33,7 @@
     font-size:14px; color:#D5DED7; width:100%; background:none; border:none; text-align:left;
   }
   .d-item:active { background:#182019; }
+  .d-item .badge { margin-left:auto; font-size:10px; font-weight:700; color:#9AB0A3; background:#131713; padding:2px 7px; border-radius:8px; }
   .d-item { opacity:0; transform:translateX(-14px); }
   #drawer.show .d-item { animation:ditem .35s cubic-bezier(.2,.9,.3,1) forwards; }
   #drawer.show .d-body .d-item:nth-child(1) { animation-delay:.05s }
@@ -303,6 +304,7 @@
     <button class="d-item primary" id="dnew"><span class="ic">&#10010;</span> Obrolan baru</button>
     <button class="d-item" id="dconfig"><span class="ic">&#9881;</span> Konfigurasi</button>
     <button class="d-item" id="dmodel"><span class="ic">&#9889;</span> Ganti model</button>
+    <button class="d-item" id="dlocal"><span class="ic">&#128737;</span> Mode lokal <span id="localst" class="badge">OFF</span></button>
     <button class="d-item" id="dupdate"><span class="ic">&#8595;</span> Cek update</button>
   </div>
   <div class="d-foot">opencode android <span id="dver">v?</span></div>
@@ -981,6 +983,20 @@ document.getElementById('mclose').onclick = function() { document.getElementById
 document.getElementById('cmcustom').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && this.value.trim()) { setModel(this.value.trim()); }
 });
+
+/* ===== mode lokal — tanpa panggilan model remote (proot crash-safe) ===== */
+function updateLocalBadge() {
+  var on = Android.getLocalMode();
+  var b = document.getElementById('localst');
+  b.textContent = on ? 'ON' : 'OFF';
+  b.style.color = on ? '#7FCF9F' : '#9AB0A3';
+}
+document.getElementById('dlocal').onclick = function() {
+  Android.setLocalMode(!Android.getLocalMode());
+  updateLocalBadge();
+  addNote(Android.getLocalMode() ? 'Mode lokal AKTIF — model remote tidak dipanggil (server proot aman).' : 'Mode lokal mati.', false);
+};
+updateLocalBadge();
 
 /* ===== pilih bahasa balasan ===== */
 var curLang = localStorage.getItem('oc-lang') || 'auto';

@@ -899,7 +899,6 @@ document.getElementById('scrim').onclick = closeDrawer;
    muncul (mis. Ling 3.0) langsung ditambahkan tanpa perlu update APK.
    Blok ini disinkronkan otomatis dari GitHub Actions tiap 6 jam —
    jangan edit manual di antara penanda START/END. */
-var MODELS = [
   {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
   {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
   {id:'opencode/ling-3.0-flash-fin-free',     nm:'Ling 3.0 Flash',        ds:'katalog resmi relay', tag:'GRATIS'},
@@ -909,6 +908,19 @@ var MODELS = [
   {id:'opencode/nemotron-3-ultra-free',       nm:'Nemotron 3 Ultra',      ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4',            nm:'Claude Sonnet 4',       ds:'butuh api key anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',                       nm:'GPT-4.1',               ds:'butuh api key openai', tag:'PRO'}
+];
+var MODELS = [
+  {id:'opencode/hy3-free',  nm:'Hy3 Free',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/big-pickle',  nm:'Big Pickle',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/deepseek-v4-flash-free',  nm:'DeepSeek V4 Flash',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/muse-spark-1.2-contributor-free',  nm:'Muse Spark 1.2',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/mimo-v2.5-free',  nm:'Mimo 2.5 Free',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/ling-3.0-flash-fin-free',  nm:'Ling 3.0 Flash',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/nemotron-3-ultra-free',  nm:'Nemotron 3 Ultra',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'opencode/laguna-s-2.1-free',  nm:'Laguna S 2.1',  ds:'katalog resmi relay', tag:'GRATIS'},
+  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'butuh api key anthropic', tag:'PRO'},
+  {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'butuh api key openai',    tag:'PRO'}
 ];
 /* AUTO-MODELS-END */
 function openModels() {

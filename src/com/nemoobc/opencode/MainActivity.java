@@ -981,6 +981,34 @@ public class MainActivity extends Activity {
                 if (tail.length() > 200) tail = tail.substring(tail.length() - 200);
                 debugLog("startServer: GAGAL, tail=" + tail);
                 if (autotest) Diagnostics.step("server-log", tail);
+                /* probe: jalankan opencode --version lewat proot SEKALI, tangkap
+                   output+exit code — membedakan kegagalan di proot vs opencode */
+                try {
+                    java.util.List<String> pr = new java.util.ArrayList<>(c.subList(0, c.size() - 3));
+                    pr.add("--version");
+                    ProcessBuilder pb2 = new ProcessBuilder(pr);
+                    pb2.environment().clear();
+                    pb2.environment().putAll(pb.environment());
+                    pb2.redirectErrorStream(true);
+                    Process p2 = pb2.start();
+                    StringBuilder sb2 = new StringBuilder();
+                    try (java.io.InputStream is = p2.getInputStream()) {
+                        byte[] b2 = new byte[512];
+                        int n;
+                        long t0 = System.currentTimeMillis();
+                        while ((n = is.read(b2)) > 0 && System.currentTimeMillis() - t0 < 8000) {
+                            sb2.append(new String(b2, 0, n));
+                        }
+                    }
+                    int ex2;
+                    try { ex2 = p2.exitValue(); } catch (IllegalThreadStateException e) { p2.destroy(); ex2 = -999; }
+                    String probe = "exit=" + ex2 + " out=" + sb2;
+                    debugLog("startServer: probe " + probe);
+                    if (autotest) Diagnostics.step("server-probe", probe);
+                } catch (Exception pe) {
+                    debugLog("startServer: probe EXCEPTION " + pe);
+                    if (autotest) Diagnostics.step("server-probe", "EXCEPTION " + pe);
+                }
                 stageUi("Server gagal start");
                 push("window.onError(" + jq("server gagal start: " + tail) + ")");
                 requestWeb();

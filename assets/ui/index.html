@@ -870,9 +870,16 @@ document.getElementById('bmenu').onclick = openDrawer;
 document.getElementById('scrim').onclick = closeDrawer;
 
 /* ===== model switcher ===== */
+/* AUTO-MODELS-START */
+/* Daftar awal offline. Setiap buka menu, app menyegarkan otomatis dari
+   endpoint resmi relay (opencode.ai/zen/v1/models): model gratis baru yang
+   muncul (mis. Ling 3.0) langsung ditambahkan tanpa perlu update APK.
+   Blok ini disinkronkan otomatis dari GitHub Actions tiap 6 jam —
+   jangan edit manual di antara penanda START/END. */
 var MODELS = [
   {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
   {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
+  {id:'opencode/ling-3.0-flash-fin-free',     nm:'Ling 3.0 Flash',        ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.5-free',              nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/muse-spark-1.2-contributor-free', nm:'Muse Spark 1.2',    ds:'katalog resmi relay', tag:'GRATIS'},
@@ -880,7 +887,13 @@ var MODELS = [
   {id:'anthropic/claude-sonnet-4',            nm:'Claude Sonnet 4',       ds:'butuh api key anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',                       nm:'GPT-4.1',               ds:'butuh api key openai', tag:'PRO'}
 ];
+/* AUTO-MODELS-END */
 function openModels() {
+  /* refresh otomatis dari relay — paling lambat tiap 15 menit / setiap paksa buka */
+  if (Date.now() - (window._modelsFetchedAt || 0) > 900000) {
+    window._modelsFetchedAt = Date.now();
+    try { Android.fetchModels(); } catch (e) {}
+  }
   var l = document.getElementById('mlist');
   l.innerHTML = '';
   MODELS.forEach(function(m) {
@@ -893,6 +906,28 @@ function openModels() {
   });
   document.getElementById('mmodel').classList.add('show');
 }
+/* model gratis baru dari relay → tambahkan ke daftar tanpa duplikat */
+window.onModels = function(newIds) {
+  var ada = {};
+  MODELS.forEach(function(m) { ada[m.id] = true; });
+  var tambah = 0;
+  try {
+    for (var i = 0; i < newIds.length; i++) {
+      var id = String(newIds[i]).trim();
+      if (!id) continue;
+      var full = id.indexOf('/') >= 0 ? id : 'opencode/' + id;
+      if (ada[full]) continue;
+      if (full.indexOf('/') > 0 && full.split('/')[0] !== 'opencode') continue; /* hanya relay */
+      var nm = id.replace(/-free$/, '').split('-').map(function(w) {
+        return w ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+      }).join(' ');
+      MODELS.push({ id: full, nm: nm, ds: 'katalog resmi relay', tag: 'GRATIS' });
+      ada[full] = true;
+      tambah++;
+    }
+  } catch (e) {}
+  if (tambah > 0 && document.getElementById('mmodel').classList.contains('show')) openModels();
+};
 function modelName(id) {
   for (var i = 0; i < MODELS.length; i++) if (MODELS[i].id === id) return MODELS[i].nm;
   return id.split('/')[1] || id;

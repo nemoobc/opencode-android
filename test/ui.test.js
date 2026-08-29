@@ -17,6 +17,7 @@ const dom = new JSDOM(html, {
       copyText: (t) => calls.copyText.push(t),
       openUrl: (u) => calls.openUrl.push(u),
       checkUpdate: () => calls.checkUpdate++,
+      fetchModels: () => calls.fetchModels++,
       readImageDataUrl: (p) => 'data:image/png;base64,AAAA',
       readConfig: () => JSON.stringify({ auth: '{"opencode":{"type":"api","key":"KEY123"}}', cfg: '{"model":"opencode/big-pickle"}' }),
       appInfo: () => '1.2.4',
@@ -124,6 +125,17 @@ window.setModel('opencode/big-pickle');
 ok('chip nama model big-pickle', $('#mname').textContent === 'Big Pickle');
 ok('saveConfig terpanggil dgn model', calls.saveConfig.some(c => c[2] === 'opencode/big-pickle'));
 ok('preset grok-code mati sudah dihapus', !doc.body.innerHTML.includes('grok-code'));
+
+console.log('== 8b. AUTO-REFRESH MODEL DARI RELAY ==');
+// onModels disuntik Java saat fetchModels selesai — panggil eksplisit seperti bridge
+window.onModels(['ling-3.0-flash-fin-free', 'deepseek-v4-flash-free', 'big-pickle']);
+ok('onModels menambah Ling 3.0', window.MODELS.some(m => m.id === 'opencode/ling-3.0-flash-fin-free'));
+ok('onModels menambah deepseek v4 flash free', window.MODELS.some(m => m.id === 'opencode/deepseek-v4-flash-free'));
+ok('onModels tidak duplikat big-pickle', window.MODELS.filter(m => m.id === 'opencode/big-pickle').length === 1);
+ok('Ling 3.0 berlabel GRATIS', (function() { var x = window.MODELS.filter(m => m.id === 'opencode/ling-3.0-flash-fin-free')[0]; return x && x.tag === 'GRATIS'; })());
+ok('nama tampilan Ling 3.0 Flash', (function() { var x = window.MODELS.filter(m => m.id === 'opencode/ling-3.0-flash-fin-free')[0]; return x && x.nm === 'Ling 3.0 Flash'; })());
+window.setModel('opencode/ling-3.0-flash-fin-free');
+ok('bisa pilih model hasil auto-refresh', $('#mname').textContent === 'Ling 3.0 Flash');
 
 console.log('== 9. MODAL CONFIG ==');
 $('#dconfig') ? null : null;

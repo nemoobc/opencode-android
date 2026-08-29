@@ -1,0 +1,102 @@
+name: sync-models
+
+on:
+  schedule:
+    # setiap 6 jam (UTC): 00, 06, 12, 18
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-free-models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ambil daftar model gratis dari relay opencode
+        id: sync
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, re
+
+          URL = "https://opencode.ai/zen/v1/models"
+          FPATH = "assets/ui/index.html"
+          START = "/* AUTO-MODELS-START */"
+          END = "/* AUTO-MODELS-END */"
+
+          with urllib.request.urlopen(urllib.request.Request(
+                  URL, headers={"User-Agent": "opencode-android/1.5.5 (sync-models; +https://github.com/nemoobc/opencode-android)"}),
+                  timeout=20) as r:
+              data = json.load(r)
+          ids = [m["id"] for m in data.get("data", [])]
+
+          # hanya model gratis resmi: akhiran -free + big-pickle (gratis tanpa suffix)
+          known_free = ["big-pickle"]
+          free_ids = [i for i in ids if i.endswith("-free")] + known_free
+          free_ids = list(dict.fromkeys(free_ids))  # dedupe urut stabil
+
+          # nama tampilan ramah untuk id yang dikenal
+          NAMES = {
+              "big-pickle": "Big Pickle",
+              "hy3-free": "Hy3 Free",
+              "ling-3.0-flash-fin-free": "Ling 3.0 Flash",
+              "nemotron-3.5-lightning-free": "Nemotron Lightning",
+              "mimo-v2.5-free": "Mimo 2.5 Free",
+              "muse-spark-1.2-contributor-free": "Muse Spark 1.2",
+              "nemotron-3-ultra-free": "Nemotron 3 Ultra",
+              "deepseek-v4-flash-free": "DeepSeek V4 Flash",
+              "laguna-s-2.1-free": "Laguna S 2.1",
+          }
+
+          def nice_name(i):
+              if i in NAMES:
+                  return NAMES[i]
+              base = re.sub(r"-free$", "", i)
+              return " ".join(w.capitalize() for w in base.split("-"))
+
+          # urutan: yang terverifikasi di atas, sisanya urut abjad
+          verified = ["big-pickle", "hy3-free"]
+          ordered = [i for i in free_ids if i in verified] + \
+                    [i for i in free_ids if i not in verified]
+
+          lines = []
+          for i in ordered:
+              lines.append("  {id:'opencode/%s',  nm:'%s',  ds:'katalog resmi relay', tag:'GRATIS'},"
+                           % (i, nice_name(i)))
+          # model PRO tetap (butuh api key) — workflow khusus FREE tidak mengubah ini
+          lines += [
+              "  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'butuh api key anthropic', tag:'PRO'},",
+              "  {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'butuh api key openai',    tag:'PRO'}",
+          ]
+
+          block = "var MODELS = [\n" + "\n".join(lines) + "\n];\n"
+
+          src = open(FPATH, encoding="utf-8").read()
+          a = src.index(START)
+          b = src.index(END)
+          # bunuh baris modul lama dari START (baris berikutnya) sampai END
+          header = "\n".join([line for line in src[a:b].splitlines() if not line.strip().startswith("var MODELS")])
+          new_src = src[:a] + header.rstrip() + "\n" + block + src[b:]
+
+          if new_src == src:
+              print("tidak-ada-perubahan")
+          else:
+              open(FPATH, "w", encoding="utf-8").write(new_src)
+              print("diperbarui")
+              print("jumlah-model-gratis:", len(ordered))
+          PY
+
+      - name: commit & push kalau ada perubahan
+        run: |
+          if git diff --quiet -- assets/ui/index.html; then
+            echo "tidak ada perubahan — selesai."
+          else
+            git config user.name "opencode-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add assets/ui/index.html
+            git commit -m "chore(model): sync daftar model gratis dari relay opencode"
+            git push
+            echo "commit & push selesai."
+          fi

@@ -413,6 +413,8 @@ public class MainActivity extends Activity {
                         Diagnostics.extra("server-log", sl.length() > 3000 ? sl.substring(sl.length() - 3000) : sl);
                     }
 
+                    testAllModels();
+
                     Diagnostics.extra("selesai", "true");
                     Diagnostics.step("selesai", "semua tahap dijalankan");
                 } catch (Exception e) {
@@ -423,6 +425,73 @@ public class MainActivity extends Activity {
         });
         t.setDaemon(true);
         t.start();
+    }
+
+    /* ===== tes SEMUA model satu per satu =====
+       Daftar model diambil dari MODELS di halaman (sinkron dengan UI).
+       Tiap model: set → kirim "balas OK" → tunggu delta pertama / idle / error
+       → catat waktu + status. Hasil disimpan sebagai tabel JSON di Diagnostics. */
+    private void testAllModels() throws Exception {
+        Diagnostics.step("model-all", "mulai tes semua model");
+        String modelsJson = evalSync("JSON.stringify(MODELS.map(function(m){return m.id}))");
+        JSONArray models = new JSONArray(modelsJson);
+        JSONArray hasil = new JSONArray();
+
+        /* model yang sudah terbukti cepat → timeout pendek; sisanya diberi 75 dtk
+           (relay bisa mengantre lama). Yang butuh API key erorr cepat tanpa key. */
+        java.util.Set<String> verified = new java.util.HashSet<>();
+        verified.add("opencode/big-pickle");
+        verified.add("opencode/hy3-free");
+
+        for (int i = 0; i < models.length(); i++) {
+            final String id = models.getString(i);
+            Diagnostics.step("model-set", "ganti ke " + id);
+            evalSync("setModel(" + jq(id) + "); true");
+            Thread.sleep(800);
+
+            /* bersihkan sisa tes sebelumnya (kalau ada bubble/hint/busy nyangkut) */
+            evalSync("if (typeof forceStop==='function' && (busy||window._done)) { forceStop(); } true");
+            evalSync("window._lastOnError=null; true");
+            Thread.sleep(600);
+
+            Diagnostics.step("model-kirim:" + id, "kirim 'balas OK'");
+            evalSync("document.getElementById('inp').value='balas OK'; document.getElementById('go').click(); true");
+
+            long timeoutMs = verified.contains(id) ? 30000 : 75000;
+            long t0 = System.currentTimeMillis();
+            while (System.currentTimeMillis() - t0 < timeoutMs) {
+                Thread.sleep(700);
+                if (sawIdle) break;                 /* jawaban selesai */
+                if (!busy && deltaCount == 0) break; /* error senyap — bridge sudah lepas */
+            }
+
+            /* kalau masih nyangkut, cancel supaya model berikutnya bersih */
+            if (busy) {
+                Diagnostics.step("model-cancel:" + id, "timeout " + ((System.currentTimeMillis() - t0) / 1000) + "s, batalkan");
+                evalSync("if (busy) { go.onclick(); } true");
+                Thread.sleep(1500);
+                evalSync("if (busy) { forceStop(); } true");
+            }
+
+            long first = firstDeltaMs;
+            int d = deltaCount;
+            boolean idle = sawIdle;
+            String err = evalSync("(window._lastOnError||'').substring(0,100)");
+
+            JSONObject r = new JSONObject();
+            r.put("model", id);
+            r.put("delta", d);
+            r.put("firstMs", first < 0 ? "n/a" : String.valueOf(first));
+            r.put("idle", idle);
+            if (err.length() > 0) r.put("err", err);
+            hasil.put(r);
+            Diagnostics.step("model:" + id, "delta=" + d
+                    + ", pertama=" + (first < 0 ? "n/a" : first + "ms")
+                    + ", idle=" + idle
+                    + (err.length() > 0 ? ", err=" + err.substring(0, Math.min(80, err.length())) : ""));
+        }
+        Diagnostics.extra("model-results", hasil.toString());
+        Diagnostics.step("model-all", "selesai: " + models.length() + " model dites");
     }
 
     /* ================= server opencode ================= */
@@ -1037,6 +1106,44 @@ public class MainActivity extends Activity {
                         }
                     } finally { cx.disconnect(); }
                 } catch (Exception ignored) {}
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
+        /* ambil daftar model gratis terkini dari relay resmi opencode
+           (opencode.ai/zen/v1/models) → teruskan ke window.onModels([...]).
+           Dipanggil tiap buka menu model; kalau ada model baru di katalog
+           (mis. Ling 3.0) langsung muncul tanpa perlu update APK. */
+        @JavascriptInterface
+        public void fetchModels() {
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        java.net.URL u = new java.net.URL("https://opencode.ai/zen/v1/models");
+                        java.net.HttpURLConnection cx = (java.net.HttpURLConnection) u.openConnection(Proxy.NO_PROXY);
+                        try {
+                            cx.setConnectTimeout(8000); cx.setReadTimeout(8000);
+                            cx.setRequestProperty("User-Agent", "opencode-android");
+                            java.io.BufferedReader r = new java.io.BufferedReader(
+                                new java.io.InputStreamReader(cx.getInputStream()));
+                            StringBuilder sb = new StringBuilder(); String l;
+                            while ((l = r.readLine()) != null) sb.append(l);
+                            r.close();
+                            org.json.JSONObject j = new org.json.JSONObject(sb.toString());
+                            org.json.JSONArray data = j.optJSONArray("data");
+                            org.json.JSONArray gratis = new org.json.JSONArray();
+                            if (data != null) {
+                                for (int i = 0; i < data.length(); i++) {
+                                    String id = data.getJSONObject(i).optString("id", "");
+                                    if (id.endsWith("-free")) gratis.put(id);
+                                }
+                            }
+                            push("window.onModels(" + gratis.toString() + ")");
+                        } finally { cx.disconnect(); }
+                    } catch (Exception ignored) {}
                 }
             });
             t.setDaemon(true);

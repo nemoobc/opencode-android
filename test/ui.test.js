@@ -70,6 +70,7 @@ ok('delta terakumulasi di buffer', window._plain.includes('halo dunia'));
 window.flushStream();
 ok('teks ter-render setelah flush', $('.msg.ai .body').textContent.includes('halo dunia'));
 ok('caret aktif saat streaming', !!$('.caret'));
+ok('_gotDelta diset saat delta pertama (saran cepat nonaktif)', window._gotDelta === true);
 
 console.log('== 4. SELESAI (onDone) ==');
 window.onDone(0);
@@ -110,6 +111,16 @@ window.forceStop();             // simulasikan watchdog meledak tanpa onDone
 ok('tombol reset oleh watchdog (anti stuck total)', !$('#go').classList.contains('stop'));
 ok('potongan jawaban tetap dirender', !!doc.querySelector('.msg.ai:last-child .md'));
 ok('_done ditandai oleh watchdog', window._done === true);
+
+console.log('== 6c. TOKEN ANTI-HIJACK: CALLBACK LAMA DIABAIKAN ==');
+$('#inp').value = 'kiriman baru setelah cancel';
+$('#go').click();                 // kirim permintaan baru (token naik)
+const tokBaru = window._reqTok;
+window.onDone(-2, tokBaru - 1);   // callback LAMA datang belakangan — harus diabaikan
+ok('UI tetap busy (callback lama tidak membajak)', $('#go').classList.contains('stop'));
+ok('bubble tidak ditimpa "gagal (kode -2)"', !doc.body.textContent.includes('gagal (kode -2)'));
+window.onDone(0, tokBaru);        // jawaban SAH untuk token ini
+ok('onDone token cocok -> tombol normal', !$('#go').classList.contains('stop'));
 
 console.log('== 7. NEW CHAT ==');
 $('#bnew').click();
@@ -164,6 +175,19 @@ ok('code block + header bahasa', !!aiBody.querySelector('.cb .cb-h .lang'));
 ok('tombol COPY di code block', !!aiBody.querySelector('.cb-h button'));
 ok('list dirender', !!aiBody.querySelector('.md li'));
 ok('tabel dirender', !!aiBody.querySelector('.md table'));
+
+console.log('== 10b. MARKDOWN LIST & TABEL (fix) ==');
+window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
+window.appendOut('Daftar:\n- satu\n- dua\n\nUrutan:\n1. pertama\n2. kedua\n\n| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |');
+window.onDone(0);
+const aiBody2 = [...$$('.msg.ai .body')].pop();
+ok('ul tunggal membungkus SEMUA item - (2 li)', aiBody2.querySelectorAll('.md ul').length === 1 && aiBody2.querySelectorAll('.md ul li').length === 2);
+ok('ol tunggal membungkus item 1. (2 li)', aiBody2.querySelectorAll('.md ol').length === 1 && aiBody2.querySelectorAll('.md ol li').length === 2);
+ok('item urutan dirender sebagai daftar', !!aiBody2.querySelector('.md ol'));
+ok('list tidak terdampar di dalam <p>', aiBody2.querySelector('.md ul').parentElement.tagName !== 'P');
+const tbl2 = aiBody2.querySelector('.md table');
+ok('tabel tanpa kolom kosong (3 th/3 td)', !!tbl2 && tbl2.querySelectorAll('thead th').length === 3 && tbl2.querySelectorAll('tbody tr:first-child td').length === 3);
+ok('tabel tidak dibungkus <p>', !!tbl2 && tbl2.parentElement.tagName !== 'P');
 
 console.log('== 11. COPY & URL ==');
 const copyBtn = aiBody.querySelector('.cb-h button');

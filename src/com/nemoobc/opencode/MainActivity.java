@@ -57,6 +57,10 @@ public class MainActivity extends Activity {
     private volatile long tSendMs = 0;
     private volatile long firstDeltaMs = -1;
     private volatile boolean sawIdle = false;
+    /* token permintaan — dikirim ke JS bersama onDone/onError supaya callback
+       lama (mis. onDone(-2) cancel yang tertunda 6 detik) tidak membajak UI
+       permintaan yang lebih baru. */
+    private volatile int reqTok = 0;
     private static final int PORT = 4096;
     private static final int REQ_PICK = 7001;
     /* marker ekstraksi rootfs SELESAI & valid — dicek biar app tidak
@@ -787,7 +791,7 @@ public class MainActivity extends Activity {
                     wakeFree();
                     String clean = errMsg == null || errMsg.length() == 0 ? "model gagal merespons" : errMsg.trim();
                     if (clean.length() > 200) clean = clean.substring(0, 200);
-                    push("window.onError(" + jq("Model error: " + clean) + ")");
+                    push("window.onError(" + jq("Model error: " + clean) + "," + reqTok + ")");
                 }
                 return;
             }
@@ -810,7 +814,7 @@ public class MainActivity extends Activity {
                 if (busy) {
                     busy = false;
                     wakeFree();
-                    push("window.onDone(0)");
+                    push("window.onDone(0," + reqTok + ")");
                 }
             }
         } catch (Exception ignored) {}
@@ -846,6 +850,7 @@ public class MainActivity extends Activity {
             deltaCount = 0;
             firstDeltaMs = -1;
             tSendMs = System.currentTimeMillis();
+            final int myTok = ++reqTok;   /* callback SSE/cancel lama memakai token lama */
             /* watchdog: kalau session.idle tidak pernah datang (stream putus parah),
                reset UI otomatis agar tombol tidak nyangkut & pesan berikut tetap bisa dikirim */
             Thread wd = new Thread(new Runnable() {
@@ -855,7 +860,7 @@ public class MainActivity extends Activity {
                     if (busy && !sawIdle) {
                         busy = false;
                         wakeFree();
-                        push("window.onDone(-1)");
+                        push("window.onDone(-1," + myTok + ")");
                     }
                 }
             });
@@ -1238,7 +1243,7 @@ public class MainActivity extends Activity {
                 try { Thread.sleep(sid == null ? 1200 : 6000); } catch (InterruptedException ignored) {}
                 busy = false;
                 wakeFree();
-                push("window.onDone(-2)");
+                push("window.onDone(-2," + reqTok + ")");
             }
         }).start();
     }

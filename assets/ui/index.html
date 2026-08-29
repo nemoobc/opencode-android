@@ -503,19 +503,31 @@ function mdRender(src) {
   txt = txt.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="#" data-url="$2">$1</a>');
   txt = txt.replace(/^\|(.+)\|\n\|[\s:|-]+\|\n((?:\|.*\|\n?)*)/gm, function(m, head, body) {
     var hs = head.split('|').map(function(x){return x.trim();});
-    var rows = body.trim().split('\n').map(function(r){return r.split('|').map(function(x){return x.trim();});});
+    var rows = body.trim().split('\n').map(function(r){return r.split('|').slice(1, -1).map(function(x){return x.trim();});});
     return '<table><thead><tr>' + hs.map(function(h){return '<th>'+h+'</th>';}).join('') + '</tr></thead><tbody>' +
       rows.map(function(r){return '<tr>' + r.map(function(c){return '<td>'+c+'</td>';}).join('') + '</tr>';}).join('') + '</tbody></table>';
   });
-  txt = txt.replace(/^\s*[-*] (.*)$/gm, '<li>$1</li>');
-  txt = txt.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>');
-  txt = txt.replace(/<\/li>\s*<li>/g, '</li><li>');
-  txt = txt.replace(/^\s*\d+\. (.*)$/gm, '<li>$1</li>');
+  txt = txt.replace(/^\s*[-*] (.*)$/gm, '\u0000U<li>$1</li>');
+  txt = txt.replace(/^\s*\d+\. (.*)$/gm, '\u0000O<li>$1</li>');
+  txt = txt.replace(/((?:\u0000[UO]<li>[\s\S]*?<\/li>)(?:\n\u0000[UO]<li>[\s\S]*?<\/li>)*)/g, function(m) {
+    var tag = m.charAt(1) === 'U' ? 'ul' : 'ol';
+    return '<' + tag + '>' + m.replace(/\u0000[UO]/g, '') + '</' + tag + '>';
+  });
+  /* paragraf yang diawali teks lalu langsung blok (mis. "Catatan:" diikuti list)
+     → pisahkan blok dari paragraf agar <ul>/<ol>/<table> valid di luar <p> */
   txt = txt.split(/\n{2,}/).map(function(p) {
     p = p.trim();
     if (!p) return '';
-    if (/^<(h\d|ul|ol|blockquote|hr|\u0000)/.test(p) || /^\u0000B/.test(p)) return p;
-    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    if (/^\u0000B/.test(p)) return p;
+    var parts = p.split(/\n(?=<(?:h\d|ul|ol|table|blockquote|hr|\u0000B))/);
+    var out = '';
+    for (var i = 0; i < parts.length; i++) {
+      var part = parts[i].trim();
+      if (!part) continue;
+      if (/^<(h\d|ul|ol|table|blockquote|hr|\u0000)/.test(part) || /^\u0000B/.test(part)) out += part;
+      else out += '<p>' + part.replace(/\n/g, '<br>') + '</p>';
+    }
+    return out;
   }).join('');
   txt = txt.replace(/\u0000B(\d+)\u0000/g, function(m, i) {
     var b = blocks[+i];
@@ -577,6 +589,7 @@ window.appendOut = function(t) {
     if (d) d.remove();
   }
   window._plain += t;
+  window._gotDelta = true;   /* delta pertama sudah masuk — jangan tawarkan "lompat model cepat" */
   /* throttle render kecil (~40ms) biar terasa MENGALIR token per token,
      bukan menumpuk lalu muncul mendadak. Hanya tail yang belum dirender
      yang di-append, supaya ringan & tidak re-flow seluruh string. */
@@ -604,8 +617,11 @@ function finishUI(code) {
   document.getElementById('hint').textContent = '';
 }
 
-window.onDone = function(code) {
+window.onDone = function(code, tok) {
   window._lastOnDone = code + ' @ ' + new Date().toISOString();
+  /* token anti-hijack: panggilan ini milik permintaan lama? abaikan (mis. onDone(-2)
+     dari cancel yang datang terlambat setelah user sudah kirim pesan baru). */
+  if (tok !== undefined && tok !== window._reqTok) return;
   clearTimeout(window._cw);
   if (window._done) return;
   window._done = true;
@@ -653,8 +669,9 @@ function friendlyErr(m) {
     return 'Server model lambat/kehabisan waktu. Periksa internet, lalu coba lagi.';
   return String(m);
 }
-window.onError = function(m) {
+window.onError = function(m, tok) {
   window._lastOnError = m + ' @ ' + new Date().toISOString();
+  if (tok !== undefined && tok !== window._reqTok) return;   /* callback lama — abaikan */
   clearTimeout(window._cw);
   var first = !window._done;
   if (window._cur) { window._cur.parentNode.parentNode.remove(); window._cur = null; }
@@ -719,6 +736,8 @@ function send(t, label, imgPrev) {
   }
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
   window._suggested = false;
+  window._gotDelta = false;   /* per-request: saran model cepat hanya untuk tanpa delta */
+  window._reqTok = (window._reqTok || 0) + 1;   /* permintaan baru = token baru */
   var body = addMsg('ai');
   body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
     '<span class="elapsed">mengetik...</span>';
@@ -847,11 +866,15 @@ chat.addEventListener('click', function(e) {
 function newChat() {
   if (busy) { window._aborted = true; window._canceling = true; Android.cancel(); }
   clearTimeout(window._cw);
+  /* tandai request lama SELESAI: callback onDone/onError/appendOut yang
+     datang belakangan (mis. onDone(-2) cancel) diabaikan semua. Token tidak
+     ikut naik — token hanya naik di send(), sinkron dengan reqTok Java. */
+  window._done = true; window._aborted = true; window._canceling = true;
   attHide();
   Android.newChat();
   window._langDetected = null;
   window._cur = null; window._plain = '';
-  busy = false; window._done = false; window._aborted = false; window._canceling = false;
+  busy = false;
   clearInterval(window._tm);
   go.innerHTML = '\u2191'; go.classList.remove('stop');
   chat.innerHTML = window._helloHTML;
@@ -1074,7 +1097,7 @@ window.onFileReady = function (name, path) {
   document.getElementById('att-name').textContent = name;
   document.getElementById('attachbar').classList.add('show');
   toast('file siap — tulis pesan lalu kirim');
-  inp.focus();
+  refocusInp();
 };
 window.onFileError = function (m) { var n = addNote('gagal lampirkan file: ' + m, true); setTimeout(function(){ if(n&&n.parentNode)n.parentNode.removeChild(n); }, 6000); };
 

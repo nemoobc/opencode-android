@@ -339,8 +339,7 @@ public class MainActivity extends Activity {
                 if (!ready) {
                     String miss = "";
                     if (!new File(rootFs, "bin/busybox").exists() && !new File(rootFs, "usr/bin/busybox").exists()) miss += "busybox ";
-                    if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
-                            && !new File(rootFs, "usr/lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
+                    if (findMusl(rootFs) == null) miss += "lib/ld-musl ";
                     if (!new File(rootFs, "usr/bin/oc").exists() && !new File(rootFs, "bin/oc").exists()) miss += "oc ";
                     debugLog("bg: payload kurang: " + miss);
                     stageUi("Payload tidak lengkap");
@@ -431,6 +430,35 @@ public class MainActivity extends Activity {
         return out[0] == null ? "" : out[0];
     }
 
+    /* cari loader musl/glibc pada rootfs (aarch64 ATAU x86_64, alpine ATAU debian).
+       Dulu di-hardcode aarch64 sehingga rootfs x86_64 (emulator/PC) tidak pernah
+       dikenali → server tidak pernah start → ConnectException 4096. */
+    private String findMusl(File root) {
+        for (String dirName : new String[]{"lib", "usr/lib"}) {
+            File dir = new File(root, dirName);
+            String[] names = dir.isDirectory() ? dir.list() : null;
+            if (names == null) continue;
+            for (String n : names) {
+                if (n.startsWith("ld-musl-") || n.startsWith("ld-linux-")
+                        || n.equals("ld-musl-aarch64.so.1") || n.equals("ld-musl-x86_64.so.1")) {
+                    return dirName + "/" + n;
+                }
+            }
+            for (String sub : names) {
+                if (!sub.endsWith("-linux-gnu")) continue;
+                File g = new File(dir, sub);
+                String[] subNames = g.isDirectory() ? g.list() : null;
+                if (subNames == null) continue;
+                for (String n : subNames) {
+                    if (n.startsWith("ld-linux-") || n.startsWith("ld-musl-")) {
+                        return dirName + "/" + sub + "/" + n;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private boolean readyOk() {
         /* Tolak layout lama & varian: busybox bisa di bin/ atau usr/bin/, musl bisa
            di lib/ atau usr/lib/, oc pasti ada di usr/bin/. Kalau rootfs lama valid
@@ -438,9 +466,7 @@ public class MainActivity extends Activity {
            (inilah yang bikin "stuck extract" saat update tanpa uninstall). */
         boolean bb = new File(rootFs, "bin/busybox").exists()
                 || new File(rootFs, "usr/bin/busybox").exists();
-        boolean musl = new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
-                || new File(rootFs, "usr/lib/ld-musl-aarch64.so.1").exists()
-                || new File(rootFs, "lib/aarch64-linux-gnu/ld-linux-aarch64.so.1").exists();
+        boolean musl = findMusl(rootFs) != null;
         boolean oc = new File(rootFs, "usr/bin/oc").exists()
                 || new File(rootFs, "bin/oc").exists();
         boolean core = bb && musl && oc;

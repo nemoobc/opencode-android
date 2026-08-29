@@ -72,6 +72,24 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        /* Catat crash mentah ke file supaya bisa dianalisis (RAM sempit / GPU buruk
+           sering bikin proses dibunuh sistem tanpa sempat masuk onError UI). */
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                try {
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    String s = java.text.SimpleDateFormat.getDateTimeInstance()
+                            .format(new java.util.Date()) + "\n" + t.getName() + ": " + sw;
+                    write(new File(getFilesDir(), "crash.txt"), s);
+                    File ex = getExternalFilesDir(null);
+                    if (ex != null) write(new File(ex, "crash.txt"), s);
+                } catch (Exception ignored) {}
+                android.os.Process.killProcess(android.os.Process.myPid());
+            }
+        });
+
         rootFs = new File(getFilesDir(), "rootfs");
         workDir = new File(getFilesDir(), "work");
         extWork = getExternalFilesDir(null);
@@ -99,6 +117,9 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
+        /* hemat memori: cache mati + jangan pre-render offscreen (RAM perangkat sempit) */
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        s.setOffscreenPreRaster(false);
         web.setBackgroundColor(0xFF0C100E);
         web.addJavascriptInterface(new Bridge(), "Android");
         web.setVisibility(View.INVISIBLE);

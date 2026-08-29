@@ -7,10 +7,16 @@ rm -rf build/classes build/gen build/*.apk build/classes.dex
 mkdir -p build/classes
 
 echo "[1/6] javac..."
-javac -source 8 -target 8 -nowarn \
+javac_out=$(javac -source 8 -target 8 -nowarn \
   -bootclasspath $AJ \
   -d build/classes \
-  src/com/nemoobc/opencode/*.java 2>&1 | { grep -v "bootstrap class path" || true; }
+  src/com/nemoobc/opencode/*.java 2>&1) || true
+printf '%s\n' "$javac_out" | grep -v "bootstrap class path" || true
+if [[ "$javac_out" == *"error:"* ]]; then
+  echo "FATAL: javac gagal — lihat error di bawah, APK TIDAK BOLEH dibangun"
+  printf '%s\n' "$javac_out" | grep -A2 "error:" | head -60
+  exit 1
+fi
 [ -d build/classes/com/nemoobc/opencode ] || { echo "FATAL: javac gagal — tidak ada .class"; exit 1; }
 
 echo "[2/6] d8..."

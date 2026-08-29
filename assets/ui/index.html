@@ -619,9 +619,10 @@ function finishUI(code) {
 
 window.onDone = function(code, tok) {
   window._lastOnDone = code + ' @ ' + new Date().toISOString();
-  /* token anti-hijack: panggilan ini milik permintaan lama? abaikan (mis. onDone(-2)
-     dari cancel yang datang terlambat setelah user sudah kirim pesan baru). */
-  if (tok !== undefined && tok !== window._reqTok) return;
+  /* token anti-hijack: panggilan milik permintaan LAMA diabaikan. Token _reqTok
+     sekarang bersumber TUNGGAL dari nilai kembali Android.send() (native),
+     jadi tidak mungkin selisih → respons sah tidak akan pernah dibuang. */
+  if (tok !== undefined && tok < window._reqTok) return;
   clearTimeout(window._cw);
   if (window._done) return;
   window._done = true;
@@ -671,7 +672,7 @@ function friendlyErr(m) {
 }
 window.onError = function(m, tok) {
   window._lastOnError = m + ' @ ' + new Date().toISOString();
-  if (tok !== undefined && tok !== window._reqTok) return;   /* callback lama — abaikan */
+  if (tok !== undefined && tok < window._reqTok) return;   /* callback lama — abaikan */
   clearTimeout(window._cw);
   var first = !window._done;
   if (window._cur) { window._cur.parentNode.parentNode.remove(); window._cur = null; }
@@ -737,7 +738,7 @@ function send(t, label, imgPrev) {
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;
   window._suggested = false;
   window._gotDelta = false;   /* per-request: saran model cepat hanya untuk tanpa delta */
-  window._reqTok = (window._reqTok || 0) + 1;   /* permintaan baru = token baru */
+  /* token _reqTok diisi dari nilai kembali Android.send() (native) — sumber tunggal */
   var body = addMsg('ai');
   body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>' +
     '<span class="elapsed">mengetik...</span>';
@@ -767,7 +768,8 @@ function send(t, label, imgPrev) {
   go.innerHTML = '&#9632;';
   go.classList.add('stop');
   document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-60 detik</b>';
-  Android.send(langPromp(t));
+  var jTok = Android.send(langPromp(t));
+  if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
 }
 /* pengaman: kalau sisi Android tidak pernah membalas setelah cancel,
    paksa UI kembali normal — senyap, potongan jawaban tetap ditampilkan */
@@ -815,14 +817,15 @@ go.onclick = function() {
        cukup diberi tahu nama/path; ini menghindari tunggu ~100 detik. */
     var image = /\.(jpe?g|png|gif|webp|bmp)$/i.test(att.name);
     var prompt;
+    var sandbox = '/work/' + att.name;
     if (image) {
       prompt = '(user melampirkan gambar: ' + att.name + ')\n' +
-        'Path kerja di sandbox KAMU: ' + att.path + '\n\n' +
+        'Path kerja di sandbox KAMU: ' + sandbox + '\n\n' +
         'Jangan membuka/ membaca byte file gambar untuk melihat isinya — kamu tidak punya ' +
         'kemampuan melihat gambar. Cukup balas berdasarkan teks ini.\n\n' +
         (t ? 'Pesan user: ' + t : 'Berikan respons singkat tentang file lampiran ini.');
     } else {
-      prompt = '(file dilampirkan ke folder kerja)\n\nNama: ' + att.name + '\nPath kerja: ' + att.path + '\n\n' +
+      prompt = '(file dilampirkan ke folder kerja)\n\nNama: ' + att.name + '\nPath kerja: ' + sandbox + '\n\n' +
         (t ? 'Pesan: ' + t + '\n\n' : '') +
         'Baca/buka isi file ini. Kalau ada pertanyaan, jawab; kalau tidak, buatkan rangkuman singkat isinya.';
     }
@@ -833,7 +836,7 @@ go.onclick = function() {
   } else {
     send(t);
   }
-  refocusInp();
+  inp.focus();
 };
 /* tombol tidak boleh mencuri focus dari #inp — kalau focus hilang,
    keyboard Android menutup tepat setelah pesan terkirim. */
@@ -899,16 +902,6 @@ document.getElementById('scrim').onclick = closeDrawer;
    muncul (mis. Ling 3.0) langsung ditambahkan tanpa perlu update APK.
    Blok ini disinkronkan otomatis dari GitHub Actions tiap 6 jam —
    jangan edit manual di antara penanda START/END. */
-  {id:'opencode/big-pickle',                  nm:'Big Pickle',            ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
-  {id:'opencode/hy3-free',                    nm:'Hy3 Free',              ds:'terverifikasi ~2-6 dtk', tag:'GRATIS'},
-  {id:'opencode/ling-3.0-flash-fin-free',     nm:'Ling 3.0 Flash',        ds:'katalog resmi relay', tag:'GRATIS'},
-  {id:'opencode/nemotron-3.5-lightning-free', nm:'Nemotron Lightning',    ds:'katalog resmi relay', tag:'GRATIS'},
-  {id:'opencode/mimo-v2.5-free',              nm:'Mimo 2.5 Free',         ds:'katalog resmi relay', tag:'GRATIS'},
-  {id:'opencode/muse-spark-1.2-contributor-free', nm:'Muse Spark 1.2',    ds:'katalog resmi relay', tag:'GRATIS'},
-  {id:'opencode/nemotron-3-ultra-free',       nm:'Nemotron 3 Ultra',      ds:'katalog resmi relay', tag:'GRATIS'},
-  {id:'anthropic/claude-sonnet-4',            nm:'Claude Sonnet 4',       ds:'butuh api key anthropic', tag:'PRO'},
-  {id:'openai/gpt-4.1',                       nm:'GPT-4.1',               ds:'butuh api key openai', tag:'PRO'}
-];
 var MODELS = [
   {id:'opencode/hy3-free',  nm:'Hy3 Free',  ds:'katalog resmi relay', tag:'GRATIS'},
   {id:'opencode/big-pickle',  nm:'Big Pickle',  ds:'katalog resmi relay', tag:'GRATIS'},

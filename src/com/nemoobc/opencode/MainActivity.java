@@ -22,6 +22,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -67,10 +68,85 @@ public class MainActivity extends Activity {
        ekstrak ulang tiap buka (keluar-masuk/update) dan tidak memakai
        rootfs parsial dari ekstraksi yang terputus */
     private static final String EXT_OK = ".oc-ok";
+    /* log fase startup — ditulis ke filesDir/debug.txt DAN Download/opencode-debug.txt
+       (via MediaStore, tanpa permission) supaya bisa dianalisis dari Termux ketika
+       app mati terlalu cepat untuk terlihat di logcat. */
+    private final StringBuilder debugBuf = new StringBuilder();
+    /* TUNDA WebView sampai server siap (hemat RAM startup — perangkat sempit).
+       push() di-queue dulu; dieksekusi setelah halaman selesai dimuat. */
+    private final java.util.List<String> pendingJs = new java.util.ArrayList<>();
+    private volatile boolean webLoaded;
+    private volatile boolean webInit;
+    private android.widget.TextView stageView;
+    private android.widget.ProgressBar progView;
+
+    private void debugLog(String msg) {
+        try {
+            /* pantauan via ADB logcat: semua jejak app diforward ke tag "OpenCode"
+               supaya bisa dilihat dari app ADB / `adb logcat` di luar device */
+            try { android.util.Log.d("OpenCode", msg); } catch (Throwable ignored) {}
+            String line = new java.text.SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date())
+                    + " " + msg + "\n";
+            synchronized (debugBuf) {
+                debugBuf.append(line);
+                if (debugBuf.length() > 40000) debugBuf.delete(0, debugBuf.length() - 40000);
+            }
+            /* HANYA tulis file internal (cepat). MediaStore dipindah ke thread
+               terjadwal (mediaDump) — dulu nulis MediaStore di sini memblokir
+               main thread 4,5 DETIK saat onCreate. */
+            try {
+                File f = new File(getFilesDir(), "debug.txt");
+                try (FileOutputStream fo = new FileOutputStream(f, true)) {
+                    fo.write(line.getBytes());
+                }
+            } catch (Exception ignored) {}
+        } catch (Throwable ignored) {}
+    }
+
+    /* flush debugBuf ke Download/opencode-debug.txt DI BELAKANG (bukan main thread) —
+       throttle tiap 2,5 detik biar startup tidak tersendat */
+    private void startMediaDump() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (running) {
+                    try { Thread.sleep(2500); } catch (InterruptedException e) { return; }
+                    /* SALIN dulu isi buffer, LEPAS kunci, baru I/O MediaStore.
+                       Sebelumnya kunci debugBuf dipegang selama openOutputStream —
+                       MediaStore device ini sering gantung >detik → semua debugLog
+                       (termasuk dari main thread via onPageFinished) ikut tersendat
+                       → ANR → proses dibunuh diam-diam = "stuck di logo". */
+                    String snap;
+                    synchronized (debugBuf) { snap = debugBuf.toString(); }
+                    try {
+                        android.content.ContentValues cv = new android.content.ContentValues();
+                        cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "opencode-debug.txt");
+                        cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+                        cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH,
+                                android.os.Environment.DIRECTORY_DOWNLOADS);
+                        cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1);
+                        android.net.Uri u = getContentResolver().insert(
+                                android.provider.MediaStore.Downloads.getContentUri("external"), cv);
+                        if (u != null) {
+                            try (OutputStream os = getContentResolver().openOutputStream(u)) {
+                                if (os != null) os.write(snap.getBytes());
+                            }
+                            cv = new android.content.ContentValues();
+                            cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0);
+                            getContentResolver().update(u, cv, null, null);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        debugLog("onCreate: mulai");
 
         /* Catat crash mentah ke file supaya bisa dianalisis (RAM sempit / GPU buruk
            sering bikin proses dibunuh sistem tanpa sempat masuk onError UI). */
@@ -82,6 +158,7 @@ public class MainActivity extends Activity {
                     e.printStackTrace(new java.io.PrintWriter(sw));
                     String s = java.text.SimpleDateFormat.getDateTimeInstance()
                             .format(new java.util.Date()) + "\n" + t.getName() + ": " + sw;
+                    debugLog("CRASH " + t.getName() + ": " + sw);
                     write(new File(getFilesDir(), "crash.txt"), s);
                     File ex = getExternalFilesDir(null);
                     if (ex != null) write(new File(ex, "crash.txt"), s);
@@ -89,6 +166,8 @@ public class MainActivity extends Activity {
                 android.os.Process.killProcess(android.os.Process.myPid());
             }
         });
+        debugLog("crashHandler: terpasang");
+        debugLog("memFree-kB: " + readMemFree());
 
         rootFs = new File(getFilesDir(), "rootfs");
         workDir = new File(getFilesDir(), "work");
@@ -101,6 +180,7 @@ public class MainActivity extends Activity {
         if (!extWork.exists()) extWork.mkdirs();
         new File(rootFs, "root/.config/opencode").mkdirs();
         setupLibLinks();
+        debugLog("dirs+libLinks: OK");
 
         autotest = getIntent() != null && getIntent().getBooleanExtra("autotest", false);
         try {
@@ -113,6 +193,9 @@ public class MainActivity extends Activity {
             Diagnostics.extra("versi", appInfoSafe());
         }
 
+        /* BUAT WebView LANGSUNG seperti desain asli: splash logo tampil selama
+           server boot, jadi UX tidak "beda/stuck". (Crash asli bukan karena RAM —
+           itu karena MainActivity.class hilang dari APK.) */
         web = new WebView(this);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -126,25 +209,34 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView v, String u) {
+                debugLog("web: onPageFinished");
+                webLoaded = true;
                 v.setVisibility(View.VISIBLE);
+                flushPending();
                 if (autotest) startAutoTest();
             }
         });
         setContentView(web);
+        debugLog("webView: dibuat + setContentView");
         web.loadUrl("file:///android_asset/ui/index.html");
+        debugLog("webView: loadUrl OK");
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try { ensureNativeLibs(); } catch (Exception e) { push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); return; }
+                try { ensureNativeLibs(); debugLog("bg: native siap"); } catch (Exception e) { debugLog("bg: ensureNativeLibs ERR " + e); push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); requestWeb(); return; }
                 boolean ready = readyOk();
+                debugLog("bg: ready awalnya=" + ready);
                 if (!ready) {
                     File old = new File(getFilesDir(), "rootfs.old");
                     File tmp = new File(getFilesDir(), "rootfs.tmp");
                     push("window.setStage(\"menyiapkan sistem — memeriksa...\")");
+                    stageUi("Menyiapkan sistem — memeriksa...");
                     try {
                         if (tmp.exists()) {
                             push("window.setStage(\"menyiapkan sistem — membersihkan sisa...\")");
+                            stageUi("Menyiapkan sistem — membersihkan sisa...");
+                            debugLog("bg: bersihkan tmp");
                             delTree(tmp);
                         }
                         /* Sisa percobaan yang ditutup paksa: rootfs belum ada, .old ada.
@@ -152,6 +244,8 @@ public class MainActivity extends Activity {
                            file satu-satu yang bikin "ekstrak ulang" & stuck lama. */
                         if (!rootFs.exists() && old.exists()) {
                             push("window.setStage(\"menyiapkan sistem — memulihkan sistem lama...\")");
+                            stageUi("Menyiapkan sistem — memulihkan sistem lama...");
+                            debugLog("bg: pulihkan old→rootfs");
                             moveDir(old, rootFs);
                         }
                         if (readyOk()) {
@@ -160,16 +254,21 @@ public class MainActivity extends Activity {
                             /* Kalau rootfs lama ada, BACKUP dulu — pakai renameTo instan */
                             if (rootFs.exists()) {
                                 push("window.setStage(\"menyiapkan sistem — menyimpan sistem lama...\")");
+                                stageUi("Menyiapkan sistem — menyimpan sistem lama...");
+                                debugLog("bg: backup rootfs→old");
                                 if (!rootFs.renameTo(old)) moveTree(rootFs, old);
                             }
                             push("window.setStage(\"menyiapkan sistem — mengekstrak...\")");
+                            stageUi("Menyiapkan sistem — mengekstrak...");
+                            debugLog("bg: mulai ekstrak");
                             tmp.mkdirs();
                             push("window.setProgress(1)");
+                            progressUi(1);
                             InputStream raw = getAssets().open("payload/rootfs.bin");
                             TarExtractor.Progress cb = new TarExtractor.Progress() {
                                 @Override
                                 public void onEntry(int n) {
-                                    if (n % 10 == 0) push("window.setProgress(" + n + ")");
+                                    if (n % 10 == 0) { push("window.setProgress(" + n + ")"); progressUi(n); }
                                 }
                                 @Override
                                 public void onBytes(long b) {
@@ -177,6 +276,7 @@ public class MainActivity extends Activity {
                                 }
                             };
                             TarExtractor.extractGz(new BufferedInputStream(raw, 1 << 16), tmp, cb);
+                            debugLog("bg: ekstrak selesai");
                             for (String p : new String[]{"usr/bin/oc"}) {
                                 File f = new File(tmp, p);
                                 if (f.exists()) f.setExecutable(true, false);
@@ -184,12 +284,14 @@ public class MainActivity extends Activity {
                             new File(tmp, EXT_OK).createNewFile();
                             if (!tmp.renameTo(rootFs)) moveTree(tmp, rootFs);
                             ready = readyOk();
+                            debugLog("bg: ready setelah ekstrak=" + ready);
                             /* JANGAN langsung hapus old di sini: kalau app dibunuh saat
                                penghapusan berjalan, buka berikutnya harusnya GAMPANG
                                restore. Hapus old nanti, setelah server mulai hidup. */
                             if (ready && old.exists()) {
                                 push("window.setProgress(555)");
                                 push("window.setProgressBytes(16332800)");
+                                progressUi(100);
                                 Thread bg = new Thread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -203,11 +305,15 @@ public class MainActivity extends Activity {
                         }
                     } catch (Exception e) {
                         /* gagal/batal di tengah: kembalikan rootfs lama biar app tetap jalan */
+                        debugLog("bg: EKSTRAKSI ERROR " + e);
                         if (!rootFs.exists() && old.exists()) moveDir(old, rootFs);
+                        stageUi("Ekstraksi gagal — coba buka lagi");
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
+                        requestWeb();
                         return;
                     }
                     push("window.setStage(\"menyalakan server AI...\")");
+                    stageUi("Menyalakan server AI...");
                 }
                 if (!ready) {
                     String miss = "";
@@ -215,12 +321,18 @@ public class MainActivity extends Activity {
                     if (!new File(rootFs, "lib/ld-musl-aarch64.so.1").exists()
                             && !new File(rootFs, "usr/lib/ld-musl-aarch64.so.1").exists()) miss += "lib/ld-musl ";
                     if (!new File(rootFs, "usr/bin/oc").exists() && !new File(rootFs, "bin/oc").exists()) miss += "oc ";
+                    debugLog("bg: payload kurang: " + miss);
+                    stageUi("Payload tidak lengkap");
                     push("window.onError(" + jq("payload tidak lengkap, kurang: " + miss) + ")");
+                    requestWeb();
                     return;
                 }
+                debugLog("bg: panggil startServer, mem=" + readMemFree());
                 startServer();
+                debugLog("bg: startServer kembali");
             }
         }).start();
+        startMediaDump();
     }
 
     private void wakeHold() {
@@ -236,6 +348,17 @@ public class MainActivity extends Activity {
 
     private void wakeFree() {
         try { if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); } catch (Exception ignored) {}
+    }
+
+    private String readMemFree() {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(
+                new FileInputStream("/proc/meminfo")))) {
+            String ln;
+            while ((ln = r.readLine()) != null) {
+                if (ln.startsWith("MemAvailable:")) return ln.trim();
+            }
+        } catch (Exception ignored) {}
+        return "?";
     }
 
     private String appInfoSafe() {
@@ -356,25 +479,128 @@ public class MainActivity extends Activity {
     }
 
     private void mkLink(String src, String dst) {
+        /* SALIN file asli tiap boot (bukan symlink). Path install Android berubah
+           tiap update (/data/app/~~SESSION==/pkg-XXX==), symlink lama mengacu path
+           mati → linker CANNOT LINK: libtalloc.so.2 not found. Salin + REPLACE
+           menghapus masalah staleness; ukuran lib ini puluhan KB jadi aman. */
         File d = new File(linkDir, dst);
-        if (d.exists()) return;
-        /* target: nativeLibraryDir (sudah diekstrak Android saat install) lebih dulu,
-           fallback files/native (ekstrak manual). Symlink HARUS mengarah ke lokasi yang
-           benar biar libtalloc.so.2 / libandroid-shmem.so resolve. */
         File nd = new File(getApplicationInfo().nativeLibraryDir, src);
         File srcFile = nd.exists() ? nd : new File(natLib, src);
         try {
-            Os.symlink(srcFile.getAbsolutePath(), d.getAbsolutePath());
-        } catch (Exception ignored) {}
+            try (java.io.InputStream in = new java.io.FileInputStream(srcFile);
+                 java.io.OutputStream out = new java.io.FileOutputStream(d)) {
+                byte[] buf = new byte[65536];
+                int r;
+                while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+            }
+        } catch (Exception e) {
+            debugLog("mkLink " + src + "->" + dst + " ERR " + e);
+        }
     }
 
     private void push(final String js) {
+        if (web != null && webLoaded) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    try { web.evaluateJavascript(js, null); } catch (Exception ignored) {}
+                }
+            });
+        } else {
+            synchronized (pendingJs) { pendingJs.add(js); }
+        }
+    }
+
+    private android.view.View buildProgressUi() {
+        android.widget.LinearLayout ll = new android.widget.LinearLayout(this);
+        ll.setOrientation(android.widget.LinearLayout.VERTICAL);
+        ll.setGravity(android.view.Gravity.CENTER);
+        ll.setBackgroundColor(0xFF0C100E);
+        int pd = (int) (24 * getResources().getDisplayMetrics().density);
+        ll.setPadding(pd, pd, pd, pd);
+        stageView = new android.widget.TextView(this);
+        stageView.setText("Menyalakan OpenCode...");
+        stageView.setTextColor(0xFFE8EAED);
+        stageView.setGravity(android.view.Gravity.CENTER);
+        progView = new android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progView.setMax(100);
+        android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        ll.addView(stageView);
+        ll.addView(progView, lp);
+        return ll;
+    }
+
+    private void stageUi(final String s) {
         ui.post(new Runnable() {
             @Override
             public void run() {
-                web.evaluateJavascript(js, null);
+                if (stageView != null) stageView.setText(s);
             }
         });
+    }
+
+    private void progressUi(final int n) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                if (progView != null) progView.setProgress(n);
+            }
+        });
+    }
+
+    /* buat WebView di UI thread — dipanggil saat server sudah siap (atau saat
+       error fatal, supaya pesan error tetap tampil) */
+    private void requestWeb() {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                ensureWeb();
+            }
+        });
+    }
+
+    private void ensureWeb() {
+        if (web != null) return;  /* WebView sudah dibuat langsung di onCreate */
+        if (webInit) return;
+        webInit = true;
+        web = new WebView(this);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        /* hemat memori: cache mati + jangan pre-render offscreen (RAM perangkat sempit) */
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        s.setOffscreenPreRaster(false);
+        web.setBackgroundColor(0xFF0C100E);
+        web.addJavascriptInterface(new Bridge(), "Android");
+        web.setVisibility(View.INVISIBLE);
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView v, String u) {
+                debugLog("web: onPageFinished");
+                webLoaded = true;
+                v.setVisibility(View.VISIBLE);
+                flushPending();
+                if (autotest) startAutoTest();
+            }
+        });
+        setContentView(web);
+        debugLog("webView: dibuat + setContentView");
+        web.loadUrl("file:///android_asset/ui/index.html");
+        debugLog("webView: loadUrl OK");
+    }
+
+    private void flushPending() {
+        java.util.List<String> copy;
+        synchronized (pendingJs) {
+            copy = new java.util.ArrayList<>(pendingJs);
+            pendingJs.clear();
+        }
+        for (String js : copy) {
+            try { web.evaluateJavascript(js, null); } catch (Exception ignored) {}
+        }
+        debugLog("web: pending JS terkirim, n=" + copy.size());
     }
 
     private static String jq(String s) {
@@ -585,8 +811,11 @@ public class MainActivity extends Activity {
             try {
                 String name = queryDisplayName(u);
                 if (name == null || name.isEmpty()) name = "file_" + System.currentTimeMillis();
-                workDir.mkdirs();
-                File dest = new File(workDir, name);
+                /* Salin ke extWork BUKAN files/work: proot meng-mount extWork -> /work,
+                   jadi file ini yang terlihat model di sandbox. */
+                if (extWork == null) extWork = getFilesDir();
+                extWork.mkdirs();
+                File dest = new File(extWork, name);
                 try (InputStream in = getContentResolver().openInputStream(u);
                      OutputStream out = new FileOutputStream(dest)) {
                     byte[] buf = new byte[65536];
@@ -614,7 +843,9 @@ public class MainActivity extends Activity {
         try {
             /* server dianggap hidup jika ada respons HTTP apa pun (200/401/404...) —
                bukan hanya 200, karena opencode menjawab beda-beda di path / */
-            if (httpCode("http://127.0.0.1:" + PORT + "/", 1200) > 0) {
+            int warm = httpCode("http://127.0.0.1:" + PORT + "/", 1200);
+            debugLog("startServer: warm-check http=" + warm);
+            if (warm > 0) {
                 serverUp = true;
                 long free = rootFs.getFreeSpace() / (1024 * 1024);
                 push("window.onReady(true," + free + ")");
@@ -654,6 +885,7 @@ public class MainActivity extends Activity {
             pb.environment().put("XDG_CONFIG_HOME", "/root/.config");
 
             serverProc = pb.start();
+            debugLog("startServer: proot spawn OK, mem=" + readMemFree());
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -696,10 +928,15 @@ public class MainActivity extends Activity {
                 String tail;
                 synchronized (serverLog) { tail = serverLog.toString(); }
                 if (tail.length() > 200) tail = tail.substring(tail.length() - 200);
+                debugLog("startServer: GAGAL, tail=" + tail);
                 if (autotest) Diagnostics.step("server-log", tail);
+                stageUi("Server gagal start");
                 push("window.onError(" + jq("server gagal start: " + tail) + ")");
+                requestWeb();
                 return;
             }
+            debugLog("startServer: serverUp, mem=" + readMemFree());
+            requestWeb();
             long free = rootFs.getFreeSpace() / (1024 * 1024);
             push("window.onReady(true," + free + ")");
             startEventStream();
@@ -723,7 +960,10 @@ public class MainActivity extends Activity {
             ka.setDaemon(true);
             ka.start();
         } catch (Exception e) {
+            debugLog("startServer: EXCEPTION " + e);
+            stageUi("Server error");
             push("window.onError(" + jq("Server error: " + e) + ")");
+            requestWeb();
         }
     }
 
@@ -759,6 +999,7 @@ public class MainActivity extends Activity {
                         if (autotest) Diagnostics.step("sse-connect", "terhubung");
                         BufferedReader r = new BufferedReader(
                                 new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+                        debugLog("sse: terhubung");
                         String line;
                         while (running && (line = r.readLine()) != null) {
                             if (!line.startsWith("data: ")) continue;
@@ -856,9 +1097,9 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void send(final String prompt) {
+        public int send(final String prompt) {
             synchronized (this) {
-                if (msgConn != null) return;   /* masih ada HTTP aktif — jangan tumpuk */
+                if (msgConn != null) return 0;   /* masih ada HTTP aktif — jangan tumpuk */
                 if (busy) {
                     /* busy macet (mis. SSE putus sebelum session.idle datang).
                        Pulihkan dulu biar kirim kedua/berikutnya tidak ditolak senyap. */
@@ -964,6 +1205,7 @@ public class MainActivity extends Activity {
                     }
                 }
             }).start();
+            return myTok;   /* sumber token tunggal: JS memakai nilai ini utk _reqTok */
         }
 
         @JavascriptInterface

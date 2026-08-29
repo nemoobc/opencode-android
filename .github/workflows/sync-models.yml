@@ -76,13 +76,29 @@ jobs:
           src = open(FPATH, encoding="utf-8").read()
           a = src.index(START)
           b = src.index(END)
-          # bunuh baris modul lama dari START (baris berikutnya) sampai END
-          header = "\n".join([line for line in src[a:b].splitlines() if not line.strip().startswith("var MODELS")])
+          # bunuh semua baris KODE dari region START..END (entri lama "{id:", baris
+          # "var MODELS", dan "];"); hanya komentar/baris kosong yang dipertahankan.
+          # Bug lama: filter cuma membuang "var MODELS", sehingga entri lama + "];"
+          # ikut nyangkut → script inline korup → splash app tidak pernah hilang.
+          code_prefixes = ("{id:", "var MODELS")
+          header = "\n".join([line for line in src[a:b].splitlines()
+                              if not (line.strip().startswith(code_prefixes) or line.strip() == "];")])
           new_src = src[:a] + header.rstrip() + "\n" + block + src[b:]
 
           if new_src == src:
               print("tidak-ada-perubahan")
           else:
+              # validasi: script inline index.html harus tetap JS valid —
+              # kalau korup, FAIL supaya tidak ter-commit (anti-korup berulang)
+              try:
+                  m = re.search(r"<script>([\s\S]*?)</script>", new_src)
+                  if not m:
+                      raise SystemExit("validasi: script inline tidak ditemukan")
+                  subprocess.run(["node", "-e", "new Function(process.argv[1])", m.group(1)],
+                                 check=True, capture_output=True)
+              except Exception as ex:
+                  print("VALIDASI GAGAL:", ex)
+                  raise SystemExit(1)
               open(FPATH, "w", encoding="utf-8").write(new_src)
               print("diperbarui")
               print("jumlah-model-gratis:", len(ordered))

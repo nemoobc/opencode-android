@@ -234,6 +234,145 @@ ok('lampiran dibersihkan', !window._att);
 calls.send.push(''); // netralkan agar hitungan di bawah tidak berubah
 calls.send.pop();
 
+console.log('== 14. DRAWER & NAVIGASI ==');
+window.openDrawer();
+ok('drawer terbuka', $('#drawer').classList.contains('show'));
+ok('scrim ikut tampil', $('#scrim').classList.contains('show'));
+window.closeDrawer();
+ok('drawer tertutup', !$('#drawer').classList.contains('show'));
+$('#bmenu').click();
+ok('tombol hamburger buka drawer', $('#drawer').classList.contains('show'));
+$('#scrim').click();
+ok('klik scrim menutup drawer', !$('#drawer').classList.contains('show'));
+$('#dmodel').click();
+ok('ditem drawer → modal model terbuka', $('#mmodel').classList.contains('show') && !$('#drawer').classList.contains('show'));
+$('#mclose').click();
+$('#dupdate').click();
+ok('ditem update → checkUpdate terpanggil', calls.checkUpdate >= 2);
+ok('toast pemeriksaan update tampil', window._tt !== undefined);
+
+console.log('== 15. MODAL MODEL DETAIL ==');
+window.openModels();
+ok('daftar model render semua', $('#mlist').children.length === window.MODELS.length);
+const claudeOpt = [...$('#mlist').querySelectorAll('.mopt')].find(b => b.textContent.includes('claude-sonnet-4'));
+ok('model PRO tanpa tag GRATIS', !!claudeOpt && !claudeOpt.textContent.includes('GRATIS'));
+ok('model PRO tetap ditampilkan', !!claudeOpt);
+const pickleOpt = [...$('#mlist').querySelectorAll('.mopt')].find(b => b.textContent.includes('big-pickle'));
+ok('model gratis bertag GRATIS', !!pickleOpt && pickleOpt.textContent.includes('GRATIS'));
+ok('model aktif bertanda sel', !!pickleOpt && pickleOpt.classList.contains('sel'));
+// pilih model via klik
+const deepOpt = [...$('#mlist').querySelectorAll('.mopt')].find(b => b.textContent.includes('deepseek'));
+const sendCountM = calls.send.length;
+deepOpt.click();
+ok('klik model → saveConfig + modal tutup', calls.saveConfig.some(c => c[2] === 'opencode/deepseek-v4-flash-free') && !$('#mmodel').classList.contains('show'));
+ok('nama header ikut berubah', $('#mname').textContent === 'DeepSeek V4 Flash');
+window.openModels();
+const claudeOpt2 = [...$('#mlist').querySelectorAll('.mopt')].find(b => b.textContent.includes('claude-sonnet-4'));
+claudeOpt2.click();
+ok('pilih model PRO disimpan', calls.saveConfig.some(c => c[2] === 'anthropic/claude-sonnet-4'));
+ok('nama header = Claude Sonnet 4', $('#mname').textContent === 'Claude Sonnet 4');
+// custom model via input
+$('#cmcustom').value = 'grok/cepat-cepat';
+$('#cmcustom').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+ok('custom model enter → setModel', calls.saveConfig.some(c => c[2] === 'grok/cepat-cepat') && $('#mname').textContent === 'cepat-cepat');
+ok('kirim tidak terganggu menu model', calls.send.length === sendCountM);
+$('#mclose').click();
+window.setModel('opencode/big-pickle'); // kembalikan model default
+ok('kembali ke big-pickle', $('#mname').textContent === 'Big Pickle');
+
+console.log('== 16. BAHASA BALASAN ==');
+ok('tombol bahasa default auto', $('#blang').title.includes('Auto'));
+$('#blang').click();
+ok('modal bahasa terbuka', $('#mlang').classList.contains('show'));
+ok('3 opsi bahasa', $('#llist').children.length === 3);
+const enOpt = [...$('#llist').querySelectorAll('.mopt')].find(b => b.textContent.includes('English'));
+enOpt.click();
+ok('pilih English → local+tombol berubah', window.localStorage.getItem('oc-lang') === 'en' && $('#blang').title.includes('English'));
+const pEn = window.langPromp('hello world');
+ok('langPromp en menyisipkan instruksi', pEn.toLowerCase().includes('always reply in english'));
+ok('teks asli tetap ada', pEn.includes('hello world'));
+$('#blang').click();
+const idOpt = [...$('#llist').querySelectorAll('.mopt')].find(b => b.textContent.includes('Indonesia'));
+idOpt.click();
+const pId = window.langPromp('halo apa kabar');
+ok('langPromp id menyisipkan instruksi', pId.includes('bahasa Indonesia'));
+ok('detectLang: teks Indonesia → id', window.detectLang('tolong bantu saya buat') === 'id');
+ok('detectLang: teks English → en', window.detectLang('please help me write a') === 'en');
+$('#blang').click();
+const autoOpt = [...$('#llist').querySelectorAll('.mopt')].find(b => b.textContent.includes('Auto'));
+autoOpt.click();
+ok('kembali auto', $('#blang').title.includes('Auto'));
+
+console.log('== 17. MODAL CONFIG ==');
+$('#dconfig').click();
+ok('modal config terbuka via drawer', $('#mconfig').classList.contains('show'));
+ok('provider terisi opencode', $('#cprov').value === 'opencode');
+ok('key terisi dari stub', $('#ckey').value === 'KEY123');
+$('#cprov').value = 'openai';
+$('#ckey').value = 'sk-baru';
+$('#cmodel').value = 'openai/gpt-4.1';
+$('#save').click();
+ok('saveConfig dgn provider+key+model', calls.saveConfig.some(c => c[0] === 'openai' && c[1] === 'sk-baru' && c[2] === 'openai/gpt-4.1'));
+window.onSaved();
+ok('modal config tutup setelah simpan', !$('#mconfig').classList.contains('show'));
+ok('model header ikut model kustom', $('#mname').textContent === 'GPT-4.1');
+$('#closem').click(); window.setModel('opencode/big-pickle');
+
+console.log('== 18. MARKDOWN LANJUT + XSS ==');
+window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
+window.appendOut('> kutipan penting\n\n---\n\n*teks miring* dan [tautan](https://opencode.ai) dan ![gambar](https://x.com/a.png)');
+window.onDone(0);
+const mdX = [...$$('.msg.ai .body')].pop();
+ok('blockquote dirender', !!mdX.querySelector('.md blockquote'));
+ok('hr dirender', !!mdX.querySelector('.md hr'));
+ok('italic dirender', !!mdX.querySelector('.md i'));
+ok('link dirender dgn data-url', !!mdX.querySelector('a[data-url="https://opencode.ai"]'));
+ok('gambar markdown dirender', !!mdX.querySelector('.md img'));
+window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
+window.appendOut('```\nnpx coba [kode]\n```\n\n<h2>tag html mentah</h2>');
+window.onDone(0);
+const mdY = [...$$('.msg.ai .body')].pop();
+ok('code block tanpa bahasa → lang "code"', !!mdY.querySelector('.cb-h .lang') && mdY.querySelector('.cb-h .lang').textContent === 'code');
+ok('kode [kode] tidak jadi HTML', !mdY.querySelector('.cb pre [kode]') && mdY.querySelector('.cb pre code').textContent.includes('[kode]'));
+ok('tag html mentah di-escape', !mdY.querySelector('.md h2'));
+window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
+var xssMark = '<img src=x onerror="window.xssPwned=1"> <script>window.xssPwned=1<\/script>';
+window.appendOut(xssMark);
+window.onDone(0);
+ok('XSS img onerror disterilkan', !doc.querySelector('.md img[onerror]') && !window.xssPwned);
+ok('XSS script disterilkan', !doc.querySelector('.md script') && !window.xssPwned);
+window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
+window.appendOut('#### H4\n\n### H3\n\n## H2 di tengah');
+window.onDone(0);
+const mdH = [...$$('.msg.ai .body')].pop();
+ok('heading h4 dirender', !!mdH.querySelector('.md h4'));
+ok('heading h3 dirender', !!mdH.querySelector('.md h3'));
+ok('heading h2 dirender', !!mdH.querySelector('.md h2'));
+ok('kombinasi paragraf+heading tidak korup', mdH.querySelector('.md h2').textContent.includes('H2'));
+
+console.log('== 19. INTERAKSI AKHIR & STATE ==');
+window._cur = null; window._plain = ''; window._done = true;   // done: appendOut harus no-op
+window.appendOut('zombi setelah done');
+ok('appendOut ditolak saat done', !doc.body.textContent.includes('zombi setelah done'));
+window._done = false;
+ok('versi app di footer drawer', $('#dver').textContent === 'v1.2.4');
+window.onUpdate('v9.9.9', 'catatan');
+$('#ubtn').click();
+ok('tombol LIHAT → openUrl release', calls.openUrl.some(u => u.includes('releases/tag/v9.9.9')));
+// Tanya lagi: kirim pesan lalu klik tombol Tanya lagi
+$('#inp').value = 'ulangi permintaan ini';
+$('#go').click();
+$('#go').click(); // stop — cancel
+window.onDone(-2, window._reqTok);
+const askBody = [...$$('.msg.ai .body')].pop();
+const askMact = askBody.parentElement.parentElement.querySelector('.mact');
+const askBtn = askMact ? [...askMact.querySelectorAll('button')].find(b => b.textContent.includes('Tanya lagi')) : null;
+ok('tombol Tanya lagi tersedia setelah kirim', !!askBtn);
+const sendCountT = calls.send.length;
+if (askBtn) askBtn.click();
+ok('Tanya lagi → kirim ulang prompt terakhir', calls.send.length === sendCountT + 1 && (calls.send[calls.send.length-1] || '').includes('ulangi permintaan ini'));
+$('#bnew').click(); // bersihkan state
+
 console.log('\n==============================');
 console.log(`HASIL: ${pass} lulus, ${fail} gagal`);
 console.log('==============================');

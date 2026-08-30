@@ -934,6 +934,11 @@ public class MainActivity extends Activity {
             c.add("-b"); c.add(nativeExec("libopencode.so") + ":/usr/bin/opencode");
             c.add("-b"); c.add(cacheDir.getAbsolutePath() + ":/tmp");
             c.add("-b"); c.add(extWork.getAbsolutePath() + ":/work");
+            /* FIX v1.5.7: opencode menyimpan getcwd HOST (proot tidak remap getcwd) ke
+               state session, lalu fs.realPath(path itu) → ENOENT di dalam rootfs →
+               ServeError fatal setelah tiap pesan selesai. Bind alias host-dir=host-dir
+               membuat path HOST cwd tersedia di dalam rootfs, + spawn langsung di sana. */
+            c.add("-b"); c.add(extWork.getAbsolutePath());
             c.add("-w"); c.add("/work");
             c.add("/usr/bin/opencode");
             c.add("serve");
@@ -942,6 +947,7 @@ public class MainActivity extends Activity {
 
             ProcessBuilder pb = new ProcessBuilder(c);
             pb.redirectErrorStream(true);
+            pb.directory(new java.io.File(extWork.getAbsolutePath()));   /* cwd host = extWork (bind alias ada di rootfs) */
             pb.environment().clear();
             pb.environment().put("LD_LIBRARY_PATH", getApplicationInfo().nativeLibraryDir + ":" + linkDir.getAbsolutePath() + ":" + natLib.getAbsolutePath());
             pb.environment().put("PROOT_LOADER", loader);

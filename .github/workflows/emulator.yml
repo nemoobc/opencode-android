@@ -133,10 +133,21 @@ jobs:
             sleep 12
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
-            # CATATAN: TIDAK ADA TUNNEL serveo/localhost.run + live view di sini.
-            # SSH keluar ke tunnel terbukti HANG (di Termux & runner) dan menahan job
-            # sampai timeout 60 menit, sehingga video tak pernah tertarik. Semua dihapus
-            # agar job cepat selesai dan MP4 pasti ter-tarik ke artifact.
+            echo "=== nginx 8080 → 18096 + serveo ==="
+            sudo apt-get update -qq && sudo apt-get install -y -qq nginx openssh-client > /dev/null 2>&1
+            sudo rm -f /etc/nginx/sites-enabled/default
+            printf 'server{listen 8080;location /{proxy_pass http://127.0.0.1:18096;proxy_set_header Host $host;}location /app/{proxy_pass http://127.0.0.1:4096/;}}\n' | sudo tee /etc/nginx/sites-enabled/proxy > /dev/null
+            sudo nginx -t && sudo service nginx restart || sudo nginx
+            echo "nginx 8080 siap, test:"; curl -s -m 5 http://127.0.0.1:8080/ | head -c 120 || echo "nginx belum ada data (wajar sebelum autotest)"
+            echo "=== serveo tunnel 80:localhost:8080 (timeout 90 detik, tidak hang job) ==="
+            rm -f serveo.log serveo.url
+            timeout 90 ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 serveo.net > serveo.log 2>&1 &
+            SSHPID=$!
+            sleep 4
+            # tunggu URL muncul (maks 20 detik)
+            URL=""; i=0; while [ $i -lt 10 ]; do URL=$(grep -o 'https://[a-z0-9.-]*\.serveo\.net' serveo.log | head -1); [ -n "$URL" ] && break; sleep 2; i=$((i+1)); done
+            if [ -n "$URL" ]; then echo "SERVEO_URL=$URL" | tee serveo.url; echo "URL publik: $URL (tahan 80 detik)"; else echo "serveo gagal / tidak dapat URL — log:"; cat serveo.log | head -20; fi
+            # jangan tunggu ssh sampai hang — biarkan jalan background, kill setelah autotest selesai
             echo "=== menunggu autotest (maks 3 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 18 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 200)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
@@ -163,6 +174,9 @@ jobs:
             wait $SRPID 2>/dev/null || true
             adb exec-out "cat /data/local/tmp/interaksi.mp4" > video-interaksi.mp4 2>/dev/null || true
             ls -la video-interaksi.mp4 2>/dev/null && (file video-interaksi.mp4 || true)
+            echo "=== TUTUP SERVEO ==="
+            kill $SSHPID 2>/dev/null || true; wait $SSHPID 2>/dev/null || true
+            cat serveo.log 2>/dev/null | head -30 || true; cat serveo.url 2>/dev/null || echo "tidak ada serveo URL"
             echo "=== DIAGNOSA JARINGAN KE MODEL (dari dalam app via server) ==="
             curl -s -m 10 "http://127.0.0.1:18096/extra" -o /dev/null || true
             echo "=== diagnosa ==="; cat hasil-diagnosa.json || true
@@ -178,4 +192,6 @@ jobs:
             shot-*.png
             logcat.txt
             video-interaksi.mp4
+            serveo.log
+            serveo.url
           if-no-files-found: warn

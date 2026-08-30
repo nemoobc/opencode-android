@@ -144,12 +144,12 @@
   #hello h2 { font-size:25px; font-weight:600; margin-bottom:8px; letter-spacing:-.3px; animation:nmup .5s .18s both; }
   #hello h2 span { background:linear-gradient(90deg,#3DDC84,#C9A227); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #hello p { font-size:13.5px; color:#8AA396; margin-bottom:30px; animation:nmup .5s .26s both; }
-  #chips { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:440px; }
-  .chip { background:#111611; border:1px solid #212922; border-radius:16px; padding:14px 15px; font-size:12.5px; color:#8AA396; text-align:left; line-height:1.5; opacity:0; transform:translateY(12px); animation:chipin .45s cubic-bezier(.2,.9,.3,1) forwards; }
+  #chips { display:grid; grid-template-columns:1fr; gap:9px; width:100%; max-width:440px; }
+  .chip { background:#111611; border:1px solid #212922; border-radius:18px; padding:15px 16px; font-size:13px; color:#8AA396; text-align:left; line-height:1.5; opacity:0; transform:translateY(12px); animation:chipin .45s cubic-bezier(.2,.9,.3,1) forwards; min-height:58px; display:flex; flex-direction:column; justify-content:center; }
   .chip:nth-child(1) { animation-delay:.32s } .chip:nth-child(2) { animation-delay:.4s }
   .chip:nth-child(3) { animation-delay:.48s } .chip:nth-child(4) { animation-delay:.56s }
   @keyframes chipin { to { opacity:1; transform:none } }
-  .chip b { display:block; color:#ECEEEC; font-size:13.5px; font-weight:600; margin-bottom:3px; }
+  .chip b { display:block; color:#ECEEEC; font-size:15px; font-weight:600; margin-bottom:4px; }
   .chip:active { border-color:#3DDC8466; background:#141C15; transform:scale(.97); }
 
   /* ===== input ===== */

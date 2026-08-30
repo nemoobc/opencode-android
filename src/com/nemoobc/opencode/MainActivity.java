@@ -1101,6 +1101,7 @@ public class MainActivity extends Activity {
             return;
         }
         lastRestartMs = now;
+        push("window.onReady(false)");   /* kunci kirim selama server bangun lagi */
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1283,6 +1284,7 @@ public class MainActivity extends Activity {
                         busy = false;
                         wakeFree();
                         push("window.onDone(-1," + myTok + ")");
+                        push("window.onStatus('model lambat (>30s) — server masih memproses, hasil bisa nyusul. Ketik ulang utk coba lagi, atau ganti model cepat.')");
                     }
                 }
             });

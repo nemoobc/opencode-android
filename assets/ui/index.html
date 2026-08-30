@@ -689,6 +689,7 @@ window.onStatus = function(m) {
   addNote('⚙ ' + m);
 };
 window.onReady = function(ok, free) {
+  window._srvOk = !!ok;
   if (ok) {
     ov.classList.remove('show');
     /* server sudah siap — hilangkan splash SEGERA (jangan tunggu timeout 10s
@@ -737,6 +738,11 @@ window.onUpdate = function(tag, body) {
 /* ===== kirim ===== */
 function send(t, label, imgPrev) {
   if (busy || !t) return;
+  if (!window._srvOk) {
+    /* server masih menyala/mati — jangan nembak koneksi kosong (bikin error + restart loop) */
+    addNote('⏳ server masih menyala — tunggu sampai siap, lalu kirim ulang');
+    return;
+  }
   window._lastPrompt = t;
   /* pastikan auto-scroll aktif saat mengirim pesan baru */
   userHold = false;

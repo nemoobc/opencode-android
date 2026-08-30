@@ -27,6 +27,7 @@ const dom = new JSDOM(html, {
     };
     window.HTMLElement.prototype.scrollIntoView = () => {};
     window.HTMLElement.prototype.scrollBy = () => {};
+    window._srvOk = true;   /* server dianggap siap di lingkungan test */
   },
 });
 const { window } = dom;

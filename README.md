@@ -54,7 +54,7 @@ Hasil kerja agent tersimpan di
 ## ⚙️ Cara kerja
 
 ```
-OpenCode-v1.5.4.apk
+OpenCode-v1.6.1.apk
  ├─ lib/arm64-v8a/libopencode.so   binary opencode resmi (dikompresi di APK)
  ├─ lib/arm64-v8a/libproot.so      jalankan rootfs tanpa root
  ├─ lib/arm64-v8a/...              loader, libtalloc, libandroid-shmem
@@ -88,14 +88,18 @@ cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
 tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 # 3. bangun (kompresi .so level 9 → APK kecil)
-./build.sh          # → build/OpenCode-v1.5.4.apk (signed + verified)
+./build.sh          # → build/OpenCode-v1.6.1.apk (signed + verified)
 ```
 
 ## 📜 Riwayat versi
 
 | Versi | Ukuran | Isi |
 |---|---|---|
-| v1.5.5 | **±64 MB** | Fix ekstrak rootfs tar (tidak stuck di "bersiap"); upload file (tombol **+** di input); auto-detect bahasa + reset per percakapan; streaming token-per-token mulus; model default `opencode/big-pickle` |
+| v1.6.1 | **±64 MB** | Fix: buang MediaStore .pending menumpuk, 'Canceled' tidak restart palsu |
+| v1.6.0 | ±64 MB | Timeout realistis 90s/100s, warm-up model, bagikan obrolan, kunci kirim saat server belum siap |
+| v1.5.9 | ±64 MB | Kunci kirim + watchdog pesan jelas |
+| v1.5.8 | ±64 MB | Chip 1 kolom besar, font 15px |
+| v1.5.5 | ±64 MB | Fix ekstrak rootfs tar (tidak stuck di "bersiap"); upload file (tombol **+** di input); auto-detect bahasa + reset per percakapan; streaming token-per-token mulus; model default `opencode/big-pickle` |
 | v1.5.4 | ±64 MB | Perombakan internal & penuh perbaikan dari v1.5.3 |
 | v1.5.3 | ±190 MB | Upaya install instan (native libs tidak diekstrak saat instal) |
 | v1.5.2 | ±190 MB | Fix "server gagal start" palsu — deteksi siap terima respons HTTP apa pun; UI v2 splash |

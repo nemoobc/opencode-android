@@ -7,12 +7,16 @@ AJ=dl/android-34/android.jar
 VER_NAME=$(grep -o 'android:versionName="[^"]*"' AndroidManifest.xml | head -1 | sed 's/.*="\([^"]*\)"/\1/')
 [ -n "$VER_NAME" ] || VER_NAME="0.0.0"
 APK_OUT="build/OpenCode-v${VER_NAME}.apk"
+# pre-check bahan (jangan build APK kosong)
+if [ ! -f "$AJ" ]; then echo "FATAL: $AJ hilang — jalankan: pkg install aapt && wget platform-34-ext7_r02.zip → dl/android-34/android.jar"; exit 1; fi
+if [ ! -f "jniLibs/$ABI/libopencode.so" ]; then echo "WARN: jniLibs/$ABI/libopencode.so belum ada — APK tetap dibuild tapi server tidak akan jalan. Unduh dari npm opencode-linux-arm64-musl"; fi
+if [ ! -f "assets/payload/rootfs.bin" ] && [ ! -d "assets/payload" ]; then echo "WARN: assets/payload/rootfs.bin belum ada — ekstrak payload dulu (lihat README)"; fi
 rm -rf build/classes build/gen build/*.apk build/classes.dex
 mkdir -p build/classes
 
 echo "[1/6] javac..."
 javac_out=$(javac -source 8 -target 8 -nowarn \
-  -bootclasspath $AJ \
+  -bootclasspath "$AJ" \
   -d build/classes \
   src/com/nemoobc/opencode/*.java 2>&1) || true
 printf '%s\n' "$javac_out" | grep -v "bootstrap class path" || true
@@ -25,7 +29,8 @@ fi
 
 echo "[2/6] d8..."
 D8_BIN="${D8_CMD:-d8}"
-$D8_BIN --release --lib $AJ --min-api 26 \
+# shellcheck disable=SC2046
+$D8_BIN --release --lib "$AJ" --min-api 26 \
   $(find build/classes -name "*.class") \
   --output build/
 
@@ -34,16 +39,17 @@ aapt package -f \
   -M AndroidManifest.xml \
   -S res \
   -A assets \
-  -I $AJ \
+  -I "$AJ" \
   -F build/base.apk
 
 echo "[4/6] tambahkan dex + native libs..."
 cd build
 aapt add base.apk classes.dex
 cd ..
-rm -rf build/pkglib && mkdir -p build/pkglib/lib/$ABI
-cp -a jniLibs/$ABI/. build/pkglib/lib/$ABI/
+rm -rf build/pkglib && mkdir -p "build/pkglib/lib/$ABI"
+cp -a "jniLibs/$ABI/." "build/pkglib/lib/$ABI/"
 cd build/pkglib
+# shellcheck disable=SC2046
 aapt add ../base.apk $(find . -type f | sed 's|^\./||')
 cd ../..
 

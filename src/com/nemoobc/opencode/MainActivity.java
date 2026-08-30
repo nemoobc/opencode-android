@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
     private volatile HttpURLConnection msgConn = null;
     private boolean autotest = false;
     private volatile boolean localMode = false;   /* MODE LOKAL: tanpa panggilan model remote (proot crash-safe) */
+    private volatile long lastRestartMs = 0;      /* throttle restart otomatis (min 5 menit antar restart) */
     private static PowerManager.WakeLock wakeLock;
     private volatile int deltaCount = 0;
     private volatile long tSendMs = 0;
@@ -1045,14 +1046,32 @@ public class MainActivity extends Activity {
                 String r0 = httpPost("http://127.0.0.1:" + PORT + "/session", "{\"title\":\"opencode\"}");
                 sessionId = new JSONObject(r0).optString("id", null);
             } catch (Exception ignored) {}
-            // keep-alive: ping tiap 4 menit biar semuanya tetap hangat
+            // keep-alive: ping tiap 4 menit sekaligus DETEKSI CRASH — kalau server
+            // mati (rootfs proot crash), restart otomatis, bukan diam-diam gagal
             Thread ka = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    int fails = 0;
                     while (running) {
                         try { Thread.sleep(240000); } catch (InterruptedException ignored) {}
-                        if (running && serverUp && !busy) {
-                            try { httpCode("http://127.0.0.1:" + PORT + "/session", 4000); } catch (Exception ignored) {}
+                        if (running && !busy) {
+                            serverUp = false;
+                            try {
+                                int c = httpCode("http://127.0.0.1:" + PORT + "/session", 4000);
+                                serverUp = (c >= 200 && c < 500);
+                            } catch (Exception ignored) {}
+                            if (serverUp) {
+                                fails = 0;
+                            } else {
+                                fails++;
+                                debugLog("keep-alive: ping gagal #" + fails);
+                                if (fails >= 2) {
+                                    debugLog("keep-alive: server crash terdeteksi — restart otomatis");
+                                    push("window.onStatus('server crash — restart otomatis…')");
+                                    restartServerAsync();
+                                    fails = 0;
+                                }
+                            }
                         }
                     }
                 }
@@ -1065,6 +1084,26 @@ public class MainActivity extends Activity {
             push("window.onError(" + jq("Server error: " + e) + ")");
             requestWeb();
         }
+    }
+
+    /* restart otomatis: startServer punya warm-check — kalau HTTP hidup, tidak
+       respawn; kalau mati (crash), spin ulang rootfs proot dari nol */
+    private void restartServerAsync() {
+        final long now = System.currentTimeMillis();
+        if (now - lastRestartMs < 5 * 60 * 1000L) {
+            debugLog("restartServerAsync: throttle aktif, lewati");
+            return;
+        }
+        lastRestartMs = now;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                debugLog("restartServerAsync: panggil startServer ulang");
+                try { startServer(); } catch (Exception e) {
+                    debugLog("restartServerAsync: EXCEPTION " + e);
+                }
+            }
+        }).start();
     }
 
     private int httpCode(String url, int timeout) {
@@ -1316,7 +1355,19 @@ public class MainActivity extends Activity {
                         busy = false;
                         wakeFree();
                         if (autotest) Diagnostics.step("post-error", String.valueOf(e));
-                        push("window.onError(" + jq("Error: " + e) + ")");
+                        boolean conn = (e instanceof java.io.IOException
+                                || e instanceof java.net.SocketException
+                                || e instanceof java.net.SocketTimeoutException);
+                        if (conn) {
+                            /* rootfs crash saat kirim = koneksi putus. Restart server
+                               otomatis supaya kiriman berikut langsung jalan. */
+                            debugLog("post-error: koneksi putus — restart server otomatis: " + e);
+                            serverUp = false;
+                            restartServerAsync();
+                            push("window.onError(" + jq("Koneksi server putus — restart otomatis sedang berjalan. Coba kirim lagi ~20 detik.") + ")");
+                        } else {
+                            push("window.onError(" + jq("Error: " + e) + ")");
+                        }
                     }
                 }
             }).start();

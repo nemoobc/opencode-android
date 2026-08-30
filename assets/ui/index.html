@@ -684,6 +684,10 @@ window.onError = function(m, tok) {
   if (first) addNote(friendlyErr(m), true);
   finishUI(-1);
 };
+window.onStatus = function(m) {
+  /* info sistem sementara (mis. "server crash — restart otomatis…") */
+  addNote('⚙ ' + m);
+};
 window.onReady = function(ok, free) {
   if (ok) {
     ov.classList.remove('show');

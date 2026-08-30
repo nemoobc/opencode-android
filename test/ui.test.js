@@ -22,6 +22,8 @@ const dom = new JSDOM(html, {
       readConfig: () => JSON.stringify({ auth: '{"opencode":{"type":"api","key":"KEY123"}}', cfg: '{"model":"opencode/big-pickle"}' }),
       appInfo: () => '1.2.4',
       toast: () => {},
+      getLocalMode: () => false,
+      setLocalMode: (v) => {},
     };
     window.HTMLElement.prototype.scrollIntoView = () => {};
     window.HTMLElement.prototype.scrollBy = () => {};

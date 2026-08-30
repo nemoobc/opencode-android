@@ -78,10 +78,10 @@ public class MainActivity extends Activity {
        ekstrak ulang tiap buka (keluar-masuk/update) dan tidak memakai
        rootfs parsial dari ekstraksi yang terputus */
     private static final String EXT_OK = ".oc-ok";
-    /* log fase startup — ditulis ke filesDir/debug.txt DAN Download/opencode-debug.txt
-       (via MediaStore, tanpa permission) supaya bisa dianalisis dari Termux ketika
-       app mati terlalu cepat untuk terlihat di logcat. */
-    private final StringBuilder debugBuf = new StringBuilder();
+    /* log fase startup — ditulis ke logcat (tag "OpenCode") DAN filesDir/debug.txt
+       (internal app). Dulu juga ditulis ke Download via MediaStore, tapi device ini
+       sering menggantung finalisasi IS_PENDING → file .pending-* menumpuk ratusan
+       per buka app di storage publik; jalur itu dihapus. */
     /* TUNDA WebView sampai server siap (hemat RAM startup — perangkat sempit).
        push() di-queue dulu; dieksekusi setelah halaman selesai dimuat. */
     private final java.util.List<String> pendingJs = new java.util.ArrayList<>();
@@ -97,13 +97,7 @@ public class MainActivity extends Activity {
             try { android.util.Log.d("OpenCode", msg); } catch (Throwable ignored) {}
             String line = new java.text.SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date())
                     + " " + msg + "\n";
-            synchronized (debugBuf) {
-                debugBuf.append(line);
-                if (debugBuf.length() > 40000) debugBuf.delete(0, debugBuf.length() - 40000);
-            }
-            /* HANYA tulis file internal (cepat). MediaStore dipindah ke thread
-               terjadwal (mediaDump) — dulu nulis MediaStore di sini memblokir
-               main thread 4,5 DETIK saat onCreate. */
+            /* HANYA tulis file internal (cepat, aman dari storage publik). */
             try {
                 File f = new File(getFilesDir(), "debug.txt");
                 try (FileOutputStream fo = new FileOutputStream(f, true)) {
@@ -111,46 +105,6 @@ public class MainActivity extends Activity {
                 }
             } catch (Exception ignored) {}
         } catch (Throwable ignored) {}
-    }
-
-    /* flush debugBuf ke Download/opencode-debug.txt DI BELAKANG (bukan main thread) —
-       throttle tiap 2,5 detik biar startup tidak tersendat */
-    private void startMediaDump() {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (running) {
-                    try { Thread.sleep(2500); } catch (InterruptedException e) { return; }
-                    /* SALIN dulu isi buffer, LEPAS kunci, baru I/O MediaStore.
-                       Sebelumnya kunci debugBuf dipegang selama openOutputStream —
-                       MediaStore device ini sering gantung >detik → semua debugLog
-                       (termasuk dari main thread via onPageFinished) ikut tersendat
-                       → ANR → proses dibunuh diam-diam = "stuck di logo". */
-                    String snap;
-                    synchronized (debugBuf) { snap = debugBuf.toString(); }
-                    try {
-                        android.content.ContentValues cv = new android.content.ContentValues();
-                        cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "opencode-debug.txt");
-                        cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "text/plain");
-                        cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH,
-                                android.os.Environment.DIRECTORY_DOWNLOADS);
-                        cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1);
-                        android.net.Uri u = getContentResolver().insert(
-                                android.provider.MediaStore.Downloads.getContentUri("external"), cv);
-                        if (u != null) {
-                            try (OutputStream os = getContentResolver().openOutputStream(u)) {
-                                if (os != null) os.write(snap.getBytes());
-                            }
-                            cv = new android.content.ContentValues();
-                            cv.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0);
-                            getContentResolver().update(u, cv, null, null);
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-        });
-        t.setDaemon(true);
-        t.start();
     }
 
     @Override
@@ -355,7 +309,6 @@ public class MainActivity extends Activity {
                 debugLog("bg: startServer kembali");
             }
         }).start();
-        startMediaDump();
     }
 
     private void wakeHold() {
@@ -1420,17 +1373,23 @@ public class MainActivity extends Activity {
                         busy = false;
                         wakeFree();
                         if (autotest) Diagnostics.step("post-error", String.valueOf(e));
+                        /* "Canceled" = koneksi sengaja dibatalkan (tombol batal / user
+                           pindah chat / ganti model), BUKAN server mati. Jangan restart,
+                           jangan bilang "koneksi putus". */
+                        boolean canceled = (e instanceof java.io.IOException)
+                                && e.getMessage() != null
+                                && e.getMessage().contains("Canceled");
                         boolean conn = (e instanceof java.io.IOException
                                 || e instanceof java.net.SocketException
                                 || e instanceof java.net.SocketTimeoutException);
-                        if (conn) {
+                        if (conn && !canceled) {
                             /* rootfs crash saat kirim = koneksi putus. Restart server
                                otomatis supaya kiriman berikut langsung jalan. */
                             debugLog("post-error: koneksi putus — restart server otomatis: " + e);
                             serverUp = false;
                             restartServerAsync();
                             push("window.onError(" + jq("Koneksi server putus — restart otomatis sedang berjalan. Coba kirim lagi ~20 detik.") + ")");
-                        } else {
+                        } else if (!canceled) {
                             push("window.onError(" + jq("Error: " + e) + ")");
                         }
                     }

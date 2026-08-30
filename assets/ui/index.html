@@ -306,6 +306,7 @@
     <button class="d-item" id="dmodel"><span class="ic">&#9889;</span> Ganti model</button>
     <button class="d-item" id="dlocal"><span class="ic">&#128737;</span> Mode lokal <span id="localst" class="badge">OFF</span></button>
     <button class="d-item" id="dupdate"><span class="ic">&#8595;</span> Cek update</button>
+    <button class="d-item" id="dshare"><span class="ic">&#128228;</span> Bagikan obrolan</button>
   </div>
   <div class="d-foot">opencode android <span id="dver">v?</span></div>
 </div>
@@ -788,7 +789,7 @@ function send(t, label, imgPrev) {
   dot.className = 'work';
   go.innerHTML = '&#9632;';
   go.classList.add('stop');
-  document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-60 detik</b>';
+  document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-90 detik</b> (pakai big-pickle utk ~15s)';
   var jTok = Android.send(langPromp(t));
   if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
 }
@@ -1103,6 +1104,24 @@ document.getElementById('save').onclick = function() {
 };
 
 /* ===== lain-lain ===== */
+document.getElementById('dshare').onclick = function() {
+  closeDrawer();
+  var out = [];
+  chat.querySelectorAll('.msg,.sysnote').forEach(function(n) {
+    var who = n.classList.contains('user') ? 'Anda' : n.classList.contains('sysnote') ? '»' : 'AI';
+    var txt = '';
+    if (n.classList.contains('user')) txt = n.textContent;
+    else {
+      var md = n.querySelector('.md');
+      txt = md ? md.textContent : (n.textContent || '');
+    }
+    if (txt && txt.trim()) out.push(who + ': ' + txt.trim());
+  });
+  var text = out.join('\n');
+  if (!text) { toast('obrolan masih kosong'); return; }
+  if (typeof Android.shareText === 'function') Android.shareText(text);
+  else copy(text), toast('tidak bisa share — disalin ke clipboard');
+};
 document.getElementById('dupdate').onclick = function() {
   closeDrawer();
   Android.checkUpdate();

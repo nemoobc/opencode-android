@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private boolean autotest = false;
     private volatile boolean localMode = false;   /* MODE LOKAL: tanpa panggilan model remote (proot crash-safe) */
     private volatile long lastRestartMs = 0;      /* throttle restart otomatis (min 5 menit antar restart) */
+    private volatile boolean warmedUp = false;     /* warm-up model: 1× per hidup server */
     private static PowerManager.WakeLock wakeLock;
     private volatile int deltaCount = 0;
     private volatile long tSendMs = 0;
@@ -1084,6 +1085,7 @@ public class MainActivity extends Activity {
             });
             ka.setDaemon(true);
             ka.start();
+            warmUpModel();
         } catch (Exception e) {
             debugLog("startServer: EXCEPTION " + e);
             stageUi("Server error");
@@ -1108,6 +1110,61 @@ public class MainActivity extends Activity {
                 debugLog("restartServerAsync: panggil startServer ulang");
                 try { startServer(); } catch (Exception e) {
                     debugLog("restartServerAsync: EXCEPTION " + e);
+                }
+            }
+        }).start();
+    }
+
+    /* warm-up: request model sekali utk panaskan TLS/cache server → pesan
+       pertama user jauh lebih cepat (host ukur: 14s → dingin). Jangan
+       ganggu kiriman user: skip kalau busy/mode lokal. */
+    private void warmUpModel() {
+        if (warmedUp || localMode) return;
+        warmedUp = true;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try { Thread.sleep(5000); } catch (InterruptedException ignored) { return; }
+                if (!serverUp || sessionId == null || busy || localMode) return;
+                try {
+                    String model = readModel();
+                    int sl = model.indexOf('/');
+                    String prov = sl > 0 ? model.substring(0, sl) : "opencode";
+                    String mid = sl > 0 ? model.substring(sl + 1) : model;
+                    if ("zen".equalsIgnoreCase(prov)) prov = "opencode";
+                    JSONObject body = new JSONObject();
+                    org.json.JSONArray parts = new org.json.JSONArray();
+                    JSONObject tp = new JSONObject();
+                    tp.put("type", "text");
+                    tp.put("text", "balas OK");
+                    parts.put(tp);
+                    body.put("parts", parts);
+                    JSONObject mm = new JSONObject();
+                    mm.put("providerID", prov);
+                    mm.put("modelID", mid);
+                    body.put("model", mm);
+                    HttpURLConnection mc = (HttpURLConnection)
+                            new URL("http://127.0.0.1:" + PORT + "/session/" + sessionId + "/message")
+                            .openConnection(Proxy.NO_PROXY);
+                    mc.setRequestMethod("POST");
+                    mc.setConnectTimeout(8000);
+                    mc.setReadTimeout(75000);
+                    mc.setDoOutput(true);
+                    mc.setRequestProperty("Content-Type", "application/json");
+                    OutputStream os = mc.getOutputStream();
+                    os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+                    os.close();
+                    int code = mc.getResponseCode();
+                    InputStream is = code >= 400 ? mc.getErrorStream() : mc.getInputStream();
+                    BufferedReader rr = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                    StringBuilder sb = new StringBuilder();
+                    String l;
+                    while ((l = rr.readLine()) != null) sb.append(l);
+                    rr.close();
+                    mc.disconnect();
+                    debugLog("warmup: HTTP " + code + " len=" + sb.length());
+                } catch (Exception e) {
+                    debugLog("warmup: err " + e);
                 }
             }
         }).start();
@@ -1279,12 +1336,12 @@ public class MainActivity extends Activity {
             Thread wd = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    try { Thread.sleep(30000); } catch (InterruptedException e) { return; }
+                    try { Thread.sleep(100000); } catch (InterruptedException e) { return; }
                     if (busy && !sawIdle) {
                         busy = false;
                         wakeFree();
                         push("window.onDone(-1," + myTok + ")");
-                        push("window.onStatus('model lambat (>30s) — server masih memproses, hasil bisa nyusul. Ketik ulang utk coba lagi, atau ganti model cepat.')");
+                        push("window.onStatus('model lambat (>90s) — server masih memproses, hasil bisa nyusul. Ketik ulang utk coba lagi, atau ganti model cepat.')");
                     }
                 }
             });
@@ -1325,7 +1382,7 @@ public class MainActivity extends Activity {
                                     + sessionId + "/message").openConnection(Proxy.NO_PROXY);
                             mc.setRequestMethod("POST");
                             mc.setConnectTimeout(8000);
-                            mc.setReadTimeout(25000);
+                            mc.setReadTimeout(90000);
                             mc.setDoOutput(true);
                             mc.setRequestProperty("Content-Type", "application/json");
                             OutputStream os = mc.getOutputStream();
@@ -1385,6 +1442,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void cancel() {
             doCancel(sessionId, msgConn);
+        }
+
+        @JavascriptInterface
+        public void shareText(String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_SEND);
+                        i.setType("text/plain");
+                        i.putExtra(Intent.EXTRA_TEXT, text);
+                        startActivity(Intent.createChooser(i, "Bagikan obrolan"));
+                    } catch (Exception ignored) {}
+                }
+            });
         }
 
         @JavascriptInterface

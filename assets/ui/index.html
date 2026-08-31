@@ -6,11 +6,11 @@
 <title>OpenCode</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; }
+  html,body { height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
   body {
     background:#0C100E; color:#ECEEEC;
     font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
-    font-size:15px; display:flex; flex-direction:column; overflow:hidden;
+    font-size:15px; display:flex; flex-direction:column; overflow:hidden; touch-action:manipulation;
   }
   button { font-family:inherit; cursor:pointer; }
 
@@ -18,32 +18,34 @@
   #scrim { position:fixed; inset:0; background:#0009; z-index:40; opacity:0; pointer-events:none; transition:opacity .25s; }
   #scrim.show { opacity:1; pointer-events:auto; }
   #drawer {
-    position:fixed; top:0; left:0; bottom:0; width:80%; max-width:300px; z-index:41;
+    position:fixed; top:0; left:0; bottom:0; width:80%; max-width:310px; z-index:41;
     background:#10140F; border-right:1px solid #1E241F; transform:translateX(-102%);
     transition:transform .28s cubic-bezier(.2,.8,.25,1); display:flex; flex-direction:column;
   }
   #drawer.show { transform:translateX(0); }
-  .d-head { padding:18px 16px; border-bottom:1px solid #1E241F; display:flex; align-items:center; gap:10px; }
+  .d-head { padding:16px 16px; border-bottom:1px solid #1E241F; display:flex; align-items:center; gap:10px; }
   .d-head .mark { width:30px; height:30px; }
   .d-head div b { font-size:15px; font-weight:600; }
   .d-head div span { display:block; font-size:11px; color:#8AA396; margin-top:2px; }
   .d-body { flex:1; overflow-y:auto; padding:12px 10px; }
   .d-item {
-    display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:12px;
-    font-size:14px; color:#D5DED7; width:100%; background:none; border:none; text-align:left;
+    display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:12px;
+    font-size:15.5px; color:#ECEEEC; width:100%; background:none; border:none; text-align:left; line-height:1.4;
   }
   .d-item:active { background:#182019; }
-  .d-item .badge { margin-left:auto; font-size:10px; font-weight:700; color:#9AB0A3; background:#131713; padding:2px 7px; border-radius:8px; }
+  .d-item .badge { margin-left:auto; font-size:11px; font-weight:700; color:#9AB0A3; background:#131713; padding:2px 7px; border-radius:8px; }
   .d-item { opacity:0; transform:translateX(-14px); }
   #drawer.show .d-item { animation:ditem .35s cubic-bezier(.2,.9,.3,1) forwards; }
   #drawer.show .d-body .d-item:nth-child(1) { animation-delay:.05s }
   #drawer.show .d-body .d-item:nth-child(2) { animation-delay:.1s }
   #drawer.show .d-body .d-item:nth-child(3) { animation-delay:.15s }
   #drawer.show .d-body .d-item:nth-child(4) { animation-delay:.2s }
+  #drawer.show .d-body .d-item:nth-child(5) { animation-delay:.25s }
+  #drawer.show .d-body .d-item:nth-child(6) { animation-delay:.3s }
   @keyframes ditem { to { opacity:1; transform:none } }
-  .d-item.primary { background:#1C2A22; border:1px solid #2A4436; color:#F0F4F1; margin-bottom:10px; font-weight:500; }
-  .d-item .ic { width:20px; text-align:center; color:#7FCF9F; font-size:15px; }
-  .d-sec { font-size:11px; letter-spacing:1.2px; color:#5E7568; padding:16px 13px 8px; font-weight:600; }
+  .d-item.primary { background:#1C2A22; border:1px solid #2A4436; color:#F0F4F1; margin-bottom:10px; font-weight:600; font-size:15.5px; }
+  .d-item .ic { width:22px; text-align:center; color:#7FCF9F; font-size:17px; }
+  .d-sec { font-size:11.5px; letter-spacing:1.1px; color:#5E7568; padding:16px 13px 8px; font-weight:600; }
   .d-foot { padding:14px 16px; border-top:1px solid #1E241F; font-size:11.5px; color:#5E7568; line-height:1.7; }
 
   /* ===== header ===== */
@@ -59,8 +61,8 @@
   #mchip .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #mchip .car { color:#8AA396; font-size:10px; }
   .hbtn {
-    width:38px; height:38px; border-radius:12px; background:none; border:none;
-    color:#C7D2CB; font-size:18px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    width:40px; height:40px; border-radius:12px; background:none; border:none;
+    color:#C7D2CB; font-size:20px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
   }
   .hbtn:active { background:#182019; }
   #dot { width:8px; height:8px; border-radius:50%; background:#3A453E; flex:0 0 auto; }
@@ -133,23 +135,23 @@
   .cb pre code { font-size:13px; line-height:1.6; color:#DCE8DF; white-space:pre; font-family:ui-monospace,Menlo,'Cascadia Mono',monospace; }
 
   /* ===== welcome — aurora ambient + greeting ===== */
-  #hello { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; position:relative; }
+  #hello { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; position:relative; }
   #hello::before { content:""; position:absolute; width:280px; height:280px; top:6%; left:50%; margin-left:-140px; border-radius:50%;
     background:radial-gradient(circle at 32% 32%,#3DDC8422,transparent 62%),radial-gradient(circle at 68% 68%,#C9A22718,transparent 62%);
     animation:aurora 6s ease-in-out infinite alternate; pointer-events:none; }
   @keyframes aurora { from { transform:scale(1) translateY(0) } to { transform:scale(1.1) translateY(8px) } }
-  #hello .mark { width:80px; height:80px; margin-bottom:26px; animation:breathe 3.4s ease-in-out infinite; position:relative; }
+  #hello .mark { width:64px; height:64px; margin-bottom:18px; animation:breathe 3.4s ease-in-out infinite; position:relative; }
   @keyframes breathe { 0%,100% { transform:scale(1); opacity:.92 } 50% { transform:scale(1.05); opacity:1 } }
   #greet { font-size:13px; color:#7FCF9F; letter-spacing:.6px; margin-bottom:6px; animation:nmup .5s .1s both; }
   #hello h2 { font-size:25px; font-weight:600; margin-bottom:8px; letter-spacing:-.3px; animation:nmup .5s .18s both; }
   #hello h2 span { background:linear-gradient(90deg,#3DDC84,#C9A227); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #hello p { font-size:13.5px; color:#8AA396; margin-bottom:30px; animation:nmup .5s .26s both; }
-  #chips { display:grid; grid-template-columns:1fr; gap:9px; width:100%; max-width:440px; }
-  .chip { background:#111611; border:1px solid #212922; border-radius:18px; padding:15px 16px; font-size:13px; color:#8AA396; text-align:left; line-height:1.5; opacity:0; transform:translateY(12px); animation:chipin .45s cubic-bezier(.2,.9,.3,1) forwards; min-height:58px; display:flex; flex-direction:column; justify-content:center; }
+  #chips { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; width:100%; max-width:480px; }
+  .chip { background:#111611; border:1px solid #212922; border-radius:16px; padding:12px 13px; font-size:12.5px; color:#8AA396; text-align:left; line-height:1.4; opacity:0; transform:translateY(10px); animation:chipin .45s cubic-bezier(.2,.9,.3,1) forwards; min-height:62px; display:flex; flex-direction:column; justify-content:center; }
   .chip:nth-child(1) { animation-delay:.32s } .chip:nth-child(2) { animation-delay:.4s }
   .chip:nth-child(3) { animation-delay:.48s } .chip:nth-child(4) { animation-delay:.56s }
   @keyframes chipin { to { opacity:1; transform:none } }
-  .chip b { display:block; color:#ECEEEC; font-size:15px; font-weight:600; margin-bottom:4px; }
+  .chip b { display:block; color:#ECEEEC; font-size:14px; font-weight:600; margin-bottom:3px; }
   .chip:active { border-color:#3DDC8466; background:#141C15; transform:scale(.97); }
 
   /* ===== input ===== */
@@ -160,7 +162,7 @@
     box-shadow:0 4px 24px #0006;
   }
   #pill:focus-within { border-color:#3A4A40; box-shadow:0 4px 24px #0008; }
-  #inp { flex:1; background:none; border:none; color:#ECEEEC; font-size:15.5px; resize:none; max-height:120px; outline:none; padding:6px 0; line-height:1.5; font-family:inherit; }
+  #inp { flex:1; background:none; border:none; color:#ECEEEC; font-size:16px; resize:none; max-height:120px; outline:none; padding:6px 0; line-height:1.5; font-family:inherit; }
   #inp::placeholder { color:#5E7568; }
   /* tombol kecil-kompak — Bumble: lampiran kiri, kirim kanan, input tetap lega */
   #battach {
@@ -196,7 +198,7 @@
   }
   #attachbar #att-x { background:#1A150F; color:#E08A7B; }
   #attachbar #att-send { margin-left:auto; background:#1C2A22; color:#7FCF9F; border:1px solid #2A4436; }
-  #hint { text-align:center; font-size:11.5px; color:#5E7568; margin-top:9px; max-width:760px; margin-left:auto; margin-right:auto; }
+  #hint { text-align:center; font-size:12.5px; color:#5E7568; margin-top:9px; max-width:760px; margin-left:auto; margin-right:auto; }
   #hint b { color:#C9A227; font-weight:500; }
 
   /* ===== scroll btn ===== */
@@ -230,6 +232,17 @@
   .card button.bb { flex:1; padding:13px; border-radius:13px; font-size:14px; font-weight:500; }
   #save { background:#ECEEEC; border:none; color:#0C100E; }
   .ghost { background:none; border:1px solid #2A332E; color:#C7D2CB; }
+  /* ===== terminal ===== */
+  #mterm .card { max-width:640px; background:#0B0F0D; border-color:#1E241F; padding:0; overflow:hidden; display:flex; flex-direction:column; max-height:86vh; }
+  #mterm .t-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #1E241F; background:#10140F; }
+  #mterm .t-head b { font-size:14px; color:#F4F6F3; }
+  #mterm .t-head .hint { font-size:11px; color:#5E7568; margin:0; }
+  #tout { flex:1; overflow-y:auto; padding:12px 14px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.55; color:#D5DED7; white-space:pre-wrap; word-break:break-all; background:#0B0F0D; min-height:180px; max-height:52vh; }
+  #tout .cmd { color:#7FCF9F; } #tout .err { color:#E08A7B; } #tout .mut { color:#5E7568; }
+  #tbar { display:flex; gap:8px; padding:10px 12px; border-top:1px solid #1E241F; background:#10140F; align-items:center; }
+  #tin { flex:1; background:#0C100E; border:1px solid #262E28; color:#ECEEEC; border-radius:10px; padding:10px 12px; font-family:ui-monospace,Menlo,monospace; font-size:13px; outline:none; }
+  #tin:focus { border-color:#3DDC8466; }
+  #tgo { background:#1C2A22; border:1px solid #2A4436; color:#7FCF9F; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600; }
   .mlist { display:flex; flex-direction:column; gap:9px; margin-top:4px; }
   .mopt { display:flex; align-items:center; gap:12px; background:#0C100E; border:1px solid #262E28; border-radius:14px; padding:14px 15px; text-align:left; width:100%; }
   .mopt.sel { border-color:#3DDC8488; background:#0F1A13; }
@@ -240,28 +253,46 @@
   /* ===== splash v2 — logo digambar + glow + shimmer ===== */
   #splash { position:fixed; inset:0; background:#0C100E; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .55s; }
   #splash.out { opacity:0; pointer-events:none; }
-  #splash .stage { position:relative; width:96px; height:96px; }
-  #splash .glow { position:absolute; inset:-42px; border-radius:50%; background:radial-gradient(circle,#3DDC8430 0%,transparent 65%); animation:breathe 2.2s ease-in-out infinite; }
-  #splash .mark { width:96px; height:96px; position:relative; }
+  #splash .stage { position:relative; width:112px; height:112px; }
+  #splash .glow { position:absolute; inset:-48px; border-radius:50%; background:radial-gradient(circle,#3DDC8436 0%,transparent 65%); animation:breathe 2.2s ease-in-out infinite; }
+  #splash .mark { width:112px; height:112px; position:relative; }
   #splash .frm path { stroke-dasharray:600; stroke-dashoffset:600; animation:draw .9s cubic-bezier(.65,0,.3,1) forwards; }
   #splash .frm path:nth-child(2) { animation-delay:.35s; }
   @keyframes draw { to { stroke-dashoffset:0; } }
   #splash .cur { animation:curin .65s .85s cubic-bezier(.2,1.6,.4,1) both, curfloat 2.4s 1.7s ease-in-out infinite; transform-origin:center; }
-  @keyframes curin { from { transform:rotate(8deg) scale(0); opacity:0 } 60% { transform:rotate(8deg) scale(1.12) } to { transform:rotate(8deg) scale(1); opacity:1 } }
-  @keyframes curfloat { 50% { transform:rotate(8deg) translateY(-4px) } }
-  #splash .nm { margin-top:16px; font-size:24px; font-weight:600; letter-spacing:.5px; animation:nmup .5s .7s both; position:relative; overflow:hidden; padding:0 6px; }
+  @keyframes curin { from { transform:rotate(0deg) scale(0); opacity:0 } 60% { transform:rotate(0deg) scale(1.08) } to { transform:rotate(0deg) scale(1); opacity:1 } }
+  @keyframes curfloat { 50% { transform:rotate(0deg) translateY(-3px) } }
+  #splash .nm { margin-top:18px; font-size:26px; font-weight:600; letter-spacing:.5px; animation:nmup .5s .7s both; position:relative; overflow:hidden; padding:0 6px; }
   #splash .nm span { color:#3DDC84; }
   #splash .nm::after { content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 25%,#ffffff26 50%,transparent 75%); transform:translateX(-130%); animation:shimmer 1.2s 1.15s ease forwards; }
   @keyframes shimmer { to { transform:translateX(130%); } }
   @keyframes nmup { from { transform:translateY(14px); opacity:0 } to { transform:none; opacity:1 } }
   #splash .sub { margin-top:6px; font-size:12px; color:#6E8478; animation:nmup .5s .95s both; }
-  #toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%) translateY(16px); background:#1A211C; border:1px solid #2A332E; color:#ECEEEC; padding:10px 18px; border-radius:12px; font-size:13px; opacity:0; transition:.3s; z-index:70; pointer-events:none; }
+  #toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%) translateY(16px); background:#1A211C; border:1px solid #2A332E; color:#ECEEEC; padding:10px 18px; border-radius:12px; font-size:13px; opacity:0; transition:.3s; z-index:70; pointer-events:none; box-shadow:0 8px 24px #0008; }
   #toast.show { opacity:1; transform:translateX(-50%); }
-   /* Animasi logo saat buka app (splash) dibuat 10 detik — lambat & dramatis.
-      Pasti dibatasi HANYA di dalam #splash, supaya animasi lain (typing, dsb) normal. */
-   #splash *, #splash *::before, #splash *::after {
-     animation-duration: 10s !important;
-   }
+  /* polish lengkap — scrollbar, chat bg, bubble shadow, pill ring, hover press */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-thumb { background:#1E241F; border-radius:8px; } ::-webkit-scrollbar-thumb:hover { background:#243026; }
+  #chatwrap { background: radial-gradient(600px 400px at 50% -10%, #141C18 0%, transparent 60%), #0C100E; }
+  .msg.user .body { box-shadow:0 4px 18px #0005, inset 0 1px 0 #ffffff0a; }
+  .msg.ai .body { text-shadow:0 1px 0 #0004; }
+  #pill { box-shadow:0 8px 32px #0007, 0 0 0 1px #ffffff07 inset; transition:border-color .2s, box-shadow .2s; }
+  #pill:focus-within { border-color:#2E4436; box-shadow:0 8px 32px #0008, 0 0 0 1px #3DDC8422 inset; }
+  #battach, #go { box-shadow:0 2px 10px #0004; } #battach:hover, #go:hover { filter:brightness(1.06); }
+  .chip { transition:border-color .2s, background .2s, transform .15s; box-shadow:0 2px 12px #0003; }
+  .chip:hover { border-color:#2A4436; background:#141C17; } .chip:active { transform:scale(.98); }
+  #scrim { backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+  #drawer { box-shadow:12px 0 40px #0008; }
+  .d-item { transition:background .18s, transform .2s; } .d-item:hover { background:#151C16; }
+  .mact button { transition:background .18s, color .18s; } .mact button:hover { background:#151C16; color:#D5DED7; }
+  .cb { box-shadow:0 6px 20px #0005; }
+  header { box-shadow:0 1px 12px #0005; }
+  /* reduced motion sudah handled di bawah */
+    /* Animasi logo saat buka app (splash) 6 detik — lambat & dramatis.
+       Pasti dibatasi HANYA di dalam #splash, supaya animasi lain (typing, dsb) normal. */
+    #splash *, #splash *::before, #splash *::after {
+      animation-duration: 6s !important;
+    }
    @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
@@ -281,7 +312,7 @@
         <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
         <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
       </g>
-      <rect class="cur" x="232" y="232" width="130" height="130" rx="18" fill="url(#gd0)" transform="rotate(8 297 297)"/>
+      <rect class="cur" x="236" y="236" width="122" height="122" rx="18" fill="url(#gd0)" transform="rotate(0 297 297)"/>
     </svg>
   </div>
   <div class="nm"><b>Open</b><span style="color:#3DDC84">Code</span></div>
@@ -296,7 +327,7 @@
       </linearGradient></defs>
       <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
       <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#gd1)" transform="rotate(8 297 297)"/>
+      <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd1)" transform="rotate(0 297 297)"/>
     </svg>
     <div><b>OpenCode</b></div>
   </div>
@@ -304,9 +335,8 @@
     <button class="d-item primary" id="dnew"><span class="ic">&#10010;</span> Obrolan baru</button>
     <button class="d-item" id="dconfig"><span class="ic">&#9881;</span> Konfigurasi</button>
     <button class="d-item" id="dmodel"><span class="ic">&#9889;</span> Ganti model</button>
-    <button class="d-item" id="dlocal"><span class="ic">&#128737;</span> Mode lokal <span id="localst" class="badge">OFF</span></button>
+    <button class="d-item" id="dterm"><span class="ic">&#9000;</span> Terminal</button>
     <button class="d-item" id="dupdate"><span class="ic">&#8595;</span> Cek update</button>
-    <button class="d-item" id="dshare"><span class="ic">&#128228;</span> Bagikan obrolan</button>
   </div>
   <div class="d-foot">opencode android <span id="dver">v?</span></div>
 </div>
@@ -314,7 +344,7 @@
 
 <header>
   <button class="hbtn" id="bmenu">&#9776;</button>
-  <button id="mchip"><span class="lbl" id="mname">Big Pickle</span><span class="car">&#9662;</span></button>
+  <button id="mchip"><span class="lbl" id="mname">Muse Spark</span><span class="car">&#9662;</span></button>
   <div style="flex:1"></div>
   <div id="dot"></div>
   <button class="hbtn" id="blang" title="bahasa balasan">&#127760;</button>
@@ -332,7 +362,7 @@
       </linearGradient></defs>
       <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
       <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#gd2)" transform="rotate(8 297 297)"/>
+      <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd2)" transform="rotate(0 297 297)"/>
     </svg>
     <h2><b>Ada yang bisa</b> <span>dibantu?</span></h2>
     <p>model gratis aktif &#8212; tanpa API key</p>
@@ -362,7 +392,7 @@
     </linearGradient></defs>
     <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
     <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-    <rect x="232" y="232" width="130" height="130" rx="18" fill="url(#gd3)" transform="rotate(8 297 297)"/>
+    <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd3)" transform="rotate(0 297 297)"/>
   </svg>
   <h2>BERSIAP...</h2>
   <p id="ovp">sekali saja di buka pertama</p>
@@ -388,6 +418,16 @@
   </div>
 </div>
 
+<div class="modal" id="mterm">
+  <div class="card">
+    <div class="t-head"><div><b>TERMINAL</b><div class="hint">Alpine • /work • <span id="tpath">/work</span></div></div><button class="bb ghost" id="tclose" style="padding:8px 14px;border-radius:10px">tutup</button></div>
+    <div id="tout"><span class="mut">Terminal Alpine — ketik perintah lalu Enter. Contoh: ls, pwd, apk add nodejs, node -v, npm i, python3 --version
+/work terhubung ke folder kerja app (extWork). Rootfs: Alpine 3.21.
+/tmp &amp; /work writable, jaringan aktif.
+</span></div>
+    <div id="tbar"><input id="tin" placeholder="perintah…  (apk add htop, ls -la, cat file.txt)" autocomplete="off" spellcheck="false"><button id="tgo">jalankan</button></div>
+  </div>
+</div>
 <div class="modal" id="mconfig">
   <div class="card">
     <h3>KONFIGURASI</h3>
@@ -404,7 +444,7 @@
     <input id="ckey" type="password" placeholder="kosongkan untuk model gratis">
     <div class="hint">Default sudah pakai model gratis tanpa key. Key lain: <a href="#" onclick="Android.openUrl('https://console.opencode.ai');return false">console.opencode.ai</a></div>
     <label>Model</label>
-    <input id="cmodel" placeholder="default: opencode/big-pickle">
+    <input id="cmodel" placeholder="default: opencode/muse-spark-1.2-contributor-free">
     <div class="acts">
       <button class="bb ghost" id="closem">tutup</button>
       <button class="bb" id="save">simpan</button>
@@ -439,8 +479,8 @@ var battach = document.getElementById('battach');
 var dot = document.getElementById('dot');
 var ov = document.getElementById('ov');
 var busy = false;
-var curModel = 'opencode/big-pickle';
-document.getElementById('mname').textContent = 'Big Pickle';
+var curModel = 'opencode/muse-spark-1.2-contributor-free';
+document.getElementById('mname').textContent = 'Muse Spark';
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -540,7 +580,7 @@ function mdRender(src) {
   return txt;
 }
 
-var AVA_SVG = '<svg viewBox="0 0 432 432"><g fill="none" stroke="#3DDC84" stroke-width="30" stroke-linecap="round"><path d="M132 84 H300 Q316 84 316 100 V196"/><path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84"/></g><rect x="244" y="244" width="118" height="118" rx="16" fill="#C9A227" transform="rotate(8 303 303)"/></svg>';
+var AVA_SVG = '<svg viewBox="0 0 432 432"><g fill="none" stroke="#3DDC84" stroke-width="30" stroke-linecap="round"><path d="M132 84 H300 Q316 84 316 100 V196"/><path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84"/></g><rect x="244" y="244" width="118" height="118" rx="16" fill="#C9A227" transform="rotate(0 303 303)"/></svg>';
 function addMsg(kind) {
   killHello();
   var m = document.createElement('div');
@@ -771,12 +811,12 @@ function send(t, label, imgPrev) {
     var el = window._cur ? window._cur.querySelector('.elapsed') : null;
     var sec = Math.round((Date.now() - t0) / 1000);
     if (el) el.textContent = 'mengetik... ' + sec + 's' + (sec > 40 ? ' - relay lambat' : '');
-    /* auto-suggest model cepat: 45 dtk tanpa delta pertama */
-    if (sec >= 45 && !window._gotDelta && !window._suggested && window._cur) {
+     /* auto-suggest model cepat: 25 dtk tanpa delta pertama (relay gratis kadang lambat) */
+    if (sec >= 25 && !window._gotDelta && !window._suggested && window._cur) {
       window._suggested = true;
       var h = document.getElementById('hint');
       h.innerHTML = 'lambat? lompat ke model cepat: ';
-      [['big-pickle','Big Pickle ~5s'],['hy3-free','Hy3 ~6s']].forEach(function(m) {
+      [['muse-spark-1.2-contributor-free','Muse Spark ~5s'],['hy3-free','Hy3 ~6s']].forEach(function(m) {
         var b = document.createElement('button');
         b.textContent = m[1];
         b.style.cssText = 'background:#1C2A22;border:1px solid #2A4436;color:#7FCF9F;border-radius:8px;padding:4px 10px;margin:3px 4px 0 0;font-size:12px;font-family:inherit';
@@ -789,7 +829,7 @@ function send(t, label, imgPrev) {
   dot.className = 'work';
   go.innerHTML = '&#9632;';
   go.classList.add('stop');
-  document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-90 detik</b> (pakai big-pickle utk ~15s)';
+  document.getElementById('hint').innerHTML = 'model gratis diproses di server &bull; balasan pertama bisa <b>30-90 detik</b> (pakai Muse Spark utk ~15s)';
   var jTok = Android.send(langPromp(t));
   if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
 }
@@ -995,20 +1035,6 @@ document.getElementById('cmcustom').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && this.value.trim()) { setModel(this.value.trim()); }
 });
 
-/* ===== mode lokal — tanpa panggilan model remote (proot crash-safe) ===== */
-function updateLocalBadge() {
-  var on = Android.getLocalMode();
-  var b = document.getElementById('localst');
-  b.textContent = on ? 'ON' : 'OFF';
-  b.style.color = on ? '#7FCF9F' : '#9AB0A3';
-}
-document.getElementById('dlocal').onclick = function() {
-  Android.setLocalMode(!Android.getLocalMode());
-  updateLocalBadge();
-  addNote(Android.getLocalMode() ? 'Mode lokal AKTIF — model remote tidak dipanggil (server proot aman).' : 'Mode lokal mati.', false);
-};
-updateLocalBadge();
-
 /* ===== pilih bahasa balasan ===== */
 var curLang = localStorage.getItem('oc-lang') || 'auto';
 var LANGS = [
@@ -1085,7 +1111,7 @@ function openConfig() {
     if (c.cfg) {
       try {
         var m = JSON.parse(c.cfg);
-        document.getElementById('cmodel').value = (m.model === 'opencode/big-pickle') ? '' : (m.model || '');
+        document.getElementById('cmodel').value = (m.model === 'opencode/muse-spark-1.2-contributor-free') ? '' : (m.model || '');
       } catch (e) {}
     }
   } catch (e) {}
@@ -1093,7 +1119,7 @@ function openConfig() {
 }
 document.getElementById('closem').onclick = function() { document.getElementById('mconfig').classList.remove('show'); };
 document.getElementById('save').onclick = function() {
-  var m = document.getElementById('cmodel').value.trim() || 'opencode/big-pickle';
+  var m = document.getElementById('cmodel').value.trim() || 'opencode/muse-spark-1.2-contributor-free';
   curModel = m;
   document.getElementById('mname').textContent = modelName(m);
   Android.saveConfig(
@@ -1104,7 +1130,8 @@ document.getElementById('save').onclick = function() {
 };
 
 /* ===== lain-lain ===== */
-document.getElementById('dshare').onclick = function() {
+var _dshare = document.getElementById('dshare');
+if (_dshare) _dshare.onclick = function() {
   closeDrawer();
   var out = [];
   chat.querySelectorAll('.msg,.sysnote').forEach(function(n) {
@@ -1122,6 +1149,40 @@ document.getElementById('dshare').onclick = function() {
   if (typeof Android.shareText === 'function') Android.shareText(text);
   else copy(text), toast('tidak bisa share — disalin ke clipboard');
 };
+document.getElementById('dterm').onclick = function() {
+  closeDrawer();
+  document.getElementById('mterm').classList.add('show');
+  setTimeout(function(){ var i=document.getElementById('tin'); if(i) i.focus(); }, 80);
+};
+document.getElementById('tclose').onclick = function(){ document.getElementById('mterm').classList.remove('show'); };
+document.getElementById('mterm').onclick = function(e){ if(e.target===this) this.classList.remove('show'); };
+(function(){
+  var hist=[], hi=-1, tout=document.getElementById('tout'), tin=document.getElementById('tin'), tgo=document.getElementById('tgo');
+  function append(s, cls){ var d=document.createElement('div'); if(cls) d.className=cls; d.textContent=s; tout.appendChild(d); tout.scrollTop=tout.scrollHeight; }
+  function run(){
+    var cmd=tin.value.trim(); if(!cmd) return;
+    hist.push(cmd); hi=hist.length; tin.value='';
+    append('$ '+cmd,'cmd');
+    append('…','mut');
+    var spin=tout.lastChild;
+    try {
+      var raw = Android.termExec(cmd);
+      var j = JSON.parse(raw);
+      spin.textContent='';
+      spin.remove();
+      var out=(j.out||'').trimEnd();
+      if(out) append(out, j.code!==0?'err':'');
+      append('[exit '+j.code+']','mut');
+    } catch(e){ spin.textContent='error: '+e; spin.className='err'; }
+  }
+  tgo.onclick=run;
+  tin.addEventListener('keydown', function(e){
+    if(e.key==='Enter'){ e.preventDefault(); run(); }
+    else if(e.key==='ArrowUp'){ if(hi>0) hi--; if(hist[hi]!==undefined) tin.value=hist[hi]; e.preventDefault(); }
+    else if(e.key==='ArrowDown'){ if(hi<hist.length-1){ hi++; tin.value=hist[hi]||''; } else { hi=hist.length; tin.value=''; } e.preventDefault(); }
+  });
+})();
+
 document.getElementById('dupdate').onclick = function() {
   closeDrawer();
   Android.checkUpdate();

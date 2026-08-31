@@ -50,7 +50,7 @@ ok('logo svg ada', !!$('#hello svg'));
 ok('4 chip saran', $$('.chip').length === 4);
 ok('tombol + ada', !!$('#bnew'));
 ok('tombol menu ada', !!$('#bmenu'));
-ok('chip model: Big Pickle (tercepat)', $('#mname').textContent === 'Big Pickle');
+ok('chip model: Muse Spark (tercepat)', $('#mname').textContent.includes('Muse Spark'));
 ok('tanpa teks "agent AI di HP-mu"', !html.includes('agent AI di HP-mu'));
 ok('tanpa "dibuat dari Termux"', !html.includes('dibuat dari Termux'));
 ok('checkUpdate terpanggil saat load', calls.checkUpdate === 1);
@@ -280,8 +280,8 @@ $('#cmcustom').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter',
 ok('custom model enter → setModel', calls.saveConfig.some(c => c[2] === 'grok/cepat-cepat') && $('#mname').textContent === 'cepat-cepat');
 ok('kirim tidak terganggu menu model', calls.send.length === sendCountM);
 $('#mclose').click();
-window.setModel('opencode/big-pickle'); // kembalikan model default
-ok('kembali ke big-pickle', $('#mname').textContent === 'Big Pickle');
+window.setModel('opencode/muse-spark-1.2-contributor-free'); // kembalikan model default spark
+ok('kembali ke spark', $('#mname').textContent.includes('Muse Spark'));
 
 console.log('== 16. BAHASA BALASAN ==');
 ok('tombol bahasa default auto', $('#blang').title.includes('Auto'));
@@ -319,7 +319,7 @@ ok('saveConfig dgn provider+key+model', calls.saveConfig.some(c => c[0] === 'ope
 window.onSaved();
 ok('modal config tutup setelah simpan', !$('#mconfig').classList.contains('show'));
 ok('model header ikut model kustom', $('#mname').textContent === 'GPT-4.1');
-$('#closem').click(); window.setModel('opencode/big-pickle');
+$('#closem').click(); window.setModel('opencode/muse-spark-1.2-contributor-free');
 
 console.log('== 18. MARKDOWN LANJUT + XSS ==');
 window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;

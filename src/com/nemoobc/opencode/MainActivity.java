@@ -713,7 +713,7 @@ public class MainActivity extends Activity {
         /* model yang sudah terbukti cepat → timeout pendek; sisanya diberi 75 dtk
            (relay bisa mengantre lama). Yang butuh API key erorr cepat tanpa key. */
         java.util.Set<String> verified = new java.util.HashSet<>();
-        verified.add("opencode/big-pickle");
+        verified.add("opencode/muse-spark-1.2-contributor-free");
         verified.add("opencode/hy3-free");
 
         for (int i = 0; i < models.length(); i++) {
@@ -1069,15 +1069,15 @@ public class MainActivity extends Activity {
     }
 
     /* warm-up: request model sekali utk panaskan TLS/cache server → pesan
-       pertama user jauh lebih cepat (host ukur: 14s → dingin). Jangan
-       ganggu kiriman user: skip kalau busy/mode lokal. */
+        pertama user jauh lebih cepat (host ukur: 14s → dingin). Jangan
+        ganggu kiriman user: skip kalau busy/mode lokal. */
     private void warmUpModel() {
         if (warmedUp || localMode) return;
         warmedUp = true;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try { Thread.sleep(5000); } catch (InterruptedException ignored) { return; }
+                try { Thread.sleep(1500); } catch (InterruptedException ignored) { return; }
                 if (!serverUp || sessionId == null || busy || localMode) return;
                 try {
                     String model = readModel();
@@ -1624,6 +1624,79 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String termExec(String cmd) {
+            try {
+                if (cmd == null || cmd.trim().length() == 0) return "{\"code\":1,\"out\":\"\"}";
+                if (rootFs == null || !rootFs.exists()) return "{\"code\":1,\"out\":\"rootfs belum siap — buka app sampai server siap\"}";
+                // alias termux: apt/pkg → apk (Alpine)
+                String c0 = cmd.trim();
+                if (c0.startsWith("apt ")) c0 = "apk" + c0.substring(3);
+                else if (c0.startsWith("apt-get ")) c0 = "apk" + c0.substring(7);
+                else if (c0.startsWith("pkg ")) c0 = "apk" + c0.substring(3);
+                else if (c0.equals("apt") || c0.equals("pkg")) c0 = "apk";
+                cmd = c0;
+                String proot = nativeExec("libproot.so");
+                String loader = nativeExec("libproot_loader.so");
+                java.util.List<String> c = new java.util.ArrayList<>();
+                c.add(proot);
+                c.add("-0");
+                c.add("-r"); c.add(rootFs.getAbsolutePath());
+                c.add("-b"); c.add("/dev");
+                c.add("-b"); c.add("/proc");
+                c.add("-b"); c.add("/sys");
+                c.add("-b"); c.add(cacheDir.getAbsolutePath() + ":/tmp");
+                c.add("-b"); c.add(extWork.getAbsolutePath() + ":/work");
+                c.add("-b"); c.add(extWork.getAbsolutePath());
+                c.add("-w"); c.add("/work");
+                c.add("/bin/sh");
+                c.add("-c");
+                c.add(cmd);
+                ProcessBuilder pb = new ProcessBuilder(c);
+                pb.environment().clear();
+                String ld = getApplicationInfo().nativeLibraryDir + ":" + linkDir.getAbsolutePath() + ":" + natLib.getAbsolutePath();
+                pb.environment().put("LD_LIBRARY_PATH", ld);
+                pb.environment().put("PROOT_LOADER", loader);
+                pb.environment().put("PROOT_TMP_DIR", cacheDir.getAbsolutePath());
+                pb.environment().put("PROOT_NO_SECCOMP", "1");
+                pb.environment().put("HOME", "/root");
+                pb.environment().put("TMPDIR", "/tmp");
+                pb.environment().put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+                pb.environment().put("TERM", "xterm-256color");
+                pb.directory(new java.io.File(extWork.getAbsolutePath()));
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                StringBuilder out = new StringBuilder();
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                    char[] buf = new char[4096];
+                    long t0 = System.currentTimeMillis();
+                    while (System.currentTimeMillis() - t0 < 120000) {
+                        if (r.ready()) {
+                            int n = r.read(buf);
+                            if (n < 0) break;
+                            out.append(buf, 0, n);
+                            if (out.length() > 200000) { out.append("\n[terpotong 200k]"); break; }
+                        } else {
+                            try { if (p.waitFor(200, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                                // drain sisa
+                                while (r.ready()) { int n = r.read(buf); if (n < 0) break; out.append(buf, 0, n); }
+                                break;
+                            }} catch (InterruptedException ignored) { break; }
+                        }
+                    }
+                    try { if (!p.waitFor(800, java.util.concurrent.TimeUnit.MILLISECONDS)) p.destroyForcibly(); } catch (Exception ignored) {}
+                }
+                int code;
+                try { code = p.exitValue(); } catch (IllegalThreadStateException e) { p.destroyForcibly(); code = 124; out.append("\n[timeout 120s]"); }
+                JSONObject o = new JSONObject();
+                o.put("code", code);
+                o.put("out", out.toString());
+                return o.toString();
+            } catch (Exception e) {
+                try { JSONObject o = new JSONObject(); o.put("code", 1); o.put("out", String.valueOf(e)); return o.toString(); } catch (Exception ignored) { return "{\"code\":1,\"out\":\"error\"}"; }
+            }
+        }
+
+        @JavascriptInterface
         public String appInfo() {
             try {
                 return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -1679,7 +1752,7 @@ public class MainActivity extends Activity {
                 if (m.length() > 0) return m;
             }
         } catch (Exception ignored) {}
-        return "opencode/big-pickle";
+        return "opencode/muse-spark-1.2-contributor-free";
     }
 
     private void write(File f, String s) throws Exception {

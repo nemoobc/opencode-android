@@ -33,9 +33,9 @@ Model gratis aktif — tanpa API key, tanpa Termux, tanpa root.
 
 ## 🆓 Gratis, tanpa API key
 
-Model default **`opencode/big-pickle`** berjalan tanpa kunci apa pun —
+Model default **`opencode/muse-spark-1.2-contributor-free`** berjalan tanpa kunci apa pun —
 pasang, buka, langsung pakai. Beberapa model gratis lain tersedia
-(mis. `opencode/hy3-free`) dan bisa dipilih sekali tap dari header.
+(mis. `opencode/big-pickle`, `opencode/hy3-free`) dan bisa dipilih sekali tap dari header.
 
 > Kecepatan akhir tetap ditentukan relay model gratis di sisi server.
 > Mau lebih cepat / model tertentu? Tempel API key provider lewat menu

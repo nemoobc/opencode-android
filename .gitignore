@@ -10,3 +10,6 @@ node_modules/
 package-lock.json
 
 autodev-*.md
+
+.autodev-state.json
+__pycache__/

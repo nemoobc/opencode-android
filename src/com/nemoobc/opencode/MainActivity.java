@@ -86,7 +86,6 @@ public class MainActivity extends Activity {
        push() di-queue dulu; dieksekusi setelah halaman selesai dimuat. */
     private final java.util.List<String> pendingJs = new java.util.ArrayList<>();
     private volatile boolean webLoaded;
-    private volatile boolean webInit;
     private android.widget.TextView stageView;
     private android.widget.ProgressBar progView;
 
@@ -553,45 +552,12 @@ public class MainActivity extends Activity {
         });
     }
 
-    /* buat WebView di UI thread — dipanggil saat server sudah siap (atau saat
-       error fatal, supaya pesan error tetap tampil) */
+    /* WebView sudah dibuat langsung di onCreate (lihat onCreate). requestWeb()
+       dulu dipakai untuk membuat WebView saat server siap; sekarang WebView
+       selalu ada sejak awal, jadi panggilan ini tidak perlu melakukan apa-apa.
+       Dipertahankan sebagai no-op agar pemanggil (jalur error) tetap valid. */
     private void requestWeb() {
-        ui.post(new Runnable() {
-            @Override
-            public void run() {
-                ensureWeb();
-            }
-        });
-    }
-
-    private void ensureWeb() {
-        if (web != null) return;  /* WebView sudah dibuat langsung di onCreate */
-        if (webInit) return;
-        webInit = true;
-        web = new WebView(this);
-        WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-        /* hemat memori: cache mati + jangan pre-render offscreen (RAM perangkat sempit) */
-        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        s.setOffscreenPreRaster(false);
-        web.setBackgroundColor(0xFF0C100E);
-        web.addJavascriptInterface(new Bridge(), "Android");
-        web.setVisibility(View.INVISIBLE);
-        web.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView v, String u) {
-                debugLog("web: onPageFinished");
-                webLoaded = true;
-                v.setVisibility(View.VISIBLE);
-                flushPending();
-                if (autotest) startAutoTest();
-            }
-        });
-        setContentView(web);
-        debugLog("webView: dibuat + setContentView");
-        web.loadUrl("file:///android_asset/ui/index.html");
-        debugLog("webView: loadUrl OK");
+        /* no-op: WebView sudah dibuat di onCreate */
     }
 
     private void flushPending() {
@@ -1168,9 +1134,9 @@ public class MainActivity extends Activity {
                     } finally {
                         if (c != null) c.disconnect();
                     }
-                    if (running && serverUp) {
-                        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
-                    }
+                    /* selalu sleep sebelum reconnect — tanpa sleep, thread SSE
+                       tight-loop saat server down (CPU 100%, baterai habis). */
+                    try { Thread.sleep(running ? 1500 : 500); } catch (InterruptedException ignored) {}
                 }
             }
         });
@@ -1574,7 +1540,10 @@ public class MainActivity extends Activity {
                         String tag = j.getString("tag_name");
                         String mine = getPackageManager()
                             .getPackageInfo(getPackageName(), 0).versionName;
-                        if (!tag.contains(mine)) {
+                        /* edgesing: "1.6.1" contains dalam "v1.6.10" → notif salah.
+                           Pakai strip prefix 'v' lalu bandingkan dengan endsWith. */
+                        String tagVer = tag.startsWith("v") ? tag.substring(1) : tag;
+                        if (!tagVer.equals(mine)) {
                             push("window.onUpdate(" + JSONObject.quote(tag) + ")");
                         }
                     } finally { cx.disconnect(); }
@@ -1608,10 +1577,16 @@ public class MainActivity extends Activity {
                             org.json.JSONObject j = new org.json.JSONObject(sb.toString());
                             org.json.JSONArray data = j.optJSONArray("data");
                             org.json.JSONArray gratis = new org.json.JSONArray();
+                            /* model gratis yang TIDAK berakhiran "-free" tapi tetap
+                               diserve relay (mis. big-pickle). Daftar ini sinkron
+                               dengan MODELS statis di index.html supaya model yang
+                               gak berakhiran "-free" tetap bisa di-refresh. */
+                            java.util.Set<String> gratisNonFree = new java.util.HashSet<>();
+                            gratisNonFree.add("big-pickle");
                             if (data != null) {
                                 for (int i = 0; i < data.length(); i++) {
                                     String id = data.getJSONObject(i).optString("id", "");
-                                    if (id.endsWith("-free")) gratis.put(id);
+                                    if (id.endsWith("-free") || gratisNonFree.contains(id)) gratis.put(id);
                                 }
                             }
                             push("window.onModels(" + gratis.toString() + ")");
@@ -1730,7 +1705,11 @@ public class MainActivity extends Activity {
             os.write(body.getBytes(StandardCharsets.UTF_8));
             os.close();
             int code = c.getResponseCode();
-            InputStream is = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            InputStream is = c.getInputStream();
+            if (code >= 400) {
+                InputStream es = c.getErrorStream();
+                is = es != null ? es : is;
+            }
             BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String l;
@@ -1791,6 +1770,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
         if (busy) {

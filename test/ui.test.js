@@ -3,6 +3,11 @@ import fs from 'fs';
 
 const html = fs.readFileSync('assets/ui/index.html', 'utf8');
 
+/* concat JS files — urutan sama kayak <script src> di index.html */
+const JS_DIR = 'assets/ui/js/';
+const JS_FILES = ['bridge.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
+const script = JS_FILES.map(f => fs.readFileSync(JS_DIR + f, 'utf8')).join('\n;\n');
+
 const calls = { send: [], cancel: 0, newChat: 0, saveConfig: [], copyText: [], openUrl: [], checkUpdate: 0, readConfig: null };
 const dom = new JSDOM(html, {
   runScripts: 'outside-only',
@@ -32,8 +37,7 @@ const dom = new JSDOM(html, {
 });
 const { window } = dom;
 const doc = window.document;
-// jalankan script inline halaman
-const script = html.match(/<script>([\s\S]*)<\/script>/)[1];
+// jalankan semua JS yang sudah di-concat
 window.eval(script);
 
 let pass = 0, fail = 0;
@@ -50,7 +54,7 @@ ok('logo svg ada', !!$('#hello svg'));
 ok('4 chip saran', $$('.chip').length === 4);
 ok('tombol + ada', !!$('#bnew'));
 ok('tombol menu ada', !!$('#bmenu'));
-ok('chip model: Muse Spark (tercepat)', $('#mname').textContent.includes('Muse Spark'));
+ok('chip model: Mimo 2.5 Free', $('#mname').textContent.includes('Mimo'));
 ok('tanpa teks "agent AI di HP-mu"', !html.includes('agent AI di HP-mu'));
 ok('tanpa "dibuat dari Termux"', !html.includes('dibuat dari Termux'));
 ok('checkUpdate terpanggil saat load', calls.checkUpdate === 1);
@@ -61,7 +65,7 @@ console.log('== 2. KIRIM PESAN (klik chip) ==');
 $$('.chip')[0].click();
 ok('Android.send terpanggil dgn prompt chip', calls.send[0].includes('folder kerja'));
 ok('bubble user muncul', $$('.msg.user').length === 1);
-ok('bubble AI + dots mengetik', !!$('.msg.ai .dots'));
+ok('bubble AI + thinking animation', !!$('.msg.ai .thinking-svg'));
 ok('avatar AI tampil', !!$('.msg.ai .ava svg'));
 ok('tombol jadi stop (merah)', $('#go').classList.contains('stop'));
 ok('timer elapsed tampil', !!$('.elapsed'));
@@ -280,8 +284,8 @@ $('#cmcustom').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter',
 ok('custom model enter → setModel', calls.saveConfig.some(c => c[2] === 'grok/cepat-cepat') && $('#mname').textContent === 'cepat-cepat');
 ok('kirim tidak terganggu menu model', calls.send.length === sendCountM);
 $('#mclose').click();
-window.setModel('opencode/muse-spark-1.2-contributor-free'); // kembalikan model default spark
-ok('kembali ke spark', $('#mname').textContent.includes('Muse Spark'));
+window.setModel('opencode/mimo-v2.5-free'); // kembalikan model default mimo
+ok('kembali ke mimo', $('#mname').textContent.includes('Mimo'));
 
 console.log('== 16. BAHASA BALASAN ==');
 ok('tombol bahasa default auto', $('#blang').title.includes('Auto'));
@@ -319,7 +323,7 @@ ok('saveConfig dgn provider+key+model', calls.saveConfig.some(c => c[0] === 'ope
 window.onSaved();
 ok('modal config tutup setelah simpan', !$('#mconfig').classList.contains('show'));
 ok('model header ikut model kustom', $('#mname').textContent === 'GPT-4.1');
-$('#closem').click(); window.setModel('opencode/muse-spark-1.2-contributor-free');
+$('#closem').click(); window.setModel('opencode/mimo-v2.5-free');
 
 console.log('== 18. MARKDOWN LANJUT + XSS ==');
 window._cur = null; window._plain = ''; window._done = false; window._aborted = false; window._canceling = false;
@@ -362,13 +366,15 @@ ok('versi app di footer drawer', $('#dver').textContent === 'v1.2.4');
 window.onUpdate('v9.9.9', 'catatan');
 $('#ubtn').click();
 ok('tombol LIHAT → openUrl release', calls.openUrl.some(u => u.includes('releases/tag/v9.9.9')));
-// Tanya lagi: kirim pesan lalu klik tombol Tanya lagi
+// Tanya lagi: kirim pesan, selesaikan, lalu klik tombol Tanya lagi
+window._done = false; window._canceling = false; window._aborted = false;
+window.eval('busy = false;');
 $('#inp').value = 'ulangi permintaan ini';
 $('#go').click();
-$('#go').click(); // stop — cancel
-window.onDone(-2, window._reqTok);
-const askBody = [...$$('.msg.ai .body')].pop();
-const askMact = askBody.parentElement.parentElement.querySelector('.mact');
+// simulate a delta so _plain has content and onDone renders it
+window.appendOut('ini jawaban test');
+window.onDone(0, window._reqTok);
+const askMact = [...$$('.msg.ai')].pop().querySelector('.mact');
 const askBtn = askMact ? [...askMact.querySelectorAll('button')].find(b => b.textContent.includes('Tanya lagi')) : null;
 ok('tombol Tanya lagi tersedia setelah kirim', !!askBtn);
 const sendCountT = calls.send.length;

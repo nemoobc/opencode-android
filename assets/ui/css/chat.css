@@ -1,0 +1,77 @@
+/* ===== chat ===== */
+#chatwrap { flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; background: radial-gradient(600px 400px at 50% -10%, #141C18 0%, transparent 60%), #0C100E; }
+#chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; }
+.msg { margin:18px 0; animation:rise .3s ease-out; }
+@keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.msg.user { display:flex; flex-direction:column; align-items:flex-end; }
+.msg.user .body {
+  max-width:85%; background:linear-gradient(135deg,#1C2A22,#1A2E24); border-radius:20px 20px 6px 20px;
+  padding:11px 16px; font-size:15.5px; line-height:1.6; white-space:pre-wrap;
+  word-break:break-word; color:#F0F4F1; box-shadow:0 4px 18px #0005, inset 0 1px 0 #ffffff08;
+}
+.msg .ts { font-size:11px; color:#5E7568; margin-top:4px; padding:0 4px; }
+.msg.user .ts { text-align:right; }
+.msg.ai .ts { margin-left:39px; }
+.msg.user .attimg { display:block; max-width:240px; max-height:300px; border-radius:14px; margin:-3px 0 9px; object-fit:cover; }
+.msg.user .attname { display:block; font-size:12.5px; color:#A9CDB6; margin-top:2px; word-break:break-all; }
+.msg.user .attx { display:block; font-size:13px; opacity:.85; }
+.msg.ai { display:flex; gap:9px; align-items:flex-start; }
+.msg.ai .ava { width:30px; height:30px; border-radius:10px; background:#141B16; border:1.5px solid #3DDC8444;
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center; margin-top:3px;
+  box-shadow:0 0 12px #3DDC8418; transition:box-shadow .3s;
+}
+.msg.ai .ava svg { width:16px; height:16px; }
+.msg.ai .bw { flex:1; min-width:0; padding-top:2px; }
+.msg.ai .body { font-size:15.5px; line-height:1.75; color:#E4EAE5; word-break:break-word; padding:2px 0; }
+.msg.ai .body.plain { white-space:pre-wrap; }
+.msg.ai .body.plain ~ .dots, .msg.ai .ava { transition:box-shadow .3s; }
+.msg.ai .body.plain ~ .dots + .elapsed ~ .dots ~ .ava, .msg.ai:has(.body.plain) .ava { box-shadow:0 0 16px #3DDC8433; animation:pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow:0 0 12px #3DDC8418; } 50% { box-shadow:0 0 20px #3DDC8433; } }
+.caret::after { content:"▍"; color:#3DDC84; animation:blink .9s infinite; }
+.thinking-svg { display:inline-flex; align-items:center; gap:8px; padding:8px 0 2px; }
+.thinking-svg .gear { animation:spin 2s linear infinite; transform-origin:center; }
+.thinking-svg .brain-pulse { animation:brainpulse 1.5s ease-in-out infinite; transform-origin:center; }
+@keyframes spin { to { transform:rotate(360deg) } }
+@keyframes brainpulse { 0%,100% { opacity:.5; transform:scale(.95) } 50% { opacity:1; transform:scale(1.05) } }
+.elapsed { display:block; font-size:12px; color:#8AA396; margin-top:8px; }
+.mact { margin-top:10px; display:flex; gap:6px; animation:rise .3s ease-out; }
+.mact button {
+  background:#111611; border:1px solid #262E28; color:#7FCF9F; border-radius:10px;
+  font-size:12.5px; padding:8px 12px; display:flex; align-items:center; gap:5px;
+  transition:background .18s, color .18s, border-color .2s;
+}
+.mact button:active { background:#1A211C; color:#C7D2CB; border-color:#3DDC8444; }
+.mact button:hover { background:#151C16; color:#D5DED7; }
+.retry-cancel { background:#1C2A22; border:1px solid #3DDC8444; color:#7FCF9F; border-radius:10px; padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; transition:background .18s, border-color .2s; }
+.retry-cancel:active { background:#141C15; border-color:#3DDC8466; }
+.sysnote { text-align:center; font-size:12.5px; color:#8AA396; margin:14px 0; }
+.sysnote.err { color:#E08A7B; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.sysnote .retry-btn { background:#1C2A22; border:1px solid #E08A7B44; color:#E08A7B; border-radius:10px; padding:6px 16px; font-size:12px; font-weight:500; cursor:pointer; transition:background .18s; }
+.sysnote .retry-btn:active { background:#2A1A18; }
+
+/* ===== markdown ===== */
+.md p { margin:0 0 12px; }
+.md p:last-child { margin-bottom:0; }
+.md h1,.md h2,.md h3,.md h4 { color:#F4F6F3; margin:18px 0 8px; font-weight:600; line-height:1.4; }
+.md h1 { font-size:19px; } .md h2 { font-size:17px; } .md h3 { font-size:15.5px; } .md h4 { font-size:14.5px; }
+.md ul,.md ol { margin:8px 0 12px; padding-left:22px; }
+.md li { margin:5px 0; }
+.md code.ic { background:#1A211C; color:#E8C87A; border-radius:6px; padding:2px 6px; font-size:13px; font-family:ui-monospace,Menlo,monospace; }
+.md blockquote { border-left:3px solid #3DDC8466; padding:4px 14px; margin:10px 0; color:#A8BFB1; background:#0F1A13; border-radius:0 8px 8px 0; }
+.md a { color:#3DDC84; text-decoration:none; }
+.md a:hover { text-decoration:underline; }
+.md hr { border:none; border-top:1px solid #1E241F; margin:16px 0; }
+.md strong { color:#F4F6F3; }
+.md table { border-collapse:collapse; margin:10px 0 14px; font-size:13.5px; display:block; overflow-x:auto; max-width:100%; }
+.md th,.md td { border:1px solid #242B26; padding:7px 11px; text-align:left; }
+.md th { background:#141A16; color:#F4F6F3; font-weight:600; }
+.cb { border:1px solid #232924; border-radius:14px; margin:12px 0; overflow:hidden; background:#0F120F; box-shadow:0 6px 20px #0005; }
+.cb-h { display:flex; align-items:center; justify-content:space-between; padding:8px 13px; background:#131713; border-bottom:1px solid #1E241F; }
+.cb-h .lang { font-size:11.5px; color:#8AA396; font-family:ui-monospace,Menlo,monospace; }
+.cb-h button { background:none; border:1px solid #262E28; color:#7FCF9F; font-size:12px; padding:4px 10px; border-radius:8px; font-weight:500; transition:background .18s, border-color .2s, color .2s; }
+.cb-h button:active { background:#1A211C; border-color:#3DDC8444; }
+.cb-h button.copied { color:#3DDC84; border-color:#3DDC8466; }
+.cb pre { padding:13px 15px; overflow-x:auto; }
+.cb pre code { font-size:13px; line-height:1.6; color:#DCE8DF; white-space:pre; font-family:ui-monospace,Menlo,'Cascadia Mono',monospace; }
+.msg.user .body { box-shadow:0 4px 18px #0005, inset 0 1px 0 #ffffff08; }
+.msg.ai .body { text-shadow:0 1px 0 #0004; }

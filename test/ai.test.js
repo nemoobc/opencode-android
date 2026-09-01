@@ -3,6 +3,11 @@ import fs from 'fs';
 
 const html = fs.readFileSync('assets/ui/index.html', 'utf8');
 
+/* concat JS files */
+const JS_DIR = 'assets/ui/js/';
+const JS_FILES = ['bridge.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
+const script = JS_FILES.map(f => fs.readFileSync(JS_DIR + f, 'utf8')).join('\n;\n');
+
 const calls = { send: [] };
 const dom = new JSDOM(html, {
   runScripts: 'outside-only',
@@ -33,7 +38,6 @@ const dom = new JSDOM(html, {
 });
 const { window } = dom;
 const doc = window.document;
-const script = html.match(/<script>([\s\S]*)<\/script>/)[1];
 window.eval(script);
 
 let pass = 0, fail = 0;
@@ -48,10 +52,16 @@ ok('warmUp sleep 1500 (bukan 5000)', java.includes('Thread.sleep(1500)'));
 ok('warmUp method pakai 1500', java.includes('warmUpModel()') && java.includes('Thread.sleep(1500)'));
 ok('termExec timeout 120s (bukan 60)', java.includes('120000') && java.includes('timeout 120s'));
 ok('apt alias ke apk', java.includes('apt ') && java.includes('apk'));
+ok('fetchModels ambil big-pickle (gak -free)', java.includes('gratisNonFree') && java.includes('big-pickle'));
+ok('fetchModels tetap ambil model -free', java.includes('id.endsWith("-free")'));
+ok('dead code ensureWeb dihapus', !java.includes('private void ensureWeb()'));
+ok('webInit dead variable dihapus', !java.includes('webInit'));
+ok('elapsed dihapus via querySelector (bukan getElementById)', script.includes("querySelector('.elapsed')") && !script.includes("getElementById('elapsed')"));
+ok('dead code dshare dihapus (tombol gak ada di HTML)', !html.includes('_dshare') && !script.includes('_dshare'));
 
 console.log('== 2. STREAMING & SSE ==');
-ok('saran cepat 25s (bukan 45)', html.includes('sec >= 25'));
-ok('throttle 40ms ada', html.includes('40'));
+ok('saran cepat 25s (bukan 45)', script.includes('sec >= 25'));
+ok('throttle 40ms ada', script.includes('40'));
 ok('appendOut ada', typeof window.appendOut === 'function');
 ok('onDone ada', typeof window.onDone === 'function');
 ok('onError ada', typeof window.onError === 'function');
@@ -61,7 +71,7 @@ $('#inp').value = 'halo ai';
 $('#go').click();
 ok('send terpanggil', calls.send.length === 1);
 ok('bubble user muncul', !!$('.msg.user'));
-ok('bubble ai dots', !!$('.msg.ai .dots'));
+ok('bubble ai thinking', !!$('.msg.ai .thinking-svg'));
 ok('go jadi stop', $('#go').classList.contains('stop'));
 
 window.appendOut('halo ');

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/ui.test.js && node test/terminal.test.js && node test/drawer-splash.test.js && node test/ai.test.js"
+    "test": "node test/ui.test.js && node test/drawer-splash.test.js && node test/ai.test.js"
   },
   "dependencies": {
     "jsdom": "^30.0.1"

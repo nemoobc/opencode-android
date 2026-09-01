@@ -3,7 +3,7 @@ var chat = document.getElementById('chat');
 /* sapaan sesuai waktu */
 (function() {
   var h = new Date().getHours();
-  var g = h < 4 ? 'Selamat malam' : (h < 11 ? 'Selamat pagi' : (h < 15 ? 'Selamat siang' : (h < 19 ? 'Selamat sore' : 'Selamat malam')));
+  var g = h < 1 ? 'Selamat dini hari' : (h < 4 ? 'Selamat larut' : (h < 11 ? 'Selamat pagi' : (h < 15 ? 'Selamat siang' : (h < 19 ? 'Selamat sore' : 'Selamat malam'))));
   var hello = document.getElementById('hello');
   var e = document.createElement('p');
   e.id = 'greet';
@@ -11,9 +11,7 @@ var chat = document.getElementById('chat');
   hello.insertBefore(e, hello.querySelector('h2'));
 })();
 window._helloHTML = document.getElementById('hello').outerHTML;
-setTimeout(function() {
-  fadeSplash();
-}, 10000);
+/* splash handled by bridge.js — 6s logo animation then loading */
 chat.innerHTML = window._helloHTML;
 var wrap = document.getElementById('chatwrap');
 var inp = document.getElementById('inp');

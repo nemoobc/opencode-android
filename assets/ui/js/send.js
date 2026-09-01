@@ -73,29 +73,6 @@ function doSend(t, label, imgPrev, retryMode, searchResults) {
   window._cur = body;
   var t0 = Date.now();
   clearInterval(window._tm);
-  window._tm = setInterval(function() {
-    var el = window._cur ? window._cur.querySelector('.elapsed') : null;
-    var sec = Math.round((Date.now() - t0) / 1000);
-    if (el) {
-      if (window._gotDelta) {
-        el.textContent = 'Mengetik... ' + sec + 's' + (sec > 40 ? ' — Relay Lambat' : '');
-      } else {
-        el.textContent = 'Berpikir...';
-      }
-    }
-    if (sec >= 25 && !window._gotDelta && !window._suggested && window._cur) {
-      window._suggested = true;
-      var h = document.getElementById('hint');
-      h.innerHTML = 'Lambat? Lompat Ke Model Cepat: ';
-      [['mimo-v2.5-free','Mimo 2.5 ~5s'],['muse-spark-1.2-contributor-free','Muse Spark ~8s']].forEach(function(m) {
-        var b = document.createElement('button');
-        b.textContent = m[1];
-        b.style.cssText = 'background:#1C2A22;border:1px solid #2A4436;color:#7FCF9F;border-radius:8px;padding:4px 10px;margin:3px 4px 0 0;font-size:12px;font-family:inherit';
-        b.onclick = function() { setModel('opencode/' + m[0]); toast(m[1] + ' Aktif — Ketik Ulang Pertanyaanmu'); };
-        h.appendChild(b);
-      });
-    }
-  }, 1000);
   busy = true;
   dot.className = 'work';
   go.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
@@ -106,7 +83,7 @@ function doSend(t, label, imgPrev, retryMode, searchResults) {
     ? WebSearch.buildPrompt(t, searchResults)
     : langPromp(t);
 
-  document.getElementById('hint').innerHTML = 'Model Gratis Diproses Di Server &bull; Balasan Pertama Bisa <b>30-90 Detik</b> (Pakai Mimo 2.5 Free Untuk Cepat)';
+  document.getElementById('hint').innerHTML = 'Mengirim ke server...';
   var jTok = Android.send(promptToSend);
   if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
 }

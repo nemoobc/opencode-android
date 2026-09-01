@@ -15,7 +15,6 @@ setTimeout(function() {
   fadeSplash();
 }, 10000);
 chat.innerHTML = window._helloHTML;
-bindChips();
 var wrap = document.getElementById('chatwrap');
 var inp = document.getElementById('inp');
 var go = document.getElementById('go');

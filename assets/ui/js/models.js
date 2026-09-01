@@ -399,3 +399,6 @@ function avatarName(id) {
 }
 var savedAvatar = localStorage.getItem('oc-avatar') || 'miki-tikus';
 var selectedAvatar = savedAvatar;
+
+/* bind chips after all scripts loaded */
+bindChips();

@@ -57,7 +57,7 @@ $D8 --release --lib "$AJ" --min-api 26 \
 echo "  dex: $(ls -la build/classes.dex | awk '{print $5}') bytes"
 
 echo "[3/6] aapt package..."
-aapt package -f \
+"$AAPT" package -f \
   -M AndroidManifest.xml \
   -S res \
   -A assets \
@@ -66,7 +66,7 @@ aapt package -f \
 
 echo "[4/6] add dex + native libs..."
 cd build
-aapt add base.apk classes.dex
+"$AAPT" add base.apk classes.dex
 
 # Add native libs if they exist
 cd ..
@@ -75,7 +75,7 @@ if [ -d "jniLibs/$ABI" ]; then
     cp -a "jniLibs/$ABI/." "build/pkglib/lib/$ABI/"
     cd build
     for so in pkglib/lib/$ABI/*.so; do
-        aapt add base.apk "$so"
+        "$AAPT" add base.apk "$so"
     done
     cd ..
     echo "  native libs added"

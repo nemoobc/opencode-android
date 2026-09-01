@@ -1,4 +1,15 @@
-/* ===== send.js — send, forceStop, input handlers ===== */
+/* ===== send.js — send, forceStop, input handlers + web search ===== */
+
+/* search toggle init */
+var bsearchBtn = document.getElementById('bsearch');
+if (WebSearch.enabled) bsearchBtn.classList.add('active');
+bsearchBtn.onclick = function() {
+  var on = WebSearch.toggle();
+  bsearchBtn.classList.toggle('active', on);
+  toast(on ? 'Pencarian Web: Aktif' : 'Pencarian Web: Mati');
+};
+
+/* send with optional web search */
 function send(t, label, imgPrev, retryMode) {
   if (busy || !t) return;
   if (!window._srvOk) {
@@ -9,6 +20,28 @@ function send(t, label, imgPrev, retryMode) {
   userHold = false;
   document.getElementById('down').classList.remove('show');
   window._flushAt = 0;
+
+  /* determine if we should search */
+  var shouldSearch = WebSearch.enabled && !imgPrev && !retryMode && t.length > 5;
+  var searchQuery = shouldSearch ? WebSearch.sanitizeQuery(t) : null;
+
+  if (searchQuery) {
+    /* show searching indicator */
+    document.getElementById('hint').innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC84" stroke-width="2.5" style="vertical-align:-1px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Mencari: <b>' + esc(searchQuery) + '</b>...';
+    document.getElementById('dot').className = 'work';
+
+    WebSearch.search(searchQuery).then(function(results) {
+      WebSearch.lastResults = results;
+      document.getElementById('hint').textContent = '';
+      doSend(t, label, imgPrev, retryMode, results);
+    });
+  } else {
+    WebSearch.lastResults = [];
+    doSend(t, label, imgPrev, retryMode, null);
+  }
+}
+
+function doSend(t, label, imgPrev, retryMode, searchResults) {
   var um;
   if (retryMode) {
     var userMsgs = chat.querySelectorAll('.msg.user');
@@ -47,7 +80,6 @@ function send(t, label, imgPrev, retryMode) {
       if (window._gotDelta) {
         el.textContent = 'Mengetik... ' + sec + 's' + (sec > 40 ? ' — Relay Lambat' : '');
       } else {
-        /* tampilkan tanpa angka detik — hanya teks Berpikir... */
         el.textContent = 'Berpikir...';
       }
     }
@@ -68,10 +100,17 @@ function send(t, label, imgPrev, retryMode) {
   dot.className = 'work';
   go.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
   go.classList.add('stop');
+
+  /* build prompt with search context if available */
+  var promptToSend = searchResults && searchResults.length
+    ? WebSearch.buildPrompt(t, searchResults)
+    : langPromp(t);
+
   document.getElementById('hint').innerHTML = 'Model Gratis Diproses Di Server &bull; Balasan Pertama Bisa <b>30-90 Detik</b> (Pakai Mimo 2.5 Free Untuk Cepat)';
-  var jTok = Android.send(langPromp(t));
+  var jTok = Android.send(promptToSend);
   if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
 }
+
 function forceStop() {
   clearTimeout(window._cw);
   if (window._done || !busy) return;

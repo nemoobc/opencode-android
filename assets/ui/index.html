@@ -52,7 +52,6 @@
     <button class="d-item" id="dmodel"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/><path d="M12 2v4M8.5 5.5L10 7M15.5 5.5L14 7"/><path d="M9 18h6"/></svg></span> Ganti model</button>
     <button class="d-item" id="dprivacy"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Privasi & Data</button>
     <button class="d-item" id="dupdate"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span> Cek update</button>
-    <a class="d-item" href="https://github.com/nemoobc/opencode-android" target="_blank" id="dsource"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></span> Source Code</a>
   </div>
   <div class="d-foot" id="dver">Powered By OpenCode</div>
 </div>
@@ -94,6 +93,7 @@
 <div id="bar">
   <div id="pill">
     <button id="battach" class="plus" title="Lampirkan file"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+    <button id="bsearch" class="search-toggle" title="Pencarian Web Real-Time"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg></button>
     <textarea id="inp" rows="1" placeholder="Tanya apa aja..."></textarea>
     <button id="go"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
   </div>
@@ -170,10 +170,36 @@
 <div class="modal" id="mprivacy">
   <div class="card">
     <h3>PRIVASI & DATA</h3>
-    <p style="font-size:13px;color:#8AA396;margin-bottom:16px;line-height:1.6">Semua data obrolan disimpan lokal di perangkatmu. Tidak ada data yang dikirim ke server selain pesan yang kamu kirim ke model AI.</p>
-    <button class="d-item" id="pbackup" style="margin-bottom:8px"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Backup Chat (TXT Terenkripsi)</button>
-    <button class="d-item" id="pimport"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> Import Chat (TXT Terenkripsi)</button>
-    <button class="d-item" id="pdelete"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#E05545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span> Hapus Semua Riwayat</button>
+    <div class="pr-section">
+      <div class="pr-header">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Kebijakan Privasi OpenCode</span>
+      </div>
+      <div class="pr-text">
+        <p><strong>Privasi Anda adalah prioritas kami.</strong> OpenCode dirancang dengan prinsip <em>privacy-first</em> — semua data obrolan Anda tetap di perangkat Anda.</p>
+        <p><strong>Apa yang kami simpan:</strong></p>
+        <ul>
+          <li>Riwayat obrolan disimpan secara lokal di perangkat Anda (localStorage).</li>
+          <li>Pengaturan tema, bahasa, dan model disimpan lokal.</li>
+          <li>Tidak ada data yang dikirim ke server kami selain pesan saat chatting.</li>
+        </ul>
+        <p><strong>Apa yang TIDAK kami lakukan:</strong></p>
+        <ul>
+          <li>Kami tidak mengumpulkan data pribadi.</li>
+          <li>Kami tidak melacak aktivitas Anda.</li>
+          <li>Kami tidak menjual atau membagikan data Anda ke pihak ketiga.</li>
+          <li>Kami tidak menyimpan log percakapan di server.</li>
+        </ul>
+        <p><strong>Pesan dikirim ke AI:</strong> Saat Anda mengirim pesan, pesan tersebut dikirim ke server AI (OpenCode Proxy) untuk diproses. Server ini hanya memproses pesan dan tidak menyimpannya secara permanen.</p>
+        <p><strong>Fitur Pencarian Web:</strong> Jika diaktifkan, pencarian web dilakukan melalui DuckDuckGo (tanpa API key). Pencarian ini anonim dan tidak terlacak.</p>
+        <p><strong>Backup & Restore:</strong> Anda dapat membuat cadangan riwayat obrolan. File cadangan berisi data terenkripsi yang hanya bisa dibuka oleh aplikasi OpenCode.</p>
+      </div>
+    </div>
+    <div class="pr-actions">
+      <button class="pr-btn" id="pbackup"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Backup Riwayat</button>
+      <button class="pr-btn" id="pimport"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6EC6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Import Riwayat</button>
+      <button class="pr-btn pr-del" id="pdelete"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#E08A7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Hapus Semua Riwayat</button>
+    </div>
     <div class="acts"><button class="bb ghost" id="prclose">Tutup</button></div>
   </div>
 </div>
@@ -198,36 +224,11 @@
   </div>
 </div>
 
-<!-- Backup Password Modal -->
-<div class="modal" id="mbakpw">
-  <div class="card">
-    <h3>KATA SANDI ENKRIPSI</h3>
-    <p style="font-size:13px;color:#8AA396;margin-bottom:12px">Masukkan kata sandi untuk mengenkripsi file backup.</p>
-    <input id="bakpw" type="password" placeholder="Kata sandi">
-    <div class="acts">
-      <button class="bb ghost" id="bakpwClose">Batal</button>
-      <button class="bb" id="bakpwOk">Ekspor</button>
-    </div>
-  </div>
-</div>
-
-<!-- Import Password Modal -->
-<div class="modal" id="mimppw">
-  <div class="card">
-    <h3>KATA SANDI DEKRIPSI</h3>
-    <p style="font-size:13px;color:#8AA396;margin-bottom:12px">Masukkan kata sandi untuk mendekripsi file import.</p>
-    <input id="imppw" type="password" placeholder="Kata sandi">
-    <div class="acts">
-      <button class="bb ghost" id="imppwClose">Batal</button>
-      <button class="bb" id="imppwOk">Impor</button>
-    </div>
-  </div>
-</div>
-
 <button id="down"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
 <div id="toast"></div>
 
 <script src="js/bridge.js"></script>
+<script src="js/websearch.js"></script>
 <script src="js/init.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/stream.js"></script>

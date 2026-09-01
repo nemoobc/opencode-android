@@ -1,7 +1,33 @@
 /* ===== bridge.js — mock Android bridge (web mode) ===== */
 if (typeof Android === 'undefined') {
   window.Android = {
-    send: function(t) { console.log('[web/send]', t); return 0; },
+    send: function(t) {
+      console.log('[web/send]', t);
+      /* simulate AI response after delay */
+      setTimeout(function() {
+        var snippets = [
+          'Ini adalah contoh balasan dari **OpenCode Web Preview**.\n\nKarena ini versi web demo, AI asli tidak tersedia. Untuk fitur lengkap dengan AI real-time, gunakan versi Android APK.',
+          '**Fitur Web Preview:**\n\n- ✅ UI lengkap seperti versi Android\n- ✅ Splash screen & loading animation\n- ✅ Drawer dengan riwayat obrolan\n- ✅ Model switcher (9 model gratis)\n- ✅ Toggle pencarian web\n- ❌ AI response (butuh server)\n\nUnduh APK untuk fitur lengkap!',
+          'Halo! 👋\n\nSaya adalah **OpenCode**, asisten AI yang berjalan di Android.\n\nVersi web ini hanya untuk **preview UI**. Untuk pengalaman lengkap:\n\n1. Unduh APK dari GitHub Releases\n2. Install di Android\n3. Mulai chat dengan AI real-time\n\nApakah ada yang bisa saya bantu untuk versi UI ini?'
+        ];
+        var reply = snippets[Math.floor(Math.random() * snippets.length)];
+        if (typeof window.appendOut === 'function') {
+          /* simulate streaming */
+          var words = reply.split(' ');
+          var i = 0;
+          var streamInterval = setInterval(function() {
+            if (i < words.length) {
+              window.appendOut(words[i] + ' ');
+              i++;
+            } else {
+              clearInterval(streamInterval);
+              if (typeof window.onDone === 'function') window.onDone(0);
+            }
+          }, 30);
+        }
+      }, 800);
+      return 1;
+    },
     cancel: function() { console.log('[web/cancel]'); },
     copyText: function(t) { navigator.clipboard.writeText(t).catch(function(){}); },
     openUrl: function(u) { window.open(u, '_blank'); },
@@ -22,7 +48,7 @@ if (typeof Android === 'undefined') {
     readImageDataUrl: function(p) { return null; },
     appInfo: function() { return 'web-1.0'; }
   };
-  /* simulate loading progress for web — mirip app asli */
+  /* simulate loading progress for web */
   (function(){
     var pfill = document.getElementById('pfill');
     var pnum = document.getElementById('pnum');

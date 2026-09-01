@@ -80,6 +80,23 @@ window.onDone = function(code, tok) {
   go.classList.remove('stop');
   dot.className = code === 0 ? 'ok' : 'bad';
   document.getElementById('hint').textContent = '';
+  /* append search sources if available */
+  if (WebSearch.lastResults && WebSearch.lastResults.length) {
+    var srcHTML = WebSearch.buildSourcesHTML();
+    if (srcHTML) {
+      /* find the last AI message and append sources */
+      var aiMsgs = chat.querySelectorAll('.msg.ai');
+      var lastAI = aiMsgs.length ? aiMsgs[aiMsgs.length - 1] : null;
+      if (lastAI) {
+        var mdDiv = lastAI.querySelector('.md');
+        if (mdDiv) {
+          mdDiv.insertAdjacentHTML('beforeend', srcHTML);
+        } else {
+          lastAI.insertAdjacentHTML('beforeend', srcHTML);
+        }
+      }
+    }
+  }
   histSaveCur();
 };
 function friendlyErr(m) {

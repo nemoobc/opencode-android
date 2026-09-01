@@ -175,9 +175,24 @@ document.getElementById('save').onclick = function() {
 
 /* ===== theme ===== */
 var THEMES = [
-  { id: 'default', nm: 'Default (Hijau)', desc: 'Tema gelap dengan aksen hijau', colors: { bg:'#0C100E', text:'#ECEEEC', accent:'#3DDC84' }},
-  { id: 'white', nm: 'Putih', desc: 'Tema terang untuk kenyamanan mata', colors: { bg:'#F5F5F0', text:'#1A1A1A', accent:'#2A7D4F' }},
-  { id: 'black', nm: 'Hitam', desc: 'Tema AMOLED murni, hemat baterai', colors: { bg:'#000000', text:'#E0E0E0', accent:'#3DDC84' }}
+  { id: 'default', nm: 'Default (Hijau)', desc: 'Tema gelap dengan aksen hijau', colors: {
+    bg:'#0C100E', text:'#ECEEEC', accent:'#3DDC84', accent2:'#C9A227',
+    cardBg:'#141A16', cardBorder:'#232924', cardText:'#F4F6F3', cardMuted:'#8AA396',
+    inputBg:'#1A211C', inputBorder:'#2A332E', itemBg:'#1C2A22', itemBorder:'#2A4436',
+    surface:'#111611', surfaceBorder:'#212922', error:'#E08A7B', muted:'#8AA396', muted2:'#C7D2CB'
+  }},
+  { id: 'white', nm: 'Putih', desc: 'Tema terang untuk kenyamanan mata', colors: {
+    bg:'#F5F5F0', text:'#1A1A1A', accent:'#2A7D4F', accent2:'#B8860B',
+    cardBg:'#FFFFFF', cardBorder:'#E0E0E0', cardText:'#1A1A1A', cardMuted:'#666666',
+    inputBg:'#F0F0EA', inputBorder:'#D0D0CA', itemBg:'#E8E8E0', itemBorder:'#D0D0CA',
+    surface:'#ECECEA', surfaceBorder:'#D8D8D2', error:'#D32F2F', muted:'#666666', muted2:'#333333'
+  }},
+  { id: 'black', nm: 'Hitam', desc: 'Tema AMOLED murni, hemat baterai', colors: {
+    bg:'#000000', text:'#E0E0E0', accent:'#3DDC84', accent2:'#C9A227',
+    cardBg:'#0A0A0A', cardBorder:'#1A1A1A', cardText:'#E0E0E0', cardMuted:'#888888',
+    inputBg:'#111111', inputBorder:'#1A1A1A', itemBg:'#0F0F0F', itemBorder:'#1A1A1A',
+    surface:'#080808', surfaceBorder:'#141414', error:'#E08A7B', muted:'#888888', muted2:'#C7D2CB'
+  }}
 ];
 var curTheme = localStorage.getItem('oc-theme') || 'default';
 function applyTheme(id) {
@@ -186,28 +201,22 @@ function applyTheme(id) {
   r.style.setProperty('--bg', t.colors.bg);
   r.style.setProperty('--text', t.colors.text);
   r.style.setProperty('--accent', t.colors.accent);
-  if (id === 'white') {
-    r.style.setProperty('--card-bg', '#FFFFFF');
-    r.style.setProperty('--card-border', '#E0E0E0');
-    r.style.setProperty('--card-text', '#1A1A1A');
-    r.style.setProperty('--card-muted', '#666666');
-    document.body.style.background = '#F5F5F0';
-    document.body.style.color = '#1A1A1A';
-  } else if (id === 'black') {
-    r.style.setProperty('--card-bg', '#0A0A0A');
-    r.style.setProperty('--card-border', '#1A1A1A');
-    r.style.setProperty('--card-text', '#E0E0E0');
-    r.style.setProperty('--card-muted', '#888888');
-    document.body.style.background = '#000000';
-    document.body.style.color = '#E0E0E0';
-  } else {
-    r.style.setProperty('--card-bg', '#141A16');
-    r.style.setProperty('--card-border', '#232924');
-    r.style.setProperty('--card-text', '#F4F6F3');
-    r.style.setProperty('--card-muted', '#8AA396');
-    document.body.style.background = '#0C100E';
-    document.body.style.color = '#ECEEEC';
-  }
+  r.style.setProperty('--accent2', t.colors.accent2);
+  r.style.setProperty('--card-bg', t.colors.cardBg);
+  r.style.setProperty('--card-border', t.colors.cardBorder);
+  r.style.setProperty('--card-text', t.colors.cardText);
+  r.style.setProperty('--card-muted', t.colors.cardMuted);
+  r.style.setProperty('--input-bg', t.colors.inputBg);
+  r.style.setProperty('--input-border', t.colors.inputBorder);
+  r.style.setProperty('--item-bg', t.colors.itemBg);
+  r.style.setProperty('--item-border', t.colors.itemBorder);
+  r.style.setProperty('--surface', t.colors.surface);
+  r.style.setProperty('--surface-border', t.colors.surfaceBorder);
+  r.style.setProperty('--error', t.colors.error);
+  r.style.setProperty('--muted', t.colors.muted);
+  r.style.setProperty('--muted2', t.colors.muted2);
+  document.body.style.background = t.colors.bg;
+  document.body.style.color = t.colors.text;
   localStorage.setItem('oc-theme', id);
   curTheme = id;
 }
@@ -234,27 +243,28 @@ document.getElementById('prclose').onclick = function() { document.getElementByI
 /* backup */
 document.getElementById('pbackup').onclick = function() {
   document.getElementById('mprivacy').classList.remove('show');
-  document.getElementById('mbakpw').classList.add('show');
-  document.getElementById('bakpw').value = '';
-  document.getElementById('bakpw').focus();
-};
-document.getElementById('bakpwClose').onclick = function() { document.getElementById('mbakpw').classList.remove('show'); };
-document.getElementById('bakpwOk').onclick = function() {
-  var pw = document.getElementById('bakpw').value;
-  if (!pw) { toast('Masukkan kata sandi'); return; }
   var arr = histGet();
+  if (!arr.length) { toast('Tidak ada riwayat untuk dibackup'); return; }
   var json = JSON.stringify(arr);
-  var encrypted = xorEncrypt(json, pw);
-  var header = 'OPENCODE-BACKUP-v1\n' + new Date().toISOString() + '\n';
-  var blob = new Blob([header + encrypted], { type: 'text/plain' });
+  /* auto-encode with simple obfuscation (not cryptographically secure, just prevents casual reading) */
+  var encoded = btoa(unescape(encodeURIComponent(json)));
+  /* split into lines for readability */
+  var lines = [];
+  for (var i = 0; i < encoded.length; i += 60) {
+    lines.push(encoded.substring(i, i + 60));
+  }
+  var header = 'OPENCODE-BACKUP-v2\n';
+  header += 'DATE: ' + new Date().toISOString() + '\n';
+  header += 'COUNT: ' + arr.length + ' conversations\n';
+  header += '---\n';
+  var blob = new Blob([header + lines.join('\n')], { type: 'text/plain' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
   a.download = 'opencode-backup-' + new Date().toISOString().slice(0,10) + '.txt';
   a.click();
   URL.revokeObjectURL(url);
-  document.getElementById('mbakpw').classList.remove('show');
-  toast('Backup Tersimpan');
+  toast('Backup Tersimpan (' + arr.length + ' obrolan)');
 };
 
 /* import */
@@ -268,45 +278,37 @@ document.getElementById('pimport').onclick = function() {
     if (!f) return;
     var reader = new FileReader();
     reader.onload = function() {
-      window._importData = reader.result;
-      document.getElementById('mimppw').classList.add('show');
-      document.getElementById('imppw').value = '';
-      document.getElementById('imppw').focus();
+      var data = reader.result;
+      try {
+        /* strip header */
+        var lines = data.split('\n');
+        var startIdx = 0;
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].trim() === '---') { startIdx = i + 1; break; }
+        }
+        if (startIdx === 0) { toast('File tidak valid'); return; }
+        var encoded = lines.slice(startIdx).join('').replace(/\n/g, '').trim();
+        var json = decodeURIComponent(escape(atob(encoded)));
+        var arr = JSON.parse(json);
+        if (!Array.isArray(arr)) throw new Error('invalid');
+        /* merge: tambahkan yang belum ada */
+        var existing = histGet();
+        var ids = {};
+        existing.forEach(function(e) { ids[e.id] = true; });
+        var added = 0;
+        arr.forEach(function(e) {
+          if (e.id && e.html && !ids[e.id]) { existing.push(e); added++; }
+        });
+        if (existing.length > 30) existing = existing.slice(0, 30);
+        histSave(existing);
+        toast(added + ' Obrolan Diimpor');
+      } catch (e) {
+        toast('Format file tidak valid atau rusak');
+      }
     };
     reader.readAsText(f);
   };
   input.click();
-};
-document.getElementById('imppwClose').onclick = function() { document.getElementById('mimppw').classList.remove('show'); window._importData = null; };
-document.getElementById('imppwOk').onclick = function() {
-  var pw = document.getElementById('imppw').value;
-  if (!pw) { toast('Masukkan kata sandi'); return; }
-  var data = window._importData;
-  if (!data) { toast('File tidak valid'); return; }
-  /* strip header */
-  var lines = data.split('\n');
-  var encrypted = lines.slice(2).join('\n').trim();
-  var json = xorDecrypt(encrypted, pw);
-  if (!json) { toast('Kata sandi salah atau file rusak'); return; }
-  try {
-    var arr = JSON.parse(json);
-    if (!Array.isArray(arr)) throw new Error('invalid');
-    /* merge: tambahkan yang belum ada */
-    var existing = histGet();
-    var ids = {};
-    existing.forEach(function(e) { ids[e.id] = true; });
-    var added = 0;
-    arr.forEach(function(e) {
-      if (e.id && e.html && !ids[e.id]) { existing.push(e); added++; }
-    });
-    if (existing.length > 30) existing = existing.slice(0, 30);
-    histSave(existing);
-    document.getElementById('mimppw').classList.remove('show');
-    window._importData = null;
-    toast(added + ' Obrolan Diimpor');
-  } catch (e) {
-    toast('Format file tidak valid');
-  }
 };
 
 /* delete all history */

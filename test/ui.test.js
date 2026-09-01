@@ -5,7 +5,7 @@ const html = fs.readFileSync('assets/ui/index.html', 'utf8');
 
 /* concat JS files — urutan sama kayak <script src> di index.html */
 const JS_DIR = 'assets/ui/js/';
-const JS_FILES = ['bridge.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
+const JS_FILES = ['bridge.js','websearch.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
 const script = JS_FILES.map(f => fs.readFileSync(JS_DIR + f, 'utf8')).join('\n;\n');
 
 const calls = { send: [], cancel: 0, newChat: 0, saveConfig: [], copyText: [], openUrl: [], checkUpdate: 0, readConfig: null };

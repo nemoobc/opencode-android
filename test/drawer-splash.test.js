@@ -10,7 +10,7 @@ const css = CSS_FILES.map(f => fs.readFileSync(CSS_DIR + f, 'utf8')).join('\n');
 
 /* concat JS files */
 const JS_DIR = 'assets/ui/js/';
-const JS_FILES = ['bridge.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
+const JS_FILES = ['bridge.js','websearch.js','init.js','utils.js','stream.js','send.js','history.js','models.js'];
 const script = JS_FILES.map(f => fs.readFileSync(JS_DIR + f, 'utf8')).join('\n;\n');
 
 const dom = new JSDOM(html, {

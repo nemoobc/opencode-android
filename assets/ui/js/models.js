@@ -234,6 +234,10 @@ function openTheme() {
 }
 document.getElementById('dprivacy').onclick = function() { closeDrawer(); openTheme(); };
 document.getElementById('prclose').onclick = function() { document.getElementById('mprivacy').classList.remove('show'); };
+document.getElementById('btn-theme').onclick = function() { document.getElementById('mprivacy').classList.remove('show'); document.getElementById('mtheme').classList.add('show'); };
+document.getElementById('btn-privacy').onclick = function() { document.getElementById('mprivacy').classList.remove('show'); document.getElementById('mprivdata').classList.add('show'); };
+document.getElementById('thclose').onclick = function() { document.getElementById('mtheme').classList.remove('show'); document.getElementById('mprivacy').classList.add('show'); };
+document.getElementById('privclose').onclick = function() { document.getElementById('mprivdata').classList.remove('show'); document.getElementById('mprivacy').classList.add('show'); };
 applyTheme(curTheme);
 
 /* backup */
@@ -315,6 +319,10 @@ document.getElementById('pdelete').onclick = function() {
     toast('Semua Riwayat Dihapus');
   }
 };
+
+/* ===== source code ===== */
+document.getElementById('dsource').onclick = function() { closeDrawer(); document.getElementById('msource').classList.add('show'); };
+document.getElementById('sourceclose').onclick = function() { document.getElementById('msource').classList.remove('show'); };
 
 /* ===== update ===== */
 document.getElementById('dupdate').onclick = function() {

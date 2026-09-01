@@ -47,7 +47,8 @@ function send(t, label, imgPrev, retryMode) {
       if (window._gotDelta) {
         el.textContent = 'Mengetik... ' + sec + 's' + (sec > 40 ? ' — Relay Lambat' : '');
       } else {
-        el.textContent = 'Berpikir... ' + sec + 's';
+        /* tampilkan tanpa angka detik — hanya teks Berpikir... */
+        el.textContent = 'Berpikir...';
       }
     }
     if (sec >= 25 && !window._gotDelta && !window._suggested && window._cur) {

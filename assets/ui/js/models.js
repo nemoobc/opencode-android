@@ -1,4 +1,4 @@
-/* ===== models.js — drawer, model switcher, language, config, avatar, update ===== */
+/* ===== models.js — drawer, model switcher, language, config, theme, privacy, backup/import ===== */
 
 /* ===== drawer ===== */
 function openDrawer() { document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show'); histRender(); }
@@ -171,6 +171,151 @@ document.getElementById('save').onclick = function() {
     document.getElementById('ckey').value,
     m
   );
+};
+
+/* ===== theme ===== */
+var THEMES = [
+  { id: 'default', nm: 'Default (Hijau)', desc: 'Tema gelap dengan aksen hijau', colors: { bg:'#0C100E', text:'#ECEEEC', accent:'#3DDC84' }},
+  { id: 'white', nm: 'Putih', desc: 'Tema terang untuk kenyamanan mata', colors: { bg:'#F5F5F0', text:'#1A1A1A', accent:'#2A7D4F' }},
+  { id: 'black', nm: 'Hitam', desc: 'Tema AMOLED murni, hemat baterai', colors: { bg:'#000000', text:'#E0E0E0', accent:'#3DDC84' }}
+];
+var curTheme = localStorage.getItem('oc-theme') || 'default';
+function applyTheme(id) {
+  var t = THEMES.find(function(x){return x.id===id;}) || THEMES[0];
+  var r = document.documentElement;
+  r.style.setProperty('--bg', t.colors.bg);
+  r.style.setProperty('--text', t.colors.text);
+  r.style.setProperty('--accent', t.colors.accent);
+  if (id === 'white') {
+    r.style.setProperty('--card-bg', '#FFFFFF');
+    r.style.setProperty('--card-border', '#E0E0E0');
+    r.style.setProperty('--card-text', '#1A1A1A');
+    r.style.setProperty('--card-muted', '#666666');
+    document.body.style.background = '#F5F5F0';
+    document.body.style.color = '#1A1A1A';
+  } else if (id === 'black') {
+    r.style.setProperty('--card-bg', '#0A0A0A');
+    r.style.setProperty('--card-border', '#1A1A1A');
+    r.style.setProperty('--card-text', '#E0E0E0');
+    r.style.setProperty('--card-muted', '#888888');
+    document.body.style.background = '#000000';
+    document.body.style.color = '#E0E0E0';
+  } else {
+    r.style.setProperty('--card-bg', '#141A16');
+    r.style.setProperty('--card-border', '#232924');
+    r.style.setProperty('--card-text', '#F4F6F3');
+    r.style.setProperty('--card-muted', '#8AA396');
+    document.body.style.background = '#0C100E';
+    document.body.style.color = '#ECEEEC';
+  }
+  localStorage.setItem('oc-theme', id);
+  curTheme = id;
+}
+function openTheme() {
+  var l = document.getElementById('thlist');
+  l.innerHTML = '';
+  THEMES.forEach(function(t) {
+    var b = document.createElement('button');
+    b.className = 'mopt' + (t.id === curTheme ? ' sel' : '');
+    b.innerHTML = '<div style="width:24px;height:24px;border-radius:50%;background:' + t.colors.bg + ';border:2px solid ' + t.colors.accent + ';flex:0 0 auto"></div><div><div class="nm">' + t.nm + '</div><div class="ds">' + t.desc + '</div></div>';
+    b.onclick = function() { applyTheme(t.id); document.getElementById('mtheme').classList.remove('show'); toast('Tema: ' + t.nm); };
+    l.appendChild(b);
+  });
+  document.getElementById('mtheme').classList.add('show');
+}
+document.getElementById('dtheme').onclick = function() { closeDrawer(); openTheme(); };
+document.getElementById('thclose').onclick = function() { document.getElementById('mtheme').classList.remove('show'); };
+applyTheme(curTheme);
+
+/* ===== privacy & data ===== */
+document.getElementById('dprivacy').onclick = function() { closeDrawer(); document.getElementById('mprivacy').classList.add('show'); };
+document.getElementById('prclose').onclick = function() { document.getElementById('mprivacy').classList.remove('show'); };
+
+/* backup */
+document.getElementById('pbackup').onclick = function() {
+  document.getElementById('mprivacy').classList.remove('show');
+  document.getElementById('mbakpw').classList.add('show');
+  document.getElementById('bakpw').value = '';
+  document.getElementById('bakpw').focus();
+};
+document.getElementById('bakpwClose').onclick = function() { document.getElementById('mbakpw').classList.remove('show'); };
+document.getElementById('bakpwOk').onclick = function() {
+  var pw = document.getElementById('bakpw').value;
+  if (!pw) { toast('Masukkan kata sandi'); return; }
+  var arr = histGet();
+  var json = JSON.stringify(arr);
+  var encrypted = xorEncrypt(json, pw);
+  var header = 'OPENCODE-BACKUP-v1\n' + new Date().toISOString() + '\n';
+  var blob = new Blob([header + encrypted], { type: 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'opencode-backup-' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('mbakpw').classList.remove('show');
+  toast('Backup Tersimpan');
+};
+
+/* import */
+document.getElementById('pimport').onclick = function() {
+  document.getElementById('mprivacy').classList.remove('show');
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt';
+  input.onchange = function() {
+    var f = input.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      window._importData = reader.result;
+      document.getElementById('mimppw').classList.add('show');
+      document.getElementById('imppw').value = '';
+      document.getElementById('imppw').focus();
+    };
+    reader.readAsText(f);
+  };
+  input.click();
+};
+document.getElementById('imppwClose').onclick = function() { document.getElementById('mimppw').classList.remove('show'); window._importData = null; };
+document.getElementById('imppwOk').onclick = function() {
+  var pw = document.getElementById('imppw').value;
+  if (!pw) { toast('Masukkan kata sandi'); return; }
+  var data = window._importData;
+  if (!data) { toast('File tidak valid'); return; }
+  /* strip header */
+  var lines = data.split('\n');
+  var encrypted = lines.slice(2).join('\n').trim();
+  var json = xorDecrypt(encrypted, pw);
+  if (!json) { toast('Kata sandi salah atau file rusak'); return; }
+  try {
+    var arr = JSON.parse(json);
+    if (!Array.isArray(arr)) throw new Error('invalid');
+    /* merge: tambahkan yang belum ada */
+    var existing = histGet();
+    var ids = {};
+    existing.forEach(function(e) { ids[e.id] = true; });
+    var added = 0;
+    arr.forEach(function(e) {
+      if (e.id && e.html && !ids[e.id]) { existing.push(e); added++; }
+    });
+    if (existing.length > 30) existing = existing.slice(0, 30);
+    histSave(existing);
+    document.getElementById('mimppw').classList.remove('show');
+    window._importData = null;
+    toast(added + ' Obrolan Diimpor');
+  } catch (e) {
+    toast('Format file tidak valid');
+  }
+};
+
+/* delete all history */
+document.getElementById('pdelete').onclick = function() {
+  if (confirm('Hapus semua riwayat obrolan? Tindakan ini tidak dapat dibatalkan.')) {
+    histSave([]);
+    document.getElementById('mprivacy').classList.remove('show');
+    toast('Semua Riwayat Dihapus');
+  }
 };
 
 /* ===== update ===== */

@@ -55,7 +55,7 @@ ok('d-item font 15px (clean)', css.includes('font-size:15px') && css.includes('.
 ok('d-item padding 14px 16px (clean)', css.includes('padding:14px 16px'));
 ok('d-item icon 18px (clean)', css.includes('font-size:18px') && css.includes('.d-item .ic'));
 ok('hbtn 38px 17px (garis tiga tidak kecil)', css.includes('width:38px') && css.includes('font-size:17px'));
-ok('drawer 6 item anim delay 5 & 6 ada (fix invisible)', css.includes('nth-child(5)') && css.includes('nth-child(6)'));
+ok('drawer 6+ items anim delay 5 & 6 ada (fix invisible)', css.includes('nth-child(5)') && css.includes('nth-child(6)'));
 ok('d-body padding 14px (clean)', css.includes('.d-body') && css.includes('padding:14px 10px'));
 
 console.log('== 2. SPLASH LOGO (gede, tidak offside) ==');

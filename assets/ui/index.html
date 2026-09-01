@@ -48,8 +48,11 @@
     <div class="d-sep">RIWAYAT</div>
     <div id="hlist"></div>
     <button class="d-item" id="dconfig"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Konfigurasi</button>
+    <button class="d-item" id="dtheme"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span> Tema</button>
     <button class="d-item" id="dmodel"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/><path d="M12 2v4M8.5 5.5L10 7M15.5 5.5L14 7"/><path d="M9 18h6"/></svg></span> Ganti model</button>
+    <button class="d-item" id="dprivacy"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Privasi & Data</button>
     <button class="d-item" id="dupdate"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span> Cek update</button>
+    <a class="d-item" href="https://github.com/nemoobc/opencode-android" target="_blank" id="dsource"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></span> Source Code</a>
   </div>
   <div class="d-foot" id="dver">Powered By OpenCode</div>
 </div>
@@ -154,22 +157,70 @@
   </div>
 </div>
 
-<div class="avatar-picker" id="avatar-picker">
-  <div class="avatar-picker-card">
-    <h3>Pilih Avatar</h3>
-    <div class="avatar-current">
-      <div class="preview" id="avatar-preview" style="padding:0;overflow:hidden;background:transparent">
-        <img id="avatar-preview-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
-        <span id="avatar-preview-emoji" style="display:none;font-size:48px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></span>
-      </div>
-      <div class="info">
-        <div class="label">Avatar kamu</div>
-        <div class="name" id="avatar-current-name">Miki Tikus</div>
-      </div>
+<!-- Tema Modal -->
+<div class="modal" id="mtheme">
+  <div class="card">
+    <h3>TEMA</h3>
+    <div class="mlist" id="thlist"></div>
+    <div class="acts"><button class="bb ghost" id="thclose">Tutup</button></div>
+  </div>
+</div>
+
+<!-- Privasi & Data Modal -->
+<div class="modal" id="mprivacy">
+  <div class="card">
+    <h3>PRIVASI & DATA</h3>
+    <p style="font-size:13px;color:#8AA396;margin-bottom:16px;line-height:1.6">Semua data obrolan disimpan lokal di perangkatmu. Tidak ada data yang dikirim ke server selain pesan yang kamu kirim ke model AI.</p>
+    <button class="d-item" id="pbackup" style="margin-bottom:8px"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Backup Chat (TXT Terenkripsi)</button>
+    <button class="d-item" id="pimport"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> Import Chat (TXT Terenkripsi)</button>
+    <button class="d-item" id="pdelete"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#E05545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span> Hapus Semua Riwayat</button>
+    <div class="acts"><button class="bb ghost" id="prclose">Tutup</button></div>
+  </div>
+</div>
+
+<!-- History Context Menu -->
+<div id="hctx" class="hctx">
+  <button class="hctx-item" id="hctx-pin"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg> Sematkan</button>
+  <button class="hctx-item" id="hctx-rename"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Ganti Nama</button>
+  <button class="hctx-item danger" id="hctx-delete"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Hapus</button>
+</div>
+<div id="hctx-scrim" class="hctx-scrim"></div>
+
+<!-- Rename Modal -->
+<div class="modal" id="mrename">
+  <div class="card">
+    <h3>GANTI NAMA OBROLAN</h3>
+    <input id="renameInput" placeholder="Nama baru" maxlength="50">
+    <div class="acts">
+      <button class="bb ghost" id="rnClose">Batal</button>
+      <button class="bb" id="rnSave">Simpan</button>
     </div>
-    <div class="avatar-grid" id="avatar-grid"></div>
-    <button class="auth-submit primary" id="avatar-save">Simpan</button>
-    <button class="social-btn google" id="avatar-cancel" style="margin-top:8px">Batal</button>
+  </div>
+</div>
+
+<!-- Backup Password Modal -->
+<div class="modal" id="mbakpw">
+  <div class="card">
+    <h3>KATA SANDI ENKRIPSI</h3>
+    <p style="font-size:13px;color:#8AA396;margin-bottom:12px">Masukkan kata sandi untuk mengenkripsi file backup.</p>
+    <input id="bakpw" type="password" placeholder="Kata sandi">
+    <div class="acts">
+      <button class="bb ghost" id="bakpwClose">Batal</button>
+      <button class="bb" id="bakpwOk">Ekspor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Password Modal -->
+<div class="modal" id="mimppw">
+  <div class="card">
+    <h3>KATA SANDI DEKRIPSI</h3>
+    <p style="font-size:13px;color:#8AA396;margin-bottom:12px">Masukkan kata sandi untuk mendekripsi file import.</p>
+    <input id="imppw" type="password" placeholder="Kata sandi">
+    <div class="acts">
+      <button class="bb ghost" id="imppwClose">Batal</button>
+      <button class="bb" id="imppwOk">Impor</button>
+    </div>
   </div>
 </div>
 

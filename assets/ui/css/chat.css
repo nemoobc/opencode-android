@@ -9,9 +9,7 @@
   padding:11px 16px; font-size:15.5px; line-height:1.6; white-space:pre-wrap;
   word-break:break-word; color:#F0F4F1; box-shadow:0 4px 18px #0005, inset 0 1px 0 #ffffff08;
 }
-.msg .ts { font-size:11px; color:#5E7568; margin-top:4px; padding:0 4px; }
-.msg.user .ts { text-align:right; }
-.msg.ai .ts { margin-left:39px; }
+.msg .ts { display:none; }
 .msg.user .attimg { display:block; max-width:240px; max-height:300px; border-radius:14px; margin:-3px 0 9px; object-fit:cover; }
 .msg.user .attname { display:block; font-size:12.5px; color:#A9CDB6; margin-top:2px; word-break:break-all; }
 .msg.user .attx { display:block; font-size:13px; opacity:.85; }

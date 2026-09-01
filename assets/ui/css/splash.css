@@ -13,9 +13,9 @@
 /* ===== modal ===== */
 .modal { position:fixed; inset:0; background:#000B; z-index:60; display:none; align-items:flex-end; justify-content:center; }
 .modal.show { display:flex; }
-.card { background:linear-gradient(180deg,#141A16,#111611); border:1px solid #232924; border-radius:22px 22px 0 0; width:100%; max-width:540px; padding:6px 20px 30px; max-height:84vh; overflow-y:auto; position:relative; }
+.card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:22px 22px 0 0; width:100%; max-width:540px; padding:6px 20px 30px; max-height:84vh; overflow-y:auto; position:relative; }
 .card::before { content:""; display:block; width:36px; height:4px; background:#2A332E; border-radius:2px; margin:4px auto 14px; }
-.card h3 { font-size:16px; font-weight:600; margin-bottom:16px; color:#F4F6F3; }
+.card h3 { font-size:16px; font-weight:600; margin-bottom:16px; color:var(--card-text); }
 .card label { display:block; font-size:12.5px; color:#9AB0A3; margin:14px 0 6px; font-weight:500; }
 .card select, .card input { width:100%; background:#0C100E; border:1px solid #262E28; color:#ECEEEC; border-radius:12px; padding:12px 13px; font-size:14px; outline:none; font-family:inherit; transition:border-color .2s, box-shadow .2s; }
 .card select:focus, .card input:focus { border-color:#3DDC8466; box-shadow:0 0 0 3px #3DDC8412; }
@@ -76,3 +76,33 @@
 #splash .cur { animation-duration: .5s, 2.4s; }
 #splash .nm { animation-duration: .4s; }
 #splash .sub { animation-duration: .4s; }
+
+/* ===== Privacy Buttons ===== */
+.pr-btn {
+  display:flex; align-items:center; gap:12px; width:100%; padding:14px 16px;
+  background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.04);
+  border-radius:12px; color:#ECEEEC; font-size:14px; font-weight:500;
+  transition:all .15s; margin-bottom:8px;
+}
+.pr-btn:active { background:rgba(61,220,132,0.1); border-color:rgba(61,220,132,0.2); }
+.pr-btn.pr-del { border-color:rgba(224,138,123,0.2); }
+.pr-btn.pr-del:active { background:rgba(224,138,123,0.1); }
+
+/* ===== History Context Menu ===== */
+.hctx {
+  display:none; position:fixed; z-index:50; background:var(--card-bg); border:1px solid var(--card-border);
+  border-radius:14px; padding:6px; min-width:170px; box-shadow:0 8px 32px #000A;
+}
+.hctx.show { display:block; }
+.hctx-scrim {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:49;
+}
+.hctx-scrim.show { display:block; }
+.hctx-item {
+  display:flex; align-items:center; gap:10px; width:100%; padding:11px 14px;
+  background:none; border:none; color:#ECEEEC; font-size:13px; font-weight:500;
+  border-radius:10px; transition:background .15s; text-align:left;
+}
+.hctx-item:active { background:rgba(61,220,132,0.15); }
+.hctx-item.hctx-del { color:#E08A7B; }
+.hctx-item.hctx-del:active { background:rgba(224,138,123,0.15); }

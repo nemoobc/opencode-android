@@ -1,10 +1,29 @@
-/* ===== utils.js — esc, toast, mdRender, AVA_SVG, addMsg, addNote, addActions ===== */
+/* ===== utils.js — esc, toast, mdRender, AVA_SVG, addMsg, addNote, addActions, encrypt/decrypt ===== */
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(t) {
   var el = document.getElementById('toast');
   el.textContent = t; el.classList.add('show');
   clearTimeout(window._tt); window._tt = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+
+/* ===== XOR encryption for backup ===== */
+function xorEncrypt(text, password) {
+  var out = '';
+  for (var i = 0; i < text.length; i++) {
+    out += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+  }
+  return btoa(unescape(encodeURIComponent(out)));
+}
+function xorDecrypt(b64, password) {
+  try {
+    var text = decodeURIComponent(escape(atob(b64)));
+    var out = '';
+    for (var i = 0; i < text.length; i++) {
+      out += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+    }
+    return out;
+  } catch (e) { return null; }
 }
 
 /* ===== markdown mini renderer ===== */
@@ -67,16 +86,10 @@ function addMsg(kind) {
   killHello();
   var m = document.createElement('div');
   m.className = 'msg ' + kind;
-  var ts = document.createElement('div');
-  ts.className = 'ts';
-  var now = new Date();
-  ts.textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   if (kind === 'ai') {
     m.innerHTML = '<div class="ava">' + AVA_SVG + '</div><div class="bw"><div class="body"></div></div>';
-    m.appendChild(ts);
   } else {
     m.innerHTML = '<div class="body"></div>';
-    m.appendChild(ts);
   }
   chat.appendChild(m);
   scrollEnd();

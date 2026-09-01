@@ -1,13 +1,11 @@
 /* ===== overlay ===== */
 #ov { position:fixed; inset:0; background:#0E1F16; z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; }
 #ov.show { display:flex; }
-#ov .mark { width:86px; height:86px; margin-bottom:24px; animation:breathe 2.4s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(61,220,132,.4)); }
+#ov .mark { width:86px; height:86px; margin-bottom:24px; }
 #ov h2 { font-size:16px; font-weight:600; letter-spacing:.5px; margin-bottom:8px; }
 #ov p { font-size:13px; color:var(--muted); margin-bottom:24px; }
 #pbar { width:280px; height:8px; background:var(--surface); border-radius:5px; overflow:hidden; position:relative; }
 #pfill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .25s; border-radius:5px; }
-#pbar::after { content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 20%,#ffffff22 50%,transparent 80%); transform:translateX(-100%); animation:barflow 1.15s linear infinite; }
-@keyframes barflow { to { transform:translateX(280px); } }
 #pnum { margin-top:10px; font-variant-numeric:tabular-nums; }
 
 /* ===== modal ===== */
@@ -55,27 +53,16 @@
 .mopt .spd { font-size:10px; color:var(--accent2); background:var(--surface); border:1px solid var(--accent2)33; border-radius:6px; padding:2px 8px; margin-left:6px; font-weight:600; }
 
 /* ===== splash ===== */
-#splash { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .55s; }
+#splash { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .4s; }
 #splash.out { opacity:0; pointer-events:none; }
 #splash .stage { position:relative; width:112px; height:112px; }
-#splash .glow { position:absolute; inset:-56px; border-radius:50%; background:radial-gradient(circle,rgba(61,220,132,.45) 0%,rgba(201,162,39,.2) 40%,transparent 65%); animation:breathe 2.2s ease-in-out infinite; }
-#splash .mark { width:112px; height:112px; position:relative; filter:drop-shadow(0 0 20px rgba(61,220,132,.3)); }
-#splash .frm path { stroke-dasharray:600; stroke-dashoffset:600; animation:draw .7s cubic-bezier(.65,0,.3,1) forwards; }
-#splash .frm path:nth-child(2) { animation-delay:.25s; }
-@keyframes draw { to { stroke-dashoffset:0; } }
-#splash .cur { animation:curin .5s .6s cubic-bezier(.2,1.6,.4,1) both, curfloat 2.4s 1.3s ease-in-out infinite; transform-origin:center; }
-@keyframes curin { from { transform:rotate(0deg) scale(0); opacity:0 } 60% { transform:rotate(0deg) scale(1.08) } to { transform:rotate(0deg) scale(1); opacity:1 } }
-@keyframes curfloat { 50% { transform:rotate(0deg) translateY(-3px) } }
-#splash .nm { margin-top:18px; font-size:26px; font-weight:700; letter-spacing:.5px; animation:nmup .4s .5s both; position:relative; overflow:hidden; padding:0 6px; }
+#splash .glow { position:absolute; inset:-40px; border-radius:50%; background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%); }
+#splash .mark { width:112px; height:112px; position:relative; }
+#splash .frm path { stroke-dasharray:600; stroke-dashoffset:0; }
+#splash .cur { }
+#splash .nm { margin-top:18px; font-size:26px; font-weight:700; letter-spacing:.5px; }
 #splash .nm span { color:var(--accent); }
-#splash .nm::after { content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 25%,#ffffff26 50%,transparent 75%); transform:translateX(-130%); animation:shimmer 1s .85s ease forwards; }
-@keyframes shimmer { to { transform:translateX(130%); } }
-#splash .sub { margin-top:6px; font-size:12px; color:var(--muted); animation:nmup .4s .7s both; }
-#splash .frm path { animation-duration: .7s; }
-#splash .frm path:nth-child(2) { animation-duration: .7s; }
-#splash .cur { animation-duration: .5s, 2.4s; }
-#splash .nm { animation-duration: .4s; }
-#splash .sub { animation-duration: .4s; }
+#splash .sub { margin-top:6px; font-size:12px; color:var(--muted); }
 
 /* ===== Privacy Section ===== */
 .pr-section { margin-bottom:20px; }

@@ -92,7 +92,9 @@ window.onDone = function(code, tok) {
         if (mdDiv) {
           mdDiv.insertAdjacentHTML('beforeend', srcHTML);
         } else {
-          lastAI.insertAdjacentHTML('beforeend', srcHTML);
+          /* wrap existing content + sources in .md div */
+          var existing = lastAI.innerHTML;
+          lastAI.innerHTML = '<div class="md">' + existing + srcHTML + '</div>';
         }
       }
     }
@@ -139,7 +141,8 @@ window.onReady = function(ok, free) {
   window._srvOk = !!ok;
   if (ok) {
     ov.classList.remove('show');
-    fadeSplash();
+    var sp = document.getElementById('splash');
+    if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
     if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
       chat.innerHTML = window._helloHTML;
       bindChips();

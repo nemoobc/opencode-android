@@ -26,7 +26,7 @@ if (typeof Android === 'undefined') {
           }, 30);
         }
       }, 800);
-      return 1;
+      return 0;
     },
     cancel: function() { console.log('[web/cancel]'); },
     copyText: function(t) { navigator.clipboard.writeText(t).catch(function(){}); },

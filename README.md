@@ -1,95 +1,148 @@
-# 📱 OpenCode Android
+# OpenCode Android
 
 <div align="center">
 
-<img src="icon.svg" width="120" alt="OpenCode"/>
-
-**[OpenCode](https://opencode.ai) — AI chat agent di genggaman kamu.**
+**OpenCode — AI chat agent di genggaman kamu.**
 
 Model gratis aktif · Tanpa API key · Tanpa Termux · Tanpa root
 
 [![release](https://img.shields.io/github/v/release/nemoobc/opencode-android?color=C9A227&label=versi)](https://github.com/nemoobc/opencode-android/releases)
 [![platform](https://img.shields.io/badge/Android%208%2B-arm64-3DDC84)](#)
+[![tests](https://img.shields.io/badge/tests-200%20pass-3DDC84)](#)
 [![license](https://img.shields.io/badge/license-MIT-blue)](#)
 
-[**⬇ Unduh APK**](https://github.com/nemoobc/opencode-android/releases) · [**🔗 Web Preview**](https://nemoobc.github.io/opencode-preview/)
+[**Unduh APK**](https://github.com/nemoobc/opencode-android/releases) · [**Web Preview**](https://nemoobc.github.io/opencode-preview/)
 
 </div>
 
 ---
 
-## ✨ Fitur
+## Fitur
 
-### 💬 Chat AI
+### Chat AI
 - **Streaming real-time** — jawaban muncul token per token
 - **Context-aware** — agent ingat percakapan sebelumnya
 - **Markdown rendering** — code block + copy, tabel, list, heading
 - **File attachment** — lampirkan gambar/file untuk analisis
-- **Multi-model** — pilih model dari header (gratis semua!)
+- **Multi-model** — 9 model gratis + custom API key
+- **Pencarian web** — toggle real-time search (DuckDuckGo)
 
-### 🔐 Login & Auth
-- **Email/Password** — daftar & login real (Supabase)
-- **Google Sign-In** — one-click login
-- **GitHub Sign-In** — one-click login
-- **Wallet Login** — MetaMask / WalletConnect (Sign-In with Ethereum)
-- **Remember Me** — session persist lintas reload
-- **Forgot Password** — reset via email
-- **Change Password** — dari drawer profile
-- **Login History** — lihat kapan & dari mana kamu login
+### Riwayat Obrolan
+- **Context menu** — tap 3-dot untuk sematkan, ganti nama, hapus
+- **Streaming indicator** — dot amber berkedip untuk chat aktif
+- **Auto-save** — riwayat tersimpan otomatis di lokal
+- **Pin obrolan** — sematkan chat penting di atas
 
-### 🎨 UI
-- **Dark theme** — desain premium ala Bumble
+### Tema
+- **Default (Hijau)** — tema gelap dengan aksen hijau
+- **Putih** — tema terang untuk kenyamanan mata
+- **Hitam** — tema AMOLED murni, hemat baterai
+
+### Privasi & Backup
+- **Privacy-first** — semua data tersimpan lokal di perangkat
+- **Backup** — ekspor riwayat ke file .txt (auto-encode)
+- **Import** — impor riwayat dari file backup
+- **Penjelasan lengkap** — kebijakan privasi transparan
+
+### UI
+- **Splash animation** — logo OpenCode dramatis saat buka
+- **Drawer navigation** — riwayat, konfigurasi, model, tema
 - **24 avatar cartoon** — pilih karakter unikmu (DiceBear)
-- **Drawer navigation** — profile, config, model, logout
-- **Splash animation** — logo dramatis saat buka
 - **Smooth transitions** — animasi halus di mana-mana
-
-### ⚙️ Lainnya
-- **Ganti model** — beberapa model gratis + custom API key
-- **Konfigurasi** — simpan API key provider lain (Anthropic, OpenAI, dll)
-- **Update checker** — notif saat ada versi baru
-- **Share obrolan** — bagikan percakapan ke apps lain
+- **Custom SVG icons** — semua ikon desain sendiri
 
 ---
 
-## 🚀 Pasang
+## Versi
+
+### Android APK
+Versi lengkap dengan AI real-time. Berjalan di Android 8+ (arm64).
 
 1. Unduh APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
 2. Izinkan instalasi dari sumber tidak dikenal
 3. Buka — ekstraksi awal cuma sekali (progress berjalan)
-4. Login / daftar akun, atau langsung pakai
+4. Mulai chat dengan AI
 
-> Hasil kerja agent tersimpan di `Android/data/com.nemoobc.opencode/files`
+### Web Preview
+Versi web untuk preview UI. Tidak ada AI real-time, hanya simulasi.
 
----
+- **URL**: https://nemoobc.github.io/opencode-preview/
+- **Fitur**: UI lengkap, splash screen, drawer, model switcher, tema
+- **Keterbatasan**: Balasan AI hanya simulasi (mock response)
 
-## 🆓 Gratis, Tanpa API Key
+### Source Code
+Full source code tersedia di GitHub.
 
-Model default **`opencode/mimo-v2.5-free`** berjalan tanpa kunci apa pun —
-pasang, buka, langsung pakai.
-
-Beberapa model gratis lain tersedia:
-| Model | Kecepatan |
-|-------|-----------|
-| `opencode/mimo-v2.5-free` | ~5s |
-| `opencode/gemini-2.0-flash` | ~4s |
-| `opencode/gpt-4o-mini` | ~6s |
-| `opencode/claude-3.5-sonnet` | ~8s |
-| `deepseek/deepseek-chat` | ~7s |
-
-> Mau pakai model berbayar? Masukkan API key di menu **Konfigurasi**.
-> Format: `provider/nama-model` (mis. `anthropic/claude-sonnet-4`)
+- **Repo**: https://github.com/nemoobc/opencode-android
+- **Build**: `./build.sh` (butuh JDK, aapt, d8, apksigner)
+- **Tests**: `node test/ui.test.js` (200 tests)
 
 ---
 
-## ⚙️ Cara Kerja
+## Struktur Proyek
 
 ```
-OpenCode-v1.6.1.apk
- ├─ lib/arm64-v8a/libopencode.so   binary opencode resmi
- ├─ lib/arm64-v8a/libproot.so      jalankan rootfs tanpa root
- ├─ lib/arm64-v8a/...              loader, libtalloc, libandroid-shmem
- └─ assets/payload/rootfs.bin      Alpine minirootfs ±4 MB
+opencode-android/
+├── src/com/nemoobc/opencode/
+│   └── MainActivity.java          # Java source — Android entry point
+├── assets/
+│   ├── ui/
+│   │   ├── index.html             # Main HTML (APK version)
+│   │   ├── index-web.html         # Web preview version
+│   │   ├── icon.svg               # App icon
+│   │   ├── css/
+│   │   │   ├── base.css           # Reset, body, toast, CSS variables
+│   │   │   ├── drawer.css         # Drawer, history, context menu
+│   │   │   ├── header.css         # Header bar, model chip, status dot
+│   │   │   ├── chat.css           # Chat bubbles, markdown, code blocks
+│   │   │   ├── welcome.css        # Welcome screen, chips, input bar
+│   │   │   └── splash.css         # Splash, modals, overlay, privacy
+│   │   └── js/
+│   │       ├── bridge.js          # Mock Android bridge (web mode)
+│   │       ├── websearch.js       # DuckDuckGo HTML search
+│   │       ├── init.js            # Global vars, DOM refs
+│   │       ├── utils.js           # Markdown render, toast, helpers
+│   │       ├── stream.js          # Streaming, onDone, onStatus
+│   │       ├── send.js            # Send, forceStop, web search
+│   │       ├── history.js         # Riwayat, context menu, pin
+│   │       └── models.js          # Models, drawer, language, theme
+│   └── payload/
+│       └── rootfs.bin             # Alpine minirootfs (~4 MB)
+├── jniLibs/arm64-v8a/
+│   ├── libopencode.so             # Binary opencode resmi
+│   ├── libproot.so                # Rootfs tanpa root
+│   ├── libproot_loader.so         # Loader
+│   ├── libtalloc.so               # Memory allocator
+│   └── libandroid-shmem.so        # Shared memory
+├── test/
+│   ├── ui.test.js                 # 145 tests — UI, modals, themes
+│   ├── drawer-splash.test.js      # 25 tests — drawer, splash, icons
+│   └── ai.test.js                 # 30 tests — streaming, models, search
+├── build.sh                       # Build script
+├── build/
+│   └── OpenCode-v1.6.1.apk       # Built APK
+└── README.md
+```
+
+---
+
+## Cara Kerja
+
+```
+User ketik pertanyaan
+     │
+     ├── [Web Search ON?] ──YES──> DuckDuckGo HTML ──> Parse 5 hasil
+     │                                                          │
+     NO ◄───────────────────────────────────────────────────────┘
+     │
+     ▼
+Kirim enriched prompt ke AI server
+     │
+     ▼
+Streaming response token per token
+     │
+     ▼
+Render markdown + source citations
 ```
 
 Saat dibuka, `opencode serve` dijalankan sebagai server lokal persisten di
@@ -98,30 +151,29 @@ real-time lewat event stream.
 
 ---
 
-## 🔐 Auth System
+## Gratis, Tanpa API Key
 
-App menggunakan **Supabase Auth** untuk autentikasi real:
+Model default **`opencode/mimo-v2.5-free`** berjalan tanpa kunci apa pun —
+pasang, buka, langsung pakai.
 
-- **Email/Password** — registrasi + login + forgot password + change password
-- **Google OAuth** — one-click login (perlu setup di Google Cloud Console)
-- **GitHub OAuth** — one-click login (perlu setup di GitHub Developer Settings)
-- **Wallet (MetaMask)** — connect wallet + personal_sign, tanpa backend
+| Model | Kecepatan | Keterangan |
+|-------|-----------|------------|
+| `opencode/mimo-v2.5-free` | ~5s | Default, recommended |
+| `opencode/muse-spark-1.2-contributor-free` | ~8s | Cepat |
+| `opencode/deepseek-v4-flash-free` | ~7s | Flash |
+| `opencode/hy3-free` | ~6s | Katalog resmi |
+| `opencode/big-pickle` | ~6s | Katalog resmi |
+| `opencode/nemotron-3-ultra-free` | ~7s | Ultra |
+| `opencode/nemotron-3.5-lightning-free` | ~4s | Tercepat |
+| `opencode/ling-3.0-flash-fin-free` | ~7s | Flash |
+| `opencode/laguna-s-2.1-free` | ~6s |baru |
 
-### Setup Google/GitHub OAuth
-
-1. Buat project di [Supabase](https://supabase.com)
-2. Buka **Authentication → Providers**
-3. Enable **Google** → masukkan Client ID + Secret dari Google Cloud Console
-4. Enable **GitHub** → masukkan Client ID + Secret dari GitHub OAuth Apps
-5. Redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
-
-### Setup Wallet Login
-
-Tidak perlu setup — langsung jalan dengan MetaMask/WalletConnect.
+> Mau pakai model berbayar? Masukkan API key di menu **Konfigurasi**.
+> Format: `provider/nama-model` (mis. `anthropic/claude-sonnet-4`)
 
 ---
 
-## 🛠️ Build dari Sumber
+## Build dari Sumber
 
 Butuh perangkat arm64 dengan JDK, `aapt`, `d8`, `apksigner`
 (semua tersedia di repo paket Termux):
@@ -131,7 +183,7 @@ git clone https://github.com/nemoobc/opencode-android && cd opencode-android
 
 # 1. unduh bahan ke dl/
 #    - platform-34 android.jar
-#    - opencode-linux-arm64-musl (npm) → jniLibs/arm64-v8a/libopencode.so
+#    - opencode-linux-arm64-musl (npm) -> jniLibs/arm64-v8a/libopencode.so
 #    - alpine-minirootfs + libgcc + libstdc++
 
 # 2. rakit payload + salin binary
@@ -141,24 +193,25 @@ cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
 tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 # 3. bangun
-./build.sh  # → build/OpenCode-v1.6.1.apk
+./build.sh  # -> build/OpenCode-v1.6.1.apk
+```
+
+### Menjalankan Tests
+
+```bash
+npm install jsdom    # dependency
+node test/ui.test.js
+node test/drawer-splash.test.js
+node test/ai.test.js
 ```
 
 ---
 
-## 📱 Screenshots
-
-| Login | Chat | Drawer | Model Picker |
-|-------|------|--------|-------------|
-| Email, Google, GitHub, Wallet | Streaming response | Profile + settings | Multi-model |
-
----
-
-## 📜 Changelog
+## Changelog
 
 | Versi | Isi |
 |-------|-----|
-| **v1.6.1** | 🔐 Login system (email, Google, GitHub, Wallet) · 24 avatar cartoon · Forgot/Change password · Login history · Remember me · UI premium dark theme · Streaming AI · Splash animation |
+| **v1.6.1** | Context menu riwayat · Tema (Default/Putih/Hitam) · Backup/Import auto-encode · Privasi penjelasan lengkap · Web search toggle · Split CSS/JS · 200 tests · Custom SVG icons |
 | v1.6.0 | Timeout realistis, warm-up model, bagikan obrolan |
 | v1.5.9 | Kunci kirim + watchdog pesan |
 | v1.5.8 | Chip 1 kolom, font 15px |
@@ -169,15 +222,29 @@ tar -czf assets/payload/rootfs.bin -C staging/rootfs .
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 Kode aplikasi: **MIT**. Komponen yang dibundel mempertahankan lisensinya
 masing-masing — proot (GPLv3), opencode (lisensi upstream), Alpine (BSD/GPL).
 
 ---
 
+## Terima Kasih
+
+Proyek ini dibangun di atas kerja luar biasa dari komunitas open source:
+
+- **[OpenCode](https://github.com/opencode-ai/opencode)** — AI coding agent asli yang menjalankan semua ini. Tanpa OpenCode, proyek ini tidak akan ada.
+- **[proot](https://proot-me.github.io/)** — menjalankan Linux di Android tanpa root
+- **[Alpine Linux](https://alpine-linux.org/)** — minirootfs yang ringan dan efisien
+- **[DiceBear](https://www.dicebear.com/)** — avatar cartoon untuk profil
+- **[Supabase](https://supabase.com/)** — referensi auth system (dihapus dari versi ini)
+
+Terima kasih khusus untuk komunitas AI Indonesia yang selalu mendukung.
+
+---
+
 <div align="center">
 
-**Dibuat dengan ❤️ untuk komunitas AI Indonesia**
+**Dibuat dengan untuk komunitas AI Indonesia**
 
 </div>

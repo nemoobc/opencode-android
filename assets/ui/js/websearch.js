@@ -14,11 +14,12 @@ var WebSearch = (function() {
   function searchDDG(query) {
     return new Promise(function(resolve) {
       try {
-        var body = 'q=' + encodeURIComponent(query) + '&kl=wt-wt';
+        /* use local proxy to bypass CORS */
+        var proxyUrl = location.origin + '/api/search';
+        var body = 'q=' + encodeURIComponent(query);
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', DDG_URL, true);
+        xhr.open('POST', proxyUrl, true);
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.setRequestHeader('Accept', 'text/html');
         xhr.timeout = 10000;
         xhr.onload = function() {
           if (xhr.status === 200) {

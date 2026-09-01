@@ -61,7 +61,7 @@ window.onDone = function(code, tok) {
         window._cur.classList.remove('plain');
         window._cur.innerHTML = '<span style="color:#8AA396;font-style:italic">Dibatalkan...</span>' +
         '<div class="mact"><button class="retry-cancel" onclick="(function(){' +
-        'var p=window._lastCancelledPrompt;if(p){busy=false;window._done=false;send(p,null,null,true);}' +
+        'if(window._retrying)return;var p=window._lastCancelledPrompt;if(p){window._retrying=true;busy=false;window._done=false;send(p,null,null,true);setTimeout(function(){window._retrying=false},2000);}' +
         '})()">&#8635; Kirim Ulang</button></div>';
       window._lastCancelledPrompt = window._lastPrompt;
     }

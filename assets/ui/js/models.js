@@ -227,18 +227,14 @@ function openTheme() {
     var b = document.createElement('button');
     b.className = 'mopt' + (t.id === curTheme ? ' sel' : '');
     b.innerHTML = '<div style="width:24px;height:24px;border-radius:50%;background:' + t.colors.bg + ';border:2px solid ' + t.colors.accent + ';flex:0 0 auto"></div><div><div class="nm">' + t.nm + '</div><div class="ds">' + t.desc + '</div></div>';
-    b.onclick = function() { applyTheme(t.id); document.getElementById('mtheme').classList.remove('show'); toast('Tema: ' + t.nm); };
+    b.onclick = function() { applyTheme(t.id); toast('Tema: ' + t.nm); };
     l.appendChild(b);
   });
-  document.getElementById('mtheme').classList.add('show');
+  document.getElementById('mprivacy').classList.add('show');
 }
-document.getElementById('dtheme').onclick = function() { closeDrawer(); openTheme(); };
-document.getElementById('thclose').onclick = function() { document.getElementById('mtheme').classList.remove('show'); };
-applyTheme(curTheme);
-
-/* ===== privacy & data ===== */
-document.getElementById('dprivacy').onclick = function() { closeDrawer(); document.getElementById('mprivacy').classList.add('show'); };
+document.getElementById('dprivacy').onclick = function() { closeDrawer(); openTheme(); };
 document.getElementById('prclose').onclick = function() { document.getElementById('mprivacy').classList.remove('show'); };
+applyTheme(curTheme);
 
 /* backup */
 document.getElementById('pbackup').onclick = function() {

@@ -53,11 +53,11 @@ function histRender() {
       var arr = histGet();
       arr.sort(function(a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
       window._hctxEntry = arr[_hctxIdx];
-      showHCtxMenu(e, _hctxIdx);
+      showHCtxMenu(btn, _hctxIdx);
     };
   });
 }
-function showHCtxMenu(e, idx) {
+function showHCtxMenu(btn, idx) {
   var menu = document.getElementById('hctx');
   var scrim = document.getElementById('hctx-scrim');
   var arr = histGet();

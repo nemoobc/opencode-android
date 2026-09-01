@@ -111,6 +111,8 @@ function addNote(txt, isErr, canRetry) {
   scrollEnd();
 }
 function addActions(body, plain) {
+  /* don't add duplicate actions */
+  if (body.parentNode && body.parentNode.querySelector('.mact')) return;
   var d = document.createElement('div');
   d.className = 'mact';
   var b = document.createElement('button');
@@ -126,7 +128,13 @@ function addActions(body, plain) {
   };
   var r = document.createElement('button');
   r.innerHTML = '&#8635; Tanya lagi';
-  r.onclick = function() { if (!busy && window._lastPrompt) send(window._lastPrompt, null, null, true); };
+  r.onclick = function() {
+    if (busy || !window._lastPrompt) return;
+    /* disable both buttons to prevent double-click stacking */
+    r.disabled = true; r.style.opacity = '0.4';
+    b.disabled = true; b.style.opacity = '0.4';
+    send(window._lastPrompt, null, null, true);
+  };
   d.appendChild(b); d.appendChild(r);
   body.parentNode.appendChild(d);
 }

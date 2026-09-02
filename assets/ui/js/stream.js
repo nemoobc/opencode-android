@@ -139,22 +139,28 @@ window.onStatus = function(m) {
 };
 window.onReady = function(ok, free) {
   window._srvOk = !!ok;
+  /* selalu hapus splash — baik server siap maupun gagal */
+  var sp = document.getElementById('splash');
+  if (sp && !sp.classList.contains('out')) {
+    sp.classList.add('out');
+    setTimeout(function() { if (sp && sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
+  }
   if (ok) {
     ov.classList.remove('show');
-    var sp = document.getElementById('splash');
-    if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
     if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
       chat.innerHTML = window._helloHTML;
       bindChips();
     }
     dot.className = 'ok';
-  } else window.onError('payload tidak lengkap - uninstall lalu install ulang');
+  } else {
+    addNote('Server gagal start. Coba tutup lalu buka ulang aplikasi.', true, true);
+  }
 };
 function fadeSplash() {
   var sp = document.getElementById('splash');
   if (sp && !sp.classList.contains('out')) {
     sp.classList.add('out');
-    setTimeout(function() { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600);
+    setTimeout(function() { if (sp && sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
   }
 }
 window.PAYLOAD_TOTAL = 16332800;

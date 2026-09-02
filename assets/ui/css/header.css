@@ -1,29 +1,32 @@
 /* ===== header ===== */
 header {
-  display:flex; align-items:center; gap:8px; padding:7px 10px 7px 6px;
-  background:var(--bg)CC; border-bottom:1px solid var(--input-bg); flex:0 0 auto;
+  display:flex; align-items:center; gap:6px; padding:6px 8px;
+  background:var(--bg); border-bottom:1px solid var(--surface-border); flex:0 0 auto;
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:20;
+  min-height:52px;
 }
 .hbtn {
-  width:38px; height:38px; border-radius:50%; border:none; background:transparent;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--muted2); font-size:17px; transition:background .15s, border-color .15s;
+  width:40px; height:40px; border-radius:12px; border:none; background:transparent;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  color:var(--muted2); transition:background .15s, color .15s, transform .12s;
 }
-.hbtn:hover { background:var(--surface); }
-.hbtn:active { background:var(--item-bg); border-color:var(--accent)44; transform:scale(.92); }
+.hbtn:hover { background:var(--surface); color:var(--text); }
+.hbtn:active { background:var(--item-bg); transform:scale(.9); }
 #mchip {
-  display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--surface-border);
-  border-radius:12px; padding:6px 10px; color:var(--text); font-size:13px; font-weight:600;
-  max-width:220px; overflow:hidden; transition:background .15s, border-color .15s;
+  display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--surface-border);
+  border-radius:10px; padding:7px 12px; color:var(--text); font-size:13px; font-weight:600;
+  max-width:200px; overflow:hidden; transition:background .15s, border-color .15s;
+  flex:0 1 auto; min-width:0;
 }
 #mchip:active { background:var(--item-bg); }
-#mchip .car { display:flex; align-items:center; opacity:.5; }
-#mchip .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-#dot { width:7px; height:7px; border-radius:50%; background:#3DDC84; display:block; transition:background .2s; flex-shrink:0; }
+#mchip .car { display:flex; align-items:center; opacity:.4; flex-shrink:0; }
+#mchip .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+#dot { width:8px; height:8px; border-radius:50%; background:#3DDC84; display:block; transition:background .2s; flex:0 0 auto; }
 #dot.ok { background:#3DDC84; box-shadow:0 0 8px #3DDC8455; }
 #dot.work { background:#C9A227; animation:blink 1s infinite; }
 #dot.bad { background:#E08A7B; }
 @keyframes blink { 0%,100%{opacity:1}50%{opacity:.35} }
+header .spacer { flex:1; min-width:4px; }
 #ubanner {
   display:none; align-items:center; gap:8px; padding:10px 14px; background:var(--surface);
   border-bottom:1px solid var(--surface-border); color:var(--muted); font-size:12.5px;

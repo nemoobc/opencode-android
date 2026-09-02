@@ -17,11 +17,14 @@
   <div class="stage">
     <div class="glow"></div>
     <svg class="mark" viewBox="0 0 432 432">
+      <defs><linearGradient id="gd0" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
+      </linearGradient></defs>
       <g class="frm">
-        <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-        <path d="M132 268 V300 Q132 316 148 316 H300 Q316 316 316 300 V100 Q316 84 300 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
+        <path d="M116 92 H316 Q332 92 332 108 V204" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+        <path d="M116 300 Q116 316 132 316 H300 Q316 316 316 300 V128 Q316 112 300 112" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
       </g>
-      <rect class="cur" x="236" y="236" width="122" height="122" rx="18" fill="#3DDC84"/>
+      <rect class="cur" x="260" y="260" width="108" height="108" rx="20" fill="url(#gd0)"/>
     </svg>
   </div>
   <div class="nm"><b>Open</b><span style="color:#3DDC84">Code</span></div>
@@ -34,9 +37,9 @@
       <defs><linearGradient id="gd1" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
       </linearGradient></defs>
-      <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd1)" transform="rotate(0 297 297)"/>
+      <path d="M116 92 H316 Q332 92 332 108 V204" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+      <path d="M116 300 Q116 316 132 316 H300 Q316 316 316 300 V128 Q316 112 300 112" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+      <rect x="260" y="260" width="108" height="108" rx="20" fill="url(#gd1)"/>
     </svg>
     <div><b>OpenCode</b></div>
   </div>
@@ -55,11 +58,11 @@
 <div id="scrim"></div>
 
 <header>
-  <button class="hbtn" id="bmenu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <button class="hbtn" id="bmenu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <button id="mchip"><div id="dot"></div><span class="lbl" id="mname">Muse Spark</span><span class="car"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
-  <div style="flex:1"></div>
-  <button class="hbtn" id="blang" title="Bahasa balasan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2v3"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg></button>
-  <button class="hbtn" id="bnew" title="Obrolan Baru"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg></button>
+  <div class="spacer"></div>
+  <button class="hbtn" id="blang" title="Bahasa balasan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2v3"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg></button>
+  <button class="hbtn" id="bnew" title="Obrolan Baru"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
 </header>
 
 <div id="ubanner"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#E8D9A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Update Tersedia: <b id="utag"></b><button id="ubtn">LIHAT</button></div>
@@ -71,9 +74,9 @@
       <defs><linearGradient id="gd2" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
       </linearGradient></defs>
-      <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-      <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd2)" transform="rotate(0 297 297)"/>
+      <path d="M116 92 H316 Q332 92 332 108 V204" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+      <path d="M116 300 Q116 316 132 316 H300 Q316 316 316 300 V128 Q316 112 300 112" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+      <rect x="260" y="260" width="108" height="108" rx="20" fill="url(#gd2)"/>
     </svg>
     <h2><b>Ada yang bisa</b> <span>dibantu?</span></h2>
     <div class="ai-badge"><span class="dot"></span> Mimo 2.5 Free — Aktif</div>
@@ -102,9 +105,9 @@
     <defs><linearGradient id="gd3" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#3DDC84"/><stop offset=".6" stop-color="#1FA063"/><stop offset="1" stop-color="#C9A227"/>
     </linearGradient></defs>
-    <path d="M132 84 H300 Q316 84 316 100 V196" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-    <path d="M316 268 V300 Q316 316 300 316 H100 Q84 316 84 300 V100 Q84 84 100 84" fill="none" stroke="#F2F2EC" stroke-width="26" stroke-linecap="round"/>
-    <rect x="236" y="236" width="122" height="122" rx="18" fill="url(#gd3)" transform="rotate(0 297 297)"/>
+    <path d="M116 92 H316 Q332 92 332 108 V204" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+    <path d="M116 300 Q116 316 132 316 H300 Q316 316 316 300 V128 Q316 112 300 112" fill="none" stroke="#F2F2EC" stroke-width="24" stroke-linecap="round"/>
+    <rect x="260" y="260" width="108" height="108" rx="20" fill="url(#gd3)"/>
   </svg>
   <h2>BERSIAP...</h2>
   <p id="ovp">Sekali saja di buka pertama</p>

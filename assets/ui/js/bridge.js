@@ -4,6 +4,15 @@
 
   /* Android mode — native Bridge class provides window.Android */
   if (typeof Android !== 'undefined') {
+    /* Fallback: kalau server gagal start, onReady tidak pernah dipanggil.
+       Auto-remove splash setelah 120s supaya user ngga stuck forever. */
+    setTimeout(function() {
+      var sp = document.getElementById('splash');
+      if (sp && !sp.classList.contains('out')) {
+        sp.classList.add('out');
+        setTimeout(function() { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
+      }
+    }, 120000);
     return; /* native bridge ready, do nothing */
   }
 
@@ -96,10 +105,10 @@
     appInfo: function() { return 'web-1.0'; }
   };
 
-  /* web mode splash - simple 6s then fade */
+  /* web mode splash - wait 3s for animations, then fade */
   setTimeout(function() {
     var sp = document.getElementById('splash');
-    if (sp) { sp.classList.add('out'); setTimeout(function() { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 500); }
+    if (sp) { sp.classList.add('out'); setTimeout(function() { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 700); }
     if (typeof window.onReady === 'function') window.onReady(true, true);
-  }, 6000);
+  }, 3000);
 })();

@@ -1,5 +1,6 @@
 /* ===== stream.js — appendOut, flushStream, finishUI, onDone, onError, onStatus, onReady, fadeSplash, progress ===== */
 window.appendOut = function(t) {
+  if (window._warmingUp) return;   /* suppress warm-up "OK" response */
   if (window._aborted) return;
   if (window._done) return;
   if (window._rend === undefined) window._rend = '';
@@ -12,15 +13,21 @@ window.appendOut = function(t) {
     body.classList.add('caret');
     body.classList.add('plain');
     window._cur = body;
-  } else {
-    var d = window._cur.querySelector('.dots');
-    if (d) d.remove();
+  } else if (!window._gotDelta) {
+    /* first delta: replace thinking animation with typing dots */
+    window._cur.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    window._cur.classList.add('caret');
+    window._cur.classList.add('plain');
   }
   window._plain += t;
   window._gotDelta = true;
   var now = Date.now();
   if (!window._flushAt || now - window._flushAt >= 40) {
     window._flushAt = now;
+    /* clear dots on first real render */
+    if (window._cur && !window._rend) {
+      window._cur.textContent = '';
+    }
     var tail = window._plain.substring(window._rend.length);
     window._rend = window._plain;
     if (tail.length && window._cur && window._cur.isConnected) {
@@ -61,7 +68,9 @@ window.onDone = function(code, tok) {
         window._cur.classList.remove('plain');
         window._cur.innerHTML = '<span style="color:#8AA396;font-style:italic">Dibatalkan...</span>' +
         '<div class="mact"><button class="retry-cancel" onclick="(function(){' +
-        'if(window._retrying)return;var p=window._lastCancelledPrompt;if(p){window._retrying=true;busy=false;window._done=false;send(p,null,null,true);setTimeout(function(){window._retrying=false},2000);}' +
+        'if(window._retrying)return;var p=window._lastCancelledPrompt;if(p){' +
+        'var old=document.querySelectorAll(\'.sysnote.err\');for(var i=0;i<old.length;i++)old[i].remove();' +
+        'window._retrying=true;busy=false;window._done=false;send(p,null,null,true);setTimeout(function(){window._retrying=false},2000);}' +
         '})()">&#8635; Kirim Ulang</button></div>';
       window._lastCancelledPrompt = window._lastPrompt;
     }
@@ -137,7 +146,7 @@ window.onError = function(m, tok) {
 window.onStatus = function(m) {
   addNote('⚙ ' + m);
 };
-window.onReady = function(ok, free) {
+window._onReadyRaw = function(ok, free) {
   window._srvOk = !!ok;
   /* selalu hapus splash — baik server siap maupun gagal */
   var sp = document.getElementById('splash');
@@ -187,3 +196,18 @@ window.onUpdate = function(tag, body) {
   window._upTag = tag;
   toast('Update ' + tag + ' tersedia');
 };
+
+/* ===== wrapper: tunda onReady kalau splash masih ada =====
+   Java bisa panggil onReady(true) sebelum splash fade (server warm).
+   User harusnya liat BERSIAP dulu sebelum masuk chat. */
+(function() {
+  var _raw = window._onReadyRaw;
+  window.onReady = function(ok, free) {
+    if (ok && document.getElementById('splash')) {
+      /* splash masih tampil — tunda, jangan hide overlay */
+      window._pendingReady = {ok: ok, free: free};
+      return;
+    }
+    if (_raw) _raw(ok, free);
+  };
+})();

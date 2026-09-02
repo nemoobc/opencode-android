@@ -23,6 +23,35 @@ var busy = false;
 var curModel = 'opencode/mimo-v2.5-free';
 document.getElementById('mname').textContent = 'Mimo 2.5 Free';
 
+/* ===== transition: splash → overlay =====
+   Splash animation ~3s (drawStroke 1.6s + cursorPop 0.5s + fadeUp).
+   Overlay tampil SAAT splash fade — jadi user lihat transisi halus.
+   Progress updates dari Java langsung kelihatan di overlay. */
+(function() {
+  /* fade splash setelah animasi selesai, lalu tampilkan overlay */
+  var SP_DUR = 3200;
+  setTimeout(function() {
+    var sp = document.getElementById('splash');
+    if (sp && !sp.classList.contains('out')) {
+      sp.classList.add('out');
+      /* tampilkan overlay HANYA kalau server belum ready
+         (_pendingReady = null berarti extraction/ server masih jalan) */
+      if (ov && !window._pendingReady) ov.classList.add('show');
+      setTimeout(function() {
+        if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
+        /* proses onReady yang tertunda */
+        if (window._pendingReady) {
+          var p = window._pendingReady;
+          window._pendingReady = null;
+          if (window._onReadyRaw) window._onReadyRaw(p.ok, p.free);
+        }
+      }, 700);
+    }
+  }, SP_DUR);
+})();
+
+/* pendingReady di-set oleh stream.js wrapper, di-proses di splash fade timeout di atas */
+
 var userHold = false;
 var msgCount = 0;
 function follow() {

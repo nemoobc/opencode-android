@@ -333,7 +333,7 @@ document.getElementById('dupdate').onclick = function() {
 document.getElementById('ubtn').onclick = function() {
   Android.openUrl('https://github.com/nemoobc/opencode-android/releases/tag/' + (window._upTag || 'latest'));
 };
-document.getElementById('dver').textContent = 'v' + (Android.appInfo ? Android.appInfo() : '?');
+document.getElementById('dver').textContent = 'Powered By Nemo';
 
 /* ===== attachment ===== */
 document.getElementById('battach').onclick = function () {

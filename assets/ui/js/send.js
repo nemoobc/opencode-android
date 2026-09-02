@@ -26,7 +26,7 @@ function send(t, label, imgPrev, retryMode) {
   var searchQuery = shouldSearch ? WebSearch.sanitizeQuery(t) : null;
 
   if (searchQuery) {
-    /* show searching indicator */
+    /* show searching indicator in hint */
     document.getElementById('hint').innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC84" stroke-width="2.5" style="vertical-align:-1px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Mencari: <b>' + esc(searchQuery) + '</b>...';
     document.getElementById('dot').className = 'work';
 
@@ -42,6 +42,7 @@ function send(t, label, imgPrev, retryMode) {
 }
 
 function doSend(t, label, imgPrev, retryMode, searchResults) {
+  window._warmingUp = false;  /* reset warm-up suppress saat user kirim pesan */
   var um;
   if (retryMode) {
     var userMsgs = chat.querySelectorAll('.msg.user');
@@ -66,10 +67,25 @@ function doSend(t, label, imgPrev, retryMode, searchResults) {
   } else {
     body = addMsg('ai');
   }
-  body.innerHTML = '<div class="thinking-svg">' +
-    '<svg class="brain-pulse" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/><path d="M12 2v4M8.5 5.5L10 7M15.5 5.5L14 7"/><path d="M9 18h6"/></svg>' +
-    '<svg class="gear" viewBox="0 0 24 24" width="14" height="14" fill="#3DDC84"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a6.94 6.94 0 0 0-1.63-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.63.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.37 1.04.7 1.63.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>' +
-    '</div><span class="elapsed">Berpikir...</span>';
+  /* web search: show searched sites first, then thinking */
+  if (searchResults && searchResults.length) {
+    var sitesHTML = '<div class="search-sites"><span class="src-label">🔍 Sumber ditemukan:</span>';
+    for (var i = 0; i < searchResults.length; i++) {
+      var r = searchResults[i];
+      var shortTitle = r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title;
+      sitesHTML += '<a class="src-link" href="#" data-url="' + esc(r.url) + '">' + esc(shortTitle) + '</a>';
+    }
+    sitesHTML += '</div>';
+    body.innerHTML = sitesHTML + '<div class="thinking-svg">' +
+      '<svg class="brain-pulse" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/><path d="M12 2v4M8.5 5.5L10 7M15.5 5.5L14 7"/><path d="M9 18h6"/></svg>' +
+      '<svg class="gear" viewBox="0 0 24 24" width="14" height="14" fill="#3DDC84"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a6.94 6.94 0 0 0-1.63-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.63.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.37 1.04.7 1.63.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>' +
+      '</div><span class="elapsed">Berpikir...</span>';
+  } else {
+    body.innerHTML = '<div class="thinking-svg">' +
+      '<svg class="brain-pulse" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/><path d="M12 2v4M8.5 5.5L10 7M15.5 5.5L14 7"/><path d="M9 18h6"/></svg>' +
+      '<svg class="gear" viewBox="0 0 24 24" width="14" height="14" fill="#3DDC84"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a6.94 6.94 0 0 0-1.63-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.63.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.37 1.04.7 1.63.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>' +
+      '</div><span class="elapsed">Berpikir...</span>';
+  }
   window._cur = body;
   var t0 = Date.now();
   clearInterval(window._tm);

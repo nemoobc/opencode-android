@@ -1,12 +1,25 @@
 /* ===== overlay ===== */
-#ov { position:fixed; inset:0; background:#0E1F16; z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; }
-#ov.show { display:flex; }
-#ov .mark { width:86px; height:86px; margin-bottom:24px; }
+#ov { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; opacity:0; transition:opacity .5s ease-out; }
+#ov.show { display:flex; opacity:1; }
+#ov .stage { position:relative; width:112px; height:112px; margin-bottom:24px; }
+#ov .glow {
+  position:absolute; inset:-40px; border-radius:50%;
+  background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%);
+}
+#ov .mark { width:112px; height:112px; position:relative; }
+#ov .frm path {
+  stroke-dasharray:600; stroke-dashoffset:0;
+}
+#ov .cur {
+  opacity:1; transform:scale(1) rotate(0deg);
+  transform-origin:297px 297px;
+}
 #ov h2 { font-size:16px; font-weight:600; letter-spacing:.5px; margin-bottom:8px; }
 #ov p { font-size:13px; color:var(--muted); margin-bottom:24px; }
 #pbar { width:280px; height:8px; background:var(--surface); border-radius:5px; overflow:hidden; position:relative; }
-#pfill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .25s; border-radius:5px; }
-#pnum { margin-top:10px; font-variant-numeric:tabular-nums; }
+#pfill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s ease-out; border-radius:5px; }
+#pnum { margin-top:10px; font-variant-numeric:tabular-nums; animation:pulse 1.8s ease-in-out infinite; letter-spacing:.3px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
 /* ===== modal ===== */
 .modal { position:fixed; inset:0; background:#000B; z-index:60; display:none; align-items:flex-end; justify-content:center; }
@@ -59,11 +72,6 @@
 #splash .glow {
   position:absolute; inset:-40px; border-radius:50%;
   background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%);
-  animation:glowPulse 2s ease-in-out infinite;
-}
-@keyframes glowPulse {
-  0%,100% { opacity:.3; transform:scale(0.95); }
-  50% { opacity:1; transform:scale(1.15); }
 }
 #splash .mark { width:112px; height:112px; position:relative; }
 #splash .frm path {

@@ -104,7 +104,13 @@ function addNote(txt, isErr, canRetry) {
     var rb = document.createElement('button');
     rb.className = 'retry-btn';
     rb.textContent = 'Coba lagi';
-    rb.onclick = function() { if (!busy && window._lastPrompt) send(window._lastPrompt); };
+    rb.onclick = function() {
+      if (busy || !window._lastPrompt) return;
+      /* hapus semua error note lama supaya tidak nimpa */
+      var old = chat.querySelectorAll('.sysnote.err');
+      for (var i = 0; i < old.length; i++) old[i].remove();
+      send(window._lastPrompt);
+    };
     d.appendChild(rb);
   }
   chat.appendChild(d);

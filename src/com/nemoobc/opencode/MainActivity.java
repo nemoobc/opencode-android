@@ -1040,6 +1040,7 @@ public class MainActivity extends Activity {
     private void warmUpModel() {
         if (warmedUp || localMode) return;
         warmedUp = true;
+        push("window._warmingUp = true");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1085,6 +1086,8 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     debugLog("warmup: err " + e);
                 }
+                /* jangan reset _warmingUp di sini — biarkan send.js yang reset
+                   saat user kirim pesan pertama. Supaya respon warm-up tidak muncul. */
             }
         }).start();
     }

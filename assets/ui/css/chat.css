@@ -74,7 +74,9 @@
 @keyframes citeHl { 0%,100% { background:none; } 30% { background:#C9A22755; } }
 .honest { margin-top:8px; font-size:12px; color:var(--muted); font-style:italic; }
 /* ===== AI gambar & file ===== */
-.aimg { max-width:100%; height:auto; border-radius:14px; border:1px solid var(--surface-border); background:var(--surface); cursor:zoom-in; }
+.aimg { max-width:100%; height:auto; border-radius:14px; border:1px solid var(--surface-border); background:var(--surface); cursor:zoom-in; display:block; margin:6px 0; }
+.imgjob { margin:8px 0; }
+.imgjob:first-child { margin-top:0; }
 /* lightbox gambar: Keluar + Simpan di atas */
 #imgview { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:100; display:none; flex-direction:column; }
 #imgview.show { display:flex; }

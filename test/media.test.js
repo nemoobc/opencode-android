@@ -42,6 +42,13 @@ test('detects English draw', () => {
 test('rejects question about image', () => {
   assert.equal(Media.imgRequest('gambar apa itu?'), null);
 });
+test('prefix image word triggers', () => {
+  assert.ok(Media.imgRequest('gambar kucing tidur'));
+  assert.ok(Media.imgRequest('foto senja di pantai'));
+});
+test('marker dong/ya triggers', () => {
+  assert.ok(Media.imgRequest('minta gambar kucing dong'));
+});
 test('rejects plain chat', () => {
   assert.equal(Media.imgRequest('halo apa kabar'), null);
 });

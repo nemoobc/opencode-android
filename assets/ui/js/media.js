@@ -12,10 +12,16 @@ var Media = (function() {
     return false;
   }
 
-  /* request gambar? cth: "buatkan gambar kucing astronot" (bukan "gambar apa itu") */
+  /* request gambar? cth: "buatkan gambar kucing", "gambar kucing dong", "foto senja ya"
+     BUKAN: "gambar apa itu?" (nanya) */
   function imgRequest(t) {
-    var low = String(t || '').toLowerCase();
-    return hasAny(low, IMG_ACT) && hasAny(low, IMG_WORDS) ? cleanImgPrompt(t) : null;
+    var low = String(t || '').toLowerCase().trim();
+    if (hasAny(low, IMG_ACT) && hasAny(low, IMG_WORDS)) return cleanImgPrompt(t);
+    if (/^(gambar|lukisan|foto|ilustrasi|image|picture|visual|sketsa|poster|wallpaper)\b/.test(low) &&
+        !/^(gambar|foto|lukisan)\s+apa|apa\s+itu|maksud|artinya/.test(low)) return cleanImgPrompt(t);
+    if (hasAny(low, IMG_WORDS) && /(dong|ya|kak|plis|please|dong$|\sya$|\skak$)/.test(low) &&
+        !/apa\s+itu|yang\s+mana/.test(low)) return cleanImgPrompt(t);
+    return null;
   }
   function cleanImgPrompt(t) {
     var s = String(t || '');

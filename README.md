@@ -10,7 +10,7 @@ Model gratis aktif · Tanpa API key · Tanpa Termux · Tanpa root
 
 [![release](https://img.shields.io/github/v/release/nemoobc/opencode-android?color=C9A227&label=versi)](https://github.com/nemoobc/opencode-android/releases)
 [![platform](https://img.shields.io/badge/Android%208%2B-arm64-3DDC84)](#)
-[![license](https://img.shields.io/badge/license-MIT-blue)](#)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [**⬇ Download APK**](https://github.com/nemoobc/opencode-android/releases)
 
@@ -72,10 +72,10 @@ Model default **`opencode/mimo-v2.5-free`** — tanpa kunci apa pun, langsung pa
 1. Download APK dari [Releases](https://github.com/nemoobc/opencode-android/releases)
 2. Izinkan instalasi dari sumber tidak dikenal
 3. Buka — ekstraksi awal cuma sekali (progress 1–100% jalan beneran)
-4. Update berikutnya tinggal timpa install (keystore permanen, data aman)
+4. Update berikutnya tinggal timpa install, data aman
 
-> ⚠ Kalau dulu pernah install versi lama dan muncul "paket bentrok": uninstall sekali,
-> lalu install yang baru. Setelah itu update selalu bisa timpa langsung.
+> ⚠ Kalau muncul "paket bentrok": uninstall sekali, lalu install yang baru.
+> Setelah itu update selalu bisa timpa langsung.
 
 ---
 
@@ -152,9 +152,6 @@ bash build-ui.sh
 OCX_ABI=x86_64 bash build.sh
 ```
 
-> `license.key` wajib ada di folder project (dibikin sekali, jangan di-commit).
-> Keystore ikut repo, password = isi `license.key`.
-
 ---
 
 ## Test Emulator (GitHub Actions)
@@ -177,23 +174,27 @@ yang dibuild otomatis di CI.
 
 | Versi | Isi |
 |-------|-----|
-| **v1.6.1** | Game (ular/quiz/puzzle/ludo) · Sitasi web [1][2] · Typewriter · Boot progress jujur · Keystore permanen |
+| **v1.6.1** | Game (ular/quiz/puzzle/ludo/tictac) · Sitasi web [1][2] · Typewriter · Boot progress jujur |
 | v1.6.0 | Timeout realistis, warm-up model, bagikan obrolan |
 | v1.5.3 | Install instan |
 
 ---
 
-## Atribusi & Lisensi
+## Lisensi
+
+**MIT** — lihat file [LICENSE](LICENSE). Bebas dipakai dan dimodifikasi.
+
+### Atribusi
 
 - Binary AI: [OpenCode](https://github.com/anomalyco/opencode)
 - Runtime sandbox: proot (GPLv3) · Rootfs: Alpine Linux
-- Kode aplikasi & UI: **MIT** — bebas dipakai dan dimodifikasi.
+- Game & UI: kode sendiri, ikon SVG gambar sendiri
 
 > **Jujur soal lisensi:** APK ini membundel proot (GPLv3) dan rootfs Alpine
 > (BSD/GPL) dalam satu file install. Artinya distribusi biner APK tunduk pada
 > kewajiban GPLv3 (tawarkan source + skrip build — repo ini SUDAH memenuhinya:
-> `build.sh`, `TarExtractor.java`, dan semua source terbuka di sini).
-> Kode buatan sendiri (`assets/ui`, `MainActivity.java` UI) tetap MIT.
+> `build.sh` dan semua source terbuka di sini).
+> Kode buatan sendiri tetap MIT.
 > Kalau kamu fork + distribusi ulang APK, kewajiban GPLv3 ikut berlaku.
 
 ---
@@ -203,7 +204,7 @@ yang dibuild otomatis di CI.
 | Gejala | Sebab | Fix |
 |--------|-------|-----|
 | `ERR_FILE_NOT_FOUND android_asset` | APK lama (assets path) | Install ulang dari Releases terbaru |
-| "Paket bentrok / tidak terinstall" | Key beda (keystore ke-reset) | Uninstall sekali → install baru. Lalu backup `Documents/opencode-keystore/` ke Drive |
+| "Paket bentrok / tidak terinstall" | Tanda tangan beda dari versi kepasang | Uninstall sekali → install baru |
 | Stuck "0 file" / % ga jalan | Ekstrak belum mulai / server boot | Tunggu max 2 menit. Masih stuck → tutup paksa → buka lagi (rootfs.tmp dibersihkan otomatis) |
 | "Server gagal start" | Boot proot lama di HP kentang | Tunggu 1–2 menit, jangan spam buka-tutup |
 | Web search ga ada hasil | Toggle mati / offline | Nyalakan toggle 🌐 di input, cek internet |

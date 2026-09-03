@@ -88,6 +88,16 @@ jobs:
           cp dl/termux/loader.bin jniLibs/x86_64/libproot_loader.so
           cp dl/termux/libtalloc.so jniLibs/x86_64/libtalloc.so
           cp dl/termux/libshmem.so jniLibs/x86_64/libshmem.so
+      - name: keystore sementara CI (emulator fresh, key bebas — JANGAN tiru untuk rilis)
+        run: |
+          tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 > license.key
+          chmod 600 license.key
+          rm -f keystore/ks.jks
+          keytool -genkeypair -keystore keystore/ks.jks -storetype PKCS12 -alias oc \
+            -keyalg RSA -keysize 2048 -validity 30 \
+            -storepass "$(cat license.key)" -keypass "$(cat license.key)" \
+            -dname "CN=CI, O=test, C=ID"
+          echo "keystore CI siap (sekali pakai, tidak di-commit)"
       - name: build apk x86_64
         run: |
           OCX_ABI=x86_64 bash build.sh

@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
@@ -192,6 +193,15 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try { ensureNativeLibs(); debugLog("bg: native siap"); } catch (Exception e) { debugLog("bg: ensureNativeLibs ERR " + e); push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); requestWeb(); return; }
+                /* TUNGGU page WebView siap (max 10 dtk) SEBELUM ekstrak.
+                   Dulu ekstrak jalan duluan: payload kecil (4.8MB) selesai
+                   sebelum page load → semua push numpuk di pendingJs lalu
+                   ke-replay instan → user TIDAK PERNAH lihat % jalan 1-100. */
+                try {
+                    int w = 0;
+                    while (!webLoaded && w < 10000) { Thread.sleep(200); w += 200; }
+                    debugLog("bg: webLoaded=" + webLoaded + " setelah tunggu " + w + "ms");
+                } catch (InterruptedException ignored) {}
                 boolean ready = readyOk();
                 debugLog("bg: ready awalnya=" + ready);
                 if (!ready) {
@@ -243,6 +253,11 @@ public class MainActivity extends Activity {
                             push("window.setProgress(1)");
                             progressUi(1);
                             InputStream raw = getAssets().open("payload/rootfs.bin");
+                            /* Hitung byte KOMPRESI (asset), bukan dekompresi —
+                               dulu % langsung 100% karena pembilangnya byte hasil ekstrak. */
+                            final TarExtractor.CountingInputStream cin =
+                                    new TarExtractor.CountingInputStream(raw);
+                            final long[] lastPush = new long[]{0};
                             TarExtractor.Progress cb = new TarExtractor.Progress() {
                                 @Override
                                 public void onEntry(int n) {
@@ -250,11 +265,18 @@ public class MainActivity extends Activity {
                                 }
                                 @Override
                                 public void onBytes(long b) {
-                                    push("window.setProgressBytes(" + b + ")");
+                                    /* onBytes = tick saja; nilai % dari counter kompresi.
+                                       Throttle ±150KB supaya tidak banjir ratusan push
+                                       yang bikin UI lag & nilai basi ke-replay. */
+                                    long c = cin.count;
+                                    if (c - lastPush[0] >= 150000) {
+                                        lastPush[0] = c;
+                                        push("window.setProgressBytes(" + c + ")");
+                                    }
                                 }
                             };
-                            TarExtractor.extractGz(new BufferedInputStream(raw, 1 << 16), tmp, cb);
-                            debugLog("bg: ekstrak selesai");
+                            int totalFiles = TarExtractor.extractGz(new BufferedInputStream(cin, 1 << 16), tmp, cb);
+                            debugLog("bg: ekstrak selesai, file=" + totalFiles);
                             for (String p : new String[]{"usr/bin/oc"}) {
                                 File f = new File(tmp, p);
                                 if (f.exists()) f.setExecutable(true, false);
@@ -266,9 +288,13 @@ public class MainActivity extends Activity {
                             /* JANGAN langsung hapus old di sini: kalau app dibunuh saat
                                penghapusan berjalan, buka berikutnya harusnya GAMPANG
                                restore. Hapus old nanti, setelah server mulai hidup. */
+                            /* total file ASLI hasil ekstrak (bukan hardcode) —
+                               SELALU dicat final (throttle bisa bikin nilai terakhir
+                               ke-skip), bukan cuma saat old ada. */
+                            push("window.FILE_TOTAL=" + totalFiles + ";window.setProgress(" + totalFiles + ")");
+                            push("window.setProgressBytes(" + cin.count + ")");
+                            progressUi(100);
                             if (ready && old.exists()) {
-                                push("window.setProgress(555)");
-                                progressUi(100);
                                 Thread bg = new Thread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -289,6 +315,12 @@ public class MainActivity extends Activity {
                         requestWeb();
                         return;
                     }
+                    push("window.setStage(\"menyalakan server AI...\")");
+                    stageUi("Menyalakan server AI...");
+                } else {
+                    /* Sudah diekstrak (buka ulang): tidak ada push progress sama
+                       sekali di jalur ini, jadi overlay harus dikabari eksplisit —
+                       kalau tidak, overlay stuck teks default "0 file". */
                     push("window.setStage(\"menyalakan server AI...\")");
                     stageUi("Menyalakan server AI...");
                 }
@@ -315,7 +347,7 @@ public class MainActivity extends Activity {
             if (wakeLock == null) {
                 PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
                 wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "opencode:generate");
-                wakeLock.setReferenceCounted(false);
+                wakeLock.setReferenceCounted(true);
             }
             wakeLock.acquire(300000);
         } catch (Exception ignored) {}
@@ -749,8 +781,22 @@ public class MainActivity extends Activity {
             writeVersionMarker();
             return;
         }
-        /* fallback (jarang): nativeLibraryDir kosong — ekstrak manual dari APK */
+        /* fallback (jarang): nativeLibraryDir kosong — ekstrak manual dari APK.
+           Two-pass: hitung dulu total byte .so supaya % akurat (dulu total .so
+           ~200MB dicat ke skala payload 4.8MB → bar langsung 100% ngaco). */
         natLib.mkdirs();
+        long soTotal = 0;
+        try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(getApplicationInfo().sourceDir)) {
+            java.util.Enumeration<? extends ZipEntry> en = zf.entries();
+            while (en.hasMoreElements()) {
+                ZipEntry e = en.nextElement();
+                String n = e.getName();
+                if (n.startsWith("lib/arm64-v8a/") && n.endsWith(".so") && e.getSize() > 0) {
+                    soTotal += e.getSize();
+                }
+            }
+        } catch (Exception ignored) {}
+        if (soTotal > 0) push("window.PAYLOAD_TOTAL=" + soTotal + ";window.setStage(\"menyiapkan sistem — menyiapkan binary...\")");
         long total = 0, lastPush = 0;
         try (ZipInputStream z = new ZipInputStream(new BufferedInputStream(
                 new FileInputStream(getApplicationInfo().sourceDir), 1 << 16))) {
@@ -1370,6 +1416,91 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void cancel() {
             doCancel(sessionId, msgConn);
+        }
+
+        /* Web search via DuckDuckGo HTML — dipanggil JS saat toggle web aktif.
+           Berjalan di thread binder @JavascriptInterface (bukan UI thread),
+           jadi boleh network langsung. Return JSON: [{"t":judul,"u":url,"s":cuplikan}] */
+        @JavascriptInterface
+        public String webSearch(String q) {
+            JSONArray out = new JSONArray();
+            HttpURLConnection c = null;
+            try {
+                URL url = new URL("https://html.duckduckgo.com/html/");
+                c = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+                c.setRequestMethod("POST");
+                c.setConnectTimeout(10000);
+                c.setReadTimeout(10000);
+                c.setDoOutput(true);
+                c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36");
+                byte[] body = ("q=" + URLEncoder.encode(q == null ? "" : q, "UTF-8")).getBytes(StandardCharsets.UTF_8);
+                OutputStream os = c.getOutputStream();
+                os.write(body);
+                os.flush();
+                os.close();
+                if (c.getResponseCode() != 200) return "[]";
+                BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line).append('\n');
+                    if (sb.length() > 300000) break;
+                }
+                br.close();
+                String html = sb.toString();
+                java.util.regex.Pattern pa = java.util.regex.Pattern.compile(
+                        "<a[^>]*class=\"result__a\"[^>]*>(.*?)</a>",
+                        java.util.regex.Pattern.DOTALL);
+                java.util.regex.Pattern ph = java.util.regex.Pattern.compile("href=\"([^\"]+)\"");
+                java.util.regex.Pattern ps = java.util.regex.Pattern.compile(
+                        "class=\"result__snippet\"[^>]*>(.*?)</div>",
+                        java.util.regex.Pattern.DOTALL);
+                java.util.regex.Matcher ma = pa.matcher(html);
+                while (ma.find() && out.length() < 5) {
+                    String aTag = ma.group(0);
+                    String title = stripTags(ma.group(1)).trim();
+                    java.util.regex.Matcher mh = ph.matcher(aTag);
+                    String link = mh.find() ? decodeUddg(mh.group(1)) : "";
+                    if (title.length() == 0 || !link.startsWith("http")) continue;
+                    String snip = "";
+                    java.util.regex.Matcher ms = ps.matcher(html);
+                    if (ms.find(ma.end())) {
+                        int nextA = html.indexOf("result__a", ma.end());
+                        if (nextA < 0 || ms.start() < nextA) snip = stripTags(ms.group(1)).trim();
+                    }
+                    JSONObject o = new JSONObject();
+                    o.put("t", title.length() > 120 ? title.substring(0, 120) : title);
+                    o.put("u", link);
+                    o.put("s", snip.length() > 200 ? snip.substring(0, 200) : snip);
+                    out.put(o);
+                }
+            } catch (Exception ignored) {
+            } finally {
+                if (c != null) c.disconnect();
+            }
+            return out.toString();
+        }
+
+        private String stripTags(String s) {
+            if (s == null) return "";
+            return s.replaceAll("<[^>]*>", "").replace("&amp;", "&").replace("&quot;", "\"")
+                    .replace("&#x27;", "'").replace("&#39;", "'")
+                    .replace("&lt;", "<").replace("&gt;", ">");
+        }
+
+        private String decodeUddg(String href) {
+            try {
+                if (href.contains("/l/?uddg=")) {
+                    String enc = href.substring(href.indexOf("uddg=") + 5);
+                    int amp = enc.indexOf('&');
+                    if (amp > 0) enc = enc.substring(0, amp);
+                    return java.net.URLDecoder.decode(enc, "UTF-8");
+                }
+                return href;
+            } catch (Exception e) {
+                return href;
+            }
         }
 
         @JavascriptInterface

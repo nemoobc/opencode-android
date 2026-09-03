@@ -14,7 +14,25 @@ public final class TarExtractor {
         default void onBytes(long total) {}
     }
 
-    public static void extractGz(InputStream raw, File dest, Progress p) throws IOException {
+    /* Menghitung byte KOMPRESI yang dibaca dari asset. Penting: onBytes(out)
+       melaporkan byte DEKOMPRESI yang ditulis ke disk (bisa 10x lipat),
+       jadi % harus pakai counter ini, bukan bytesWritten. */
+    public static class CountingInputStream extends java.io.FilterInputStream {
+        public long count = 0;
+        public CountingInputStream(InputStream in) { super(in); }
+        @Override public int read() throws IOException {
+            int r = super.read();
+            if (r >= 0) count++;
+            return r;
+        }
+        @Override public int read(byte[] b, int off, int len) throws IOException {
+            int r = super.read(b, off, len);
+            if (r > 0) count += r;
+            return r;
+        }
+    }
+
+    public static int extractGz(InputStream raw, File dest, Progress p) throws IOException {
         // Auto-detect format payload: kalau tar POLOS (bukan gzip), jangan dibungkus
         // GZIPInputStream — itu bikin macet karena deflate tak pernah selesai. Magic gzip = 1f 8b.
         java.io.PushbackInputStream pb = new java.io.PushbackInputStream(raw, 512);
@@ -22,10 +40,10 @@ public final class TarExtractor {
         int b = pb.read();
         pb.unread(new byte[]{(byte) a, (byte) b}, 0, 2);
         boolean gz = a == 0x1f && (b & 0xff) == 0x8b;
-        extract(gz ? new GZIPInputStream(pb, 65536) : pb, dest, p);
+        return extract(gz ? new GZIPInputStream(pb, 65536) : pb, dest, p);
     }
 
-    public static void extract(InputStream in, File dest, Progress p) throws IOException {
+    public static int extract(InputStream in, File dest, Progress p) throws IOException {
         byte[] head = new byte[512];
         byte[] buf = new byte[65536];
         String longName = null;
@@ -128,6 +146,7 @@ public final class TarExtractor {
             if (p != null) p.onEntry(count);
         }
         in.close();
+        return count;
     }
 
     private static String trimLead(String s) {

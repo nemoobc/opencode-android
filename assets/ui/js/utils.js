@@ -53,6 +53,8 @@ function mdRender(src) {
       rows.map(function(r){return '<tr>' + r.map(function(c){return '<td>'+c+'</td>';}).join('') + '</tr>';}).join('') + '</tbody></table>';
   });
   txt = txt.replace(/^\s*[-*] (.*)$/gm, '\u0000U<li>$1</li>');
+  txt = txt.replace(/^\s*[\u2022\u25AA\u25E6\u00B7]\s+(.*)$/gm, '\u0000U<li>$1</li>');
+  txt = txt.replace(/^\s*[-–—]\s+(.*)$/gm, '\u0000U<li>$1</li>');
   txt = txt.replace(/^\s*\d+\. (.*)$/gm, '\u0000O<li>$1</li>');
   txt = txt.replace(/((?:\u0000[UO]<li>[\s\S]*?<\/li>)(?:\n\u0000[UO]<li>[\s\S]*?<\/li>)*)/g, function(m) {
     var tag = m.charAt(1) === 'U' ? 'ul' : 'ol';

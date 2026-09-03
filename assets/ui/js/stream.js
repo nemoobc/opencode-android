@@ -21,24 +21,47 @@ window.appendOut = function(t) {
   }
   window._plain += t;
   window._gotDelta = true;
-  var now = Date.now();
-  if (!window._flushAt || now - window._flushAt >= 40) {
-    window._flushAt = now;
-    /* clear dots on first real render */
-    if (window._cur && !window._rend) {
-      window._cur.textContent = '';
-    }
-    var tail = window._plain.substring(window._rend.length);
-    window._rend = window._plain;
-    if (tail.length && window._cur && window._cur.isConnected) {
-      window._cur.textContent += tail;
-      window._cur.classList.add('caret');
-      follow();
-    }
-  }
+  startTyper();
 };
+/* ===== typewriter: teks muncul bertahap biar kelihatan "mengetik" =====
+   Delta dari server sering datang bergerombol (1 burst besar) sehingga
+   tanpa pacer, jawaban langsung pop penuh. Pacer reveal bertahap 50ms. */
+function startTyper() {
+  if (window._typer) return;
+  window._typer = setInterval(function() { tickTyper(); }, 50);
+}
+function stopTyper() {
+  if (window._typer) { clearInterval(window._typer); window._typer = null; }
+}
+function tickTyper() {
+  var cur = window._cur;
+  if (!cur || !cur.isConnected) { stopTyper(); return; }
+  var plain = window._plain || '', rend = window._rend || '';
+  if (rend.length >= plain.length) {
+    /* kejar-kejaran selesai saat done: render markdown final */
+    if (window._done && window._ff) {
+      window._ff = false;
+      finishMarkdown(window._doneCode || 0);
+    }
+    return; /* nunggu delta berikutnya */
+  }
+  if (!rend) cur.textContent = ''; /* clear dots di reveal pertama */
+  var remain = plain.length - rend.length;
+  /* fast-forward pas done: kebut biar typing tetap kelihatan sekilas
+     tapi jawaban langsung jadi (timing pas, ga ngegantung) */
+  var step = window._ff
+    ? Math.max(120, Math.ceil(remain / 3))
+    : Math.max(4, Math.min(120, Math.ceil(remain / 10)));
+  var tail = plain.substring(rend.length, rend.length + step);
+  window._rend = rend + tail;
+  cur.textContent += tail;
+  cur.classList.add('caret');
+  follow();
+}
+window._tickTyper = tickTyper;
 window.flushStream = function() {
-  if (window._cur) { window._cur.textContent = window._plain; follow(); }
+  stopTyper();
+  if (window._cur) { window._rend = window._plain; window._cur.textContent = window._plain; follow(); }
 };
 function finishUI(code) {
   busy = false;
@@ -57,6 +80,23 @@ window.onDone = function(code, tok) {
   clearInterval(window._tm);
   var el = window._cur ? window._cur.querySelector('.elapsed') : null;
   if (el) el.remove();
+  /* teks belum selesai ke-reveal (burst cepat): JANGAN langsung swap ke
+     markdown — fast-forward typing dulu biar animasi ngetik kelihatan,
+     render final ditunda sampai tick kejar (timing pas). */
+  if (window._cur && !window._canceling &&
+      (window._plain || '').trim() &&
+      (window._rend || '').length < (window._plain || '').length) {
+    window._ff = true;
+    window._doneCode = code;
+    dot.className = 'work';
+    if (typeof startTyper === 'function') startTyper();
+    return;
+  }
+  if (typeof stopTyper === 'function') stopTyper();
+  finishMarkdown(code);
+};
+function finishMarkdown(code) {
+  if (typeof stopTyper === 'function') stopTyper();
   if (window._cur) {
     var plain = (window._plain || '').trim();
     if (window._canceling) {
@@ -116,10 +156,10 @@ function friendlyErr(m) {
     return 'Model tidak tersedia saat ini. Coba ganti model cepat dari menu, lalu ketik ulang.';
   if (low.indexOf('http 429') >= 0 || low.indexOf('too many') >= 0 || low.indexOf('rate limit') >= 0)
     return 'Terlalu banyak permintaan (rate limit). Tunggu sebentar, lalu coba lagi.';
-  if (low.indexOf('cleartext') >= 0 || low.indexOf('localhost') >= 0 || low.indexOf('connect') >= 0)
-    return 'Koneksi ke server lokal gagal. Tutup lalu buka ulang aplikasi.';
   if (low.indexOf('timed out') >= 0 || low.indexOf('timeout') >= 0)
     return 'Server model lambat/kehabisan waktu. Periksa internet, lalu coba lagi.';
+  if (low.indexOf('cleartext') >= 0 || low.indexOf('localhost') >= 0 || low.indexOf('connect') >= 0)
+    return 'Koneksi ke server lokal gagal. Tutup lalu buka ulang aplikasi.';
   return String(m);
 }
 window.onError = function(m, tok) {
@@ -172,19 +212,49 @@ function fadeSplash() {
     setTimeout(function() { if (sp && sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
   }
 }
-window.PAYLOAD_TOTAL = 16332800;
+window.PAYLOAD_TOTAL = 4839338;
+window.FILE_TOTAL = 528;
+window._fileN = 0;
+/* progress dicat ke overlay (#ov) DAN splash (#splash) — splash yang
+   tampil duluan saat ekstrak jalan, jadi % harus kelihatan di sana.
+   SATU label "N / total file • P%" — dulu dua format (file vs MB)
+   rebutan satu label sampai kelihatan flicker. */
+function paintProgress(pct, label) {
+  pct = Math.max(0, Math.min(100, pct));
+  var f = document.getElementById('pfill');
+  if (f) f.style.width = pct + '%';
+  var p = document.getElementById('pnum');
+  if (p) p.textContent = label;
+  var sf = document.getElementById('spfill');
+  if (sf) sf.style.width = pct + '%';
+  var sp = document.getElementById('spnum');
+  if (sp) sp.textContent = Math.round(pct) + '%';
+}
+function fileLabel(pct) {
+  return window._fileN + ' / ' + window.FILE_TOTAL + ' file • ' + Math.round(pct) + '%';
+}
 window.setProgress = function(n) {
-  document.getElementById('pnum').textContent = n + ' / 555 file';
+  window._fileN = n;
+  var pct = (n / window.FILE_TOTAL) * 100;
+  paintProgress(pct, fileLabel(pct));
 };
 window.setProgressBytes = function(b) {
-  var mb = b / 1048576;
-  var pct = Math.min(100, (b / PAYLOAD_TOTAL) * 100);
-  document.getElementById('pfill').style.width = pct + '%';
-  document.getElementById('pnum').textContent = mb.toFixed(1) + ' / 16 MB (' + Math.round(pct) + '%)';
+  var pct = (b / window.PAYLOAD_TOTAL) * 100;
+  paintProgress(pct, fileLabel(Math.min(100, pct)));
 };
 window.setStage = function(t) {
   var p = document.getElementById('ovp');
   if (p) p.textContent = t;
+  /* fase boot server tidak ada % (indefinite) → animasi geser, bukan 0% macet.
+     fase ekstrak → bar determinate biasa. */
+  var boot = /menyalakan/i.test(t || '');
+  var bar = document.getElementById('pbar');
+  if (bar) {
+    if (boot) bar.classList.add('indet');
+    else bar.classList.remove('indet');
+  }
+  var num = document.getElementById('pnum');
+  if (num && boot) num.textContent = 'memuat server...';
 };
 window.onSaved = function() {
   document.getElementById('mconfig').classList.remove('show');

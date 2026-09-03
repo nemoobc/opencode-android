@@ -1,6 +1,6 @@
 /* ===== chat ===== */
-#chatwrap { flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; background:radial-gradient(600px 400px at 50% -10%, var(--surface) 0%, transparent 60%), var(--bg); }
-#chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; }
+#chatwrap { flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; background:radial-gradient(600px 400px at 50% -10%, var(--surface) 0%, transparent 60%), var(--bg); }
+#chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; overflow-x:hidden; }
 .msg { margin:18px 0; animation:rise .3s ease-out; }
 @keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 .msg.user { display:flex; flex-direction:column; align-items:flex-end; }
@@ -20,12 +20,19 @@
 }
 .msg.ai .ava svg { width:16px; height:16px; }
 .msg.ai .bw { flex:1; min-width:0; padding-top:2px; }
-.msg.ai .body { font-size:15.5px; line-height:1.75; color:var(--card-text); word-break:break-word; padding:2px 0; }
+.msg.ai .body { font-size:15.5px; line-height:1.75; color:var(--card-text); word-break:normal; overflow-wrap:break-word; padding:2px 0; }
 .msg.ai .body.plain { white-space:pre-wrap; }
 .msg.ai .body.plain ~ .dots, .msg.ai .ava { transition:box-shadow .3s; }
 .msg.ai .body.plain ~ .dots + .elapsed ~ .dots ~ .ava, .msg.ai:has(.body.plain) .ava { box-shadow:0 0 16px var(--accent)33; animation:pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { box-shadow:0 0 12px var(--accent)18; } 50% { box-shadow:0 0 20px var(--accent)33; } }
 .caret::after { content:"▍"; color:var(--accent); animation:blink .9s infinite; }
+.dots { display:inline-flex; gap:4px; align-items:center; padding:6px 0; }
+.dots i { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:dotB 1.2s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay:.15s; }
+.dots i:nth-child(3) { animation-delay:.3s; }
+@keyframes dotB { 0%,60%,100% { opacity:.25; transform:translateY(0); } 30% { opacity:1; transform:translateY(-4px); } }
+.msg.ai .md { animation:mdIn .25s ease-out; }
+@keyframes mdIn { from { opacity:0; } to { opacity:1; } }
 .thinking-svg { display:inline-flex; align-items:center; gap:8px; padding:8px 0 2px; }
 .thinking-svg .gear { animation:spin 2s linear infinite; transform-origin:center; }
 .thinking-svg .brain-pulse { animation:brainpulse 1.5s ease-in-out infinite; transform-origin:center; }
@@ -56,8 +63,9 @@
 .md li { margin:5px 0; }
 .md code.ic { background:var(--input-bg); color:#E8C87A; border-radius:6px; padding:2px 6px; font-size:13px; font-family:ui-monospace,Menlo,monospace; }
 .md blockquote { border-left:3px solid var(--accent)66; padding:4px 14px; margin:10px 0; color:#A8BFB1; background:var(--surface); border-radius:0 8px 8px 0; }
-.md a { color:var(--accent); text-decoration:none; }
+.md a { color:var(--accent); text-decoration:none; word-break:break-all; }
 .md a:hover { text-decoration:underline; }
+.md img { max-width:100%; height:auto; border-radius:12px; }
 .md hr { border:none; border-top:1px solid var(--input-bg); margin:16px 0; }
 .md strong { color:var(--card-text); }
 .md table { border-collapse:collapse; margin:10px 0 14px; font-size:13.5px; display:block; overflow-x:auto; max-width:100%; }

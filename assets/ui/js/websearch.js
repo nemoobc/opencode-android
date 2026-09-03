@@ -13,8 +13,17 @@ var WebSearch = (function() {
    */
   function searchDDG(query) {
     return new Promise(function(resolve) {
+      /* native bridge (aplikasi Android): HTTP langsung via Java,
+         tanpa CORS/proxy — file:// tidak punya origin valid. */
       try {
-        /* use local proxy to bypass CORS */
+        if (typeof Android !== 'undefined' && Android && typeof Android.webSearch === 'function') {
+          var arr = JSON.parse(Android.webSearch(query) || '[]');
+          resolve(normalizeNative(arr));
+          return;
+        }
+      } catch (e) { /* jatuh ke fallback */ }
+      /* web-mode fallback: local proxy (browser testing) */
+      try {
         var proxyUrl = location.origin + '/api/search';
         var body = 'q=' + encodeURIComponent(query);
         var xhr = new XMLHttpRequest();
@@ -35,6 +44,24 @@ var WebSearch = (function() {
         resolve([]);
       }
     });
+  }
+
+  /**
+   * Normalize hasil native Java [{t,u,s}] → [{title,url,snippet}]
+   */
+  function normalizeNative(arr) {
+    var out = [];
+    try {
+      for (var i = 0; i < arr.length && out.length < MAX_RESULTS; i++) {
+        var r = arr[i] || {};
+        var title = String(r.t || '').trim();
+        var url = String(r.u || '');
+        if (title && url.indexOf('http') === 0) {
+          out.push({ title: title, url: url, snippet: String(r.s || '') });
+        }
+      }
+    } catch (e) { /* abaikan */ }
+    return out;
   }
 
   /**
@@ -142,12 +169,12 @@ var WebSearch = (function() {
     var ctx = '[KONTEKS PENCARIAN WEB — sumber terverifikasi]\n\n';
     for (var i = 0; i < searchResults.length; i++) {
       var r = searchResults[i];
-      ctx += (i + 1) + '. ' + r.title + '\n';
+      ctx += '[' + (i + 1) + '] ' + r.title + '\n';
       ctx += '   URL: ' + r.url + '\n';
       if (r.snippet) ctx += '   ' + r.snippet + '\n';
       ctx += '\n';
     }
-    ctx += 'Gunakan informasi di atas sebagai referensi. Jawab berdasarkan konteks pencarian di atas jika relevan, atau berdasarkan pengetahuanmu jika tidak cukup.\n\n';
+    ctx += 'ATURAN SITASI: kalau memakai info dari sumber di atas, cantumkan nomornya seperti [1] atau [2] langsung di kalimat jawaban. Contoh: "Harga emas hari ini naik [1]."\n\n';
     ctx += 'Pertanyaan user: ' + originalQuery;
     return ctx;
   }
@@ -157,12 +184,13 @@ var WebSearch = (function() {
    */
   function buildSourcesHTML() {
     if (!_lastResults.length) return '';
-    var html = '<div class="search-sources"><span class="src-label">📌 Sumber Pencarian:</span> ';
+    /* daftar bernomor vertikal — nomornya nyambung ke sitasi [1][2] di jawaban.
+       data-url (bukan href) supaya tap dibuka via Android.openUrl. */
+    var html = '<div class="search-sources"><div class="src-label">🌐 Sumber:</div>';
     for (var i = 0; i < _lastResults.length; i++) {
       var r = _lastResults[i];
-      var shortTitle = r.title.length > 40 ? r.title.substring(0, 40) + '...' : r.title;
-      html += '<a class="src-link" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(shortTitle) + '</a>';
-      if (i < _lastResults.length - 1) html += ' · ';
+      var shortTitle = r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title;
+      html += '<a class="src-link" href="#" data-url="' + esc(r.url) + '"><b>[' + (i + 1) + ']</b> ' + esc(shortTitle) + '</a>';
     }
     html += '</div>';
     return html;

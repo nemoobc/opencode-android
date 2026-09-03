@@ -1,0 +1,74 @@
+/* ===== games.css — menu + ular + quiz + puzzle + ludo ===== */
+.gcard { max-width:560px; }
+.ggrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 4px; }
+.gopt { display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 10px 14px; background:var(--bg); border:1px solid var(--surface-border); border-radius:16px; color:var(--card-text); transition:transform .12s, border-color .2s; }
+.gopt:active { transform:scale(.95); border-color:var(--accent)88; }
+.gicon svg { width:46px; height:46px; display:block; }
+.gname { font-size:14px; font-weight:600; }
+.gbest { font-size:11px; color:var(--muted); min-height:14px; }
+.ghead { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.ghead h3 { margin:0 !important; flex:1; text-align:center; font-size:15px; }
+.ghead .bb { padding:8px 12px; font-size:13px; }
+#gscore { font-size:13px; font-weight:700; color:var(--accent2); min-width:52px; text-align:right; font-variant-numeric:tabular-nums; }
+#gbody { display:flex; flex-direction:column; align-items:center; gap:10px; padding-bottom:6px; }
+.gpanel { text-align:center; padding:18px 10px; }
+.gpanel .big { font-size:22px; font-weight:700; margin-bottom:6px; }
+.gpanel .sub2 { font-size:13px; color:var(--muted); margin-bottom:14px; }
+.gbtn { background:linear-gradient(135deg,var(--accent),#2BC474); border:none; color:var(--bg); font-weight:700; font-size:14px; padding:12px 26px; border-radius:13px; box-shadow:0 4px 16px var(--accent)33; }
+.gbtn:active { transform:scale(.96); }
+.gbtn.ghost2 { background:none; border:1px solid var(--input-border); color:var(--muted2); box-shadow:none; margin-left:8px; }
+
+/* ===== ular ===== */
+#snk { background:#08110C; border:1px solid var(--surface-border); border-radius:14px; touch-action:none; max-width:100%; }
+.dpad { display:grid; grid-template-columns:repeat(3,52px); grid-template-rows:repeat(2,48px); gap:6px; justify-content:center; }
+.dpad button { background:var(--surface); border:1px solid var(--surface-border); color:var(--text); border-radius:12px; font-size:18px; }
+.dpad button:active { background:var(--accent)33; }
+.dpad .du { grid-column:2; grid-row:1; }
+.dpad .dl { grid-column:1; grid-row:2; }
+.dpad .dd { grid-column:2; grid-row:2; }
+.dpad .dr { grid-column:3; grid-row:2; }
+
+/* ===== quiz ===== */
+.qprog { font-size:12px; color:var(--muted); }
+.qbar { width:100%; height:6px; background:var(--surface); border-radius:4px; overflow:hidden; }
+.qbar i { display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:4px; }
+.qq { font-size:16px; font-weight:600; text-align:center; line-height:1.5; padding:4px 6px; }
+.qopts { display:flex; flex-direction:column; gap:8px; width:100%; }
+.qopt { text-align:left; background:var(--bg); border:1px solid var(--surface-border); color:var(--text); border-radius:13px; padding:13px 14px; font-size:14px; transition:transform .1s; }
+.qopt:active { transform:scale(.98); }
+.qopt.right { border-color:var(--accent); background:var(--accent)22; color:#7FCF9F; font-weight:700; }
+.qopt.wrong { border-color:var(--error); background:var(--error)18; }
+.qopt:disabled { opacity:.9; }
+.qstreak { font-size:12px; color:#E8D9A0; min-height:16px; }
+
+/* ===== puzzle ===== */
+.pzgrid { display:grid; grid-template-columns:repeat(3,92px); grid-template-rows:repeat(3,92px); gap:6px; }
+.pztile { background:linear-gradient(135deg,var(--item-bg),var(--surface)); border:1px solid var(--surface-border); border-radius:14px; color:var(--text); font-size:30px; font-weight:700; transition:transform .12s; }
+.pztile:active { transform:scale(.93); }
+.pztile.ok { border-color:var(--accent)66; color:#7FCF9F; }
+.pztile.hole { background:transparent; border:1px dashed var(--input-border); }
+.pzmeta { display:flex; gap:16px; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ===== ludo ===== */
+.luturn { display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; }
+.ludot { width:12px; height:12px; border-radius:50%; }
+.luboard { position:relative; width:min(92vw,360px); height:min(92vw,360px); }
+.lugrid { display:grid; grid-template-columns:repeat(15,1fr); grid-template-rows:repeat(15,1fr); width:100%; height:100%; border:2px solid var(--surface-border); border-radius:10px; overflow:hidden; background:var(--bg); }
+.lucell { border:.5px solid #ffffff10; }
+.lucell.baseR { background:#E08A7B26; } .lucell.baseG { background:#3DDC8426; }
+.lucell.baseY { background:#E8D9A026; } .lucell.baseB { background:#6EC6FF26; }
+.lucell.homeR { background:#E08A7B55; } .lucell.homeG { background:#3DDC8455; }
+.lucell.homeY { background:#E8D9A055; } .lucell.homeB { background:#6EC6FF55; }
+.lucell.safe { background:#ffffff14; position:relative; }
+.lucell.safe::after { content:"★"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:8px; color:#E8D9A0; }
+.lucell.triR { background:#E08A7B; } .lucell.triG { background:#3DDC84; }
+.lucell.triY { background:#E8D9A0; } .lucell.triB { background:#6EC6FF; }
+.lutoks { position:absolute; inset:0; pointer-events:none; }
+.lutok { position:absolute; width:6.4%; height:6.4%; margin:-3.2% 0 0 -3.2%; border-radius:50%; border:2px solid #fff8; pointer-events:auto; box-shadow:0 2px 6px #0009; transition:left .3s, top .3s; padding:0; }
+.lutok.canmove { animation:tokPulse 1s ease-in-out infinite; border-color:#fff; }
+@keyframes tokPulse { 0%,100% { box-shadow:0 0 0 0 #fff6; } 50% { box-shadow:0 0 0 6px #fff0; } }
+.lurow { display:flex; align-items:center; gap:12px; }
+.ludice { width:58px; height:58px; border-radius:14px; background:var(--bg); border:2px solid var(--surface-border); color:var(--text); font-size:34px; line-height:1; }
+.ludice:disabled { opacity:.45; }
+.ludice:not(:disabled):active { transform:scale(.92); }
+.lulog { font-size:12px; color:var(--muted); min-height:16px; text-align:center; max-width:100%; }

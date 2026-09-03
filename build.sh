@@ -12,6 +12,7 @@ NC='\033[0m'
 
 ABI="arm64-v8a"
 AJ="dl/android-34/android.jar"
+KS_PASS="${OC_KEYSTORE_PASS:-opencode123}"
 
 # auto-detect tools
 find_tool() {
@@ -64,8 +65,8 @@ echo ""
 rm -rf build/classes build/gen build/*.apk build/classes.dex build/base.apk
 mkdir -p build/classes
 
-# [1/6] compile java
-echo -e "${YELLOW}[1/6] javac...${NC}"
+# [1/7] compile java
+echo -e "${YELLOW}[1/7] javac...${NC}"
 SRC_FILES=$(find src/com/nemoobc/opencode -name "*.java")
 javac -source 8 -target 8 -nowarn \
     -bootclasspath "$AJ" \
@@ -79,25 +80,46 @@ fi
 CLASS_COUNT=$(find build/classes -name "*.class" | wc -l)
 echo "  compiled $CLASS_COUNT classes"
 
-# [2/6] dex
-echo -e "${YELLOW}[2/6] d8...${NC}"
+# [2/7] dex
+echo -e "${YELLOW}[2/7] d8...${NC}"
 CLASS_FILES=$(find build/classes -name "*.class")
 $D8 --release --lib "$AJ" --min-api 26 \
     $CLASS_FILES \
     --output build/
 echo "  dex: $(wc -c < build/classes.dex) bytes"
 
-# [3/6] aapt package
-echo -e "${YELLOW}[3/6] aapt package...${NC}"
+# [3/7] minify js/css (build copy, jangan in-place)
+echo -e "${YELLOW}[3/7] minify js/css...${NC}"
+if [ -f "tools/minify.py" ] && [ -n "$PYTHON" ]; then
+    rm -rf build/ui
+    cp -a assets/ui build/ui
+    $PYTHON tools/minify.py build/ui/js/ 2>&1
+    $PYTHON tools/minify.py build/ui/css/ 2>&1
+    echo "  minified (build/ui)"
+else
+    rm -rf build/ui
+    cp -a assets/ui build/ui
+    echo "  skipped (no python, using original)"
+fi
+
+# [4/7] aapt package (pakai minified assets)
+echo -e "${YELLOW}[4/7] aapt package...${NC}"
+if [ -d "build/ui" ]; then
+    mv assets/ui build/ui-orig
+    cp -a build/ui assets/ui
+fi
 "$AAPT" package -f \
     -M AndroidManifest.xml \
     -S res \
     -A assets \
     -I "$AJ" \
     -F build/base.apk
+if [ -d "build/ui-orig" ]; then
+    rm -rf assets/ui && mv build/ui-orig assets/ui
+fi
 
-# [4/6] add dex + native libs
-echo -e "${YELLOW}[4/6] add dex + native libs...${NC}"
+# [5/7] add dex + native libs
+echo -e "${YELLOW}[5/7] add dex + native libs...${NC}"
 cd build
 "$AAPT" add base.apk classes.dex
 cd ..
@@ -115,8 +137,8 @@ else
     echo "  no native libs"
 fi
 
-# [5/6] align
-echo -e "${YELLOW}[5/6] align...${NC}"
+# [6/7] align
+echo -e "${YELLOW}[6/7] align...${NC}"
 if [ -f "tools/align.py" ] && [ -n "$PYTHON" ]; then
     $PYTHON tools/align.py build/base.apk build/base-aligned.apk
     mv build/base-aligned.apk build/base.apk
@@ -129,16 +151,22 @@ else
     echo "  skipped (no align tool)"
 fi
 
-# [6/6] sign
-echo -e "${YELLOW}[6/6] sign...${NC}"
-if [ ! -f build/ks.jks ]; then
-    "$KEYTOOL" -genkeypair -keystore build/ks.jks -alias oc \
+# [7/7] sign (keystore PERMANEN di keystore/ — jangan di build/,
+#  karena build/ boleh dihapus. Key beda = install bentrok.)
+echo -e "${YELLOW}[7/7] sign...${NC}"
+KS_FILE="keystore/ks.jks"
+mkdir -p keystore
+if [ ! -f "$KS_FILE" ]; then
+    "$KEYTOOL" -genkeypair -keystore "$KS_FILE" -alias oc \
         -keyalg RSA -keysize 2048 -validity 10000 \
-        -storepass opencode123 -keypass opencode123 \
+        -storepass "$KS_PASS" -keypass "$KS_PASS" \
         -dname "CN=OpenCode, O=nemoobc, C=ID" 2>/dev/null
+    echo "  keystore baru: $KS_FILE (JAGA — ganti key = install bentrok)"
+else
+    echo "  keystore lama dipakai: $KS_FILE"
 fi
 
-"$APKSIGNER" sign --ks build/ks.jks --ks-pass pass:opencode123 \
+"$APKSIGNER" sign --ks "$KS_FILE" --ks-pass pass:"$KS_PASS" \
     --out "$APK_OUT" build/base.apk
 
 "$APKSIGNER" verify "$APK_OUT" && echo "  VERIFIED"

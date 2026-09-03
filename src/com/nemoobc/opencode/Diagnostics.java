@@ -91,6 +91,12 @@ public final class Diagnostics {
 
     private static void handle(Socket s) {
         try {
+            /* hanya izinkan koneksi dari loopback (localhost) */
+            String addr = s.getInetAddress().getHostAddress();
+            if (!"127.0.0.1".equals(addr) && !"::1".equals(addr) && !"0:0:0:0:0:0:0:1".equals(addr)) {
+                respond(s, 403, "text/plain", "forbidden".getBytes());
+                return;
+            }
             InputStream in = s.getInputStream();
             StringBuilder req = new StringBuilder();
             int c;

@@ -97,10 +97,16 @@ var Dev = (function() {
     }
   }
   function verifyFile(path) {
+    var hasReader = false;
+    try { hasReader = (typeof Android !== 'undefined' && Android && typeof Android.readTextFile === 'function'); } catch (e) {}
+    if (!hasReader) {
+      document.getElementById('dev-msg').textContent = 'App/web ini versi lama — update dulu baru bisa.';
+      return;
+    }
     var raw = null;
-    try { raw = (typeof Android !== 'undefined' && Android && Android.readTextFile) ? Android.readTextFile(path) : null; } catch (e) {}
+    try { raw = Android.readTextFile(path); } catch (e) {}
     if (!raw) {
-      document.getElementById('dev-msg').textContent = 'File tidak terbaca / terlalu besar.';
+      document.getElementById('dev-msg').textContent = 'File tidak terbaca / terlalu besar (max 8KB).';
       return;
     }
     verifyText(raw);

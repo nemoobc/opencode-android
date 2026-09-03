@@ -216,8 +216,7 @@
         if (n > 1) { ox = (g % 2 ? 0.72 : 0.28); oy = (g < 2 ? 0.28 : 0.72); }
         btn.style.left = ((t.cell[1] + ox) / 15 * 100) + '%';
         btn.style.top = ((t.cell[0] + oy) / 15 * 100) + '%';
-        /* angka cuma pas numpuk, kalo sendiri polos + dot */
-        btn.textContent = n > 1 ? String(t.i + 1) : '';
+        /* pin numpuk ala asli (tanpa angka) */
         /* di markas = kecil (kaya pion di kandang referensi) */
         if (L.toks[t.color][t.i] < 0) btn.classList.add('inyard');
         else btn.classList.remove('inyard');

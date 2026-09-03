@@ -151,7 +151,6 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .lucell.homeY { background:#E8C93A; } .lucell.homeB { background:#3FA7E8; }
 .lucell.safe { background:#E8D9A022; position:relative; }
 .lucell.safe::after { content:"★"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; color:#8a8f98; text-shadow:none; }
-.lutok.inyard { transform:scale(.82); }
 .lucell.homestartR { background:#E0514A; } .lucell.homestartG { background:#2FBF71; }
 .lucell.homestartY { background:#E8C93A; } .lucell.homestartB { background:#3FA7E8; }
 .lucell.homeR::after, .lucell.homeG::after, .lucell.homeY::after, .lucell.homeB::after {
@@ -175,16 +174,15 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .tric { position:absolute; left:40%; top:40%; width:20%; height:20%; background:conic-gradient(from 45deg,#E0514A 0 25%,#E8C93A 0 50%,#3FA7E8 0 75%,#2FBF71 0); pointer-events:none; }
 
 .lutoks { position:absolute; inset:0; pointer-events:none; }
-.lutok { position:absolute; width:6.6%; height:7.8%; margin:-4.6% 0 0 -3.3%; border-radius:50% 50% 50% 8%; transform:rotate(-45deg); border:2px solid rgba(0,0,0,.3); pointer-events:auto; background:radial-gradient(circle at 38% 30%, #ffffff77 0%, transparent 36%), var(--c,#888); box-shadow:0 3px 7px #000a; transition:left var(--lud,.3s) ease-in-out, top var(--lud,.3s) ease-in-out, margin-top .09s ease-out; padding:0; }
-.lutok.land { animation:landS .2s ease; }
-@keyframes landS { 0% { transform:scale(1,1); } 40% { transform:scale(1.3,.72); } 100% { transform:scale(1,1); } }
-.lutok::before { content:""; position:absolute; inset:-11px; }
-.lutok::after { content:""; position:absolute; left:50%; top:50%; width:52%; height:52%; margin:-26% 0 0 -26%; border-radius:50%; background:#fff; box-shadow:inset 0 -2px 4px #0003; }
+.lutok { position:absolute; width:6.6%; height:6.6%; margin:-3.3% 0 0 -3.3%; background:none; border:none; pointer-events:auto; padding:0; transition:left var(--lud,.3s) ease-in-out, top var(--lud,.3s) ease-in-out, margin-top .09s ease-out; }
+.lutok::before { content:""; position:absolute; left:8%; top:2%; width:84%; height:84%; background:radial-gradient(circle at 38% 30%, #ffffff77 0%, transparent 36%), var(--c,#888); border-radius:50% 50% 50% 10%; transform:rotate(-45deg); border:2px solid rgba(0,0,0,.3); box-shadow:0 3px 7px #000a; }
+.lutok::after { content:""; position:absolute; left:50%; top:42%; width:34%; height:34%; margin:-17% 0 0 -17%; border-radius:50%; background:#fff; box-shadow:inset 0 -2px 4px #0003; }
+.lutok.inyard { transform:scale(.82); }
 .lutok.think { animation:tokThink .7s ease-in-out infinite; }
 @keyframes tokThink { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 .luboom { position:absolute; width:10%; height:10%; margin:-5% 0 0 -5%; border-radius:50%; border:3px solid #FFE28A; pointer-events:none; animation:boomGo .5s ease-out forwards; }
 @keyframes boomGo { from { transform:scale(.3); opacity:1; } to { transform:scale(1.6); opacity:0; } }
-.lutok.canmove { animation:tokPulse 1s ease-in-out infinite; border-color:#fff; }
+.lutok.canmove::before { animation:tokPulse 1s ease-in-out infinite; border-color:#fff; }
 @keyframes tokPulse { 0%,100% { box-shadow:0 0 0 0 #fff6; } 50% { box-shadow:0 0 0 6px #fff0; } }
 .lurow { display:flex; align-items:center; gap:12px; }
 .luteams { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; padding:2px 4px; }

@@ -41,6 +41,7 @@ Ular, Quiz Otak, Puzzle, dan Ludo lawan CPU.
 | File attachment | Lampirkan gambar/file untuk analisis |
 | 🎨 AI Gambar | Minta gambar → AI bikinkan (tanpa API key) |
 | 📄 AI File | Minta kode/file → pilih tampil di chat atau kirim file |
+| 🔔 Pengumuman | Info update/pengumuman remote, dot merah kalau ada baru |
 | Multi-model | 9 model gratis + API key sendiri buat model berbayar |
 | Riwayat lokal | Auto-save, pin, ganti nama, hapus, backup/impor terenkripsi |
 | 3 Tema | Default (Hijau), Putih, Hitam AMOLED |

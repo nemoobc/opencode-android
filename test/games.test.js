@@ -6,7 +6,7 @@ import { createSandbox, loadScriptsInOrder } from './setup.js';
 
 const { dom, window, sandbox } = createSandbox();
 
-loadScriptsInOrder(sandbox, ['games.js', 'g-snake.js', 'g-quiz.js', 'g-puzzle.js', 'g-ludo.js']);
+loadScriptsInOrder(sandbox, ['games.js', 'g-snake.js', 'g-quiz.js', 'g-puzzle.js', 'g-ludo.js', 'g-tic.js']);
 
 const Games = sandbox.window.Games;
 
@@ -39,6 +39,7 @@ test('registry has 4 games', () => {
   assert.ok(Games._impl.quiz, 'quiz');
   assert.ok(Games._impl.puzzle, 'puzzle');
   assert.ok(Games._impl.ludo, 'ludo');
+  assert.ok(Games._impl.tic, 'tic');
 });
 test('openGames shows modal + menu', () => {
   sandbox.openGames();
@@ -53,7 +54,13 @@ test('closeGames hides modal', () => {
 });
 test('best labels render', () => {
   sandbox.openGames();
-  assert.ok(sandbox.document.getElementById('gb-snake').textContent.includes('Terbaik'));
+  assert.ok(sandbox.document.getElementById('gb-snake').textContent.includes('Belum main'));
+  sandbox.localStorage.setItem('g-snake-best', '120');
+  sandbox.openGames();
+  const el = sandbox.document.getElementById('gb-snake');
+  assert.ok(el.textContent.includes('120'));
+  assert.ok(el.classList.contains('has'), 'gold class');
+  sandbox.localStorage.removeItem('g-snake-best');
   sandbox.closeGames();
 });
 
@@ -173,6 +180,30 @@ test('no capture on safe cell', () => {
   const res = Games.LUDO.applyMove(st, 'G', { i: 0, to: 39 });
   assert.ok(!res.captured, 'safe, no capture');
   assert.equal(st.toks.R[0], 0, 'R stays');
+});
+
+// --- tictactoe ---
+console.log('\ntictactoe:');
+test('winner detects rows/cols/diags', () => {
+  assert.equal(Games.TIC.winner(['X','X','X','','','','','','']).p, 'X');
+  assert.equal(Games.TIC.winner(['','','','O','O','O','','','']).p, 'O');
+  assert.equal(Games.TIC.winner(['X','','','X','','','X','','']).p, 'X');
+  assert.equal(Games.TIC.winner(['','','O','','O','','O','','']).p, 'O');
+  assert.equal(Games.TIC.winner(['X','O','X','X','O','O','O','X','X']), 'D');
+  assert.equal(Games.TIC.winner(['X','','','','','','','','']), null);
+});
+test('cpu takes winning move', () => {
+  assert.equal(Games.TIC.cpuMove(['O','O','','X','','','','','']), 2);
+});
+test('cpu blocks opponent', () => {
+  assert.equal(Games.TIC.cpuMove(['X','X','','O','','','','','']), 2);
+});
+test('cpu prefers center on empty', () => {
+  assert.equal(Games.TIC.cpuMove(['','','','','','','','','']), 4);
+});
+test('decisive detects immediate win', () => {
+  assert.equal(Games.TIC.decisive(['O','O','','X','','','','',''], 2, 'O'), true);
+  assert.equal(Games.TIC.decisive(['O','','','X','','','','',''], 2, 'O'), false);
 });
 
 Games.stop();

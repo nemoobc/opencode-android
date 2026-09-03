@@ -157,6 +157,7 @@ const HTML = `<!DOCTYPE html>
           <button class="gopt" data-g="quiz"><span class="gname">Quiz Otak</span><span class="gbest" id="gb-quiz"></span></button>
           <button class="gopt" data-g="puzzle"><span class="gname">Puzzle</span><span class="gbest" id="gb-puzzle"></span></button>
           <button class="gopt" data-g="ludo"><span class="gname">Ludo</span><span class="gbest" id="gb-ludo"></span></button>
+          <button class="gopt" data-g="tic"><span class="gname">TicTac</span><span class="gbest" id="gb-tic"></span></button>
         </div>
         <div class="acts"><button class="bb ghost" id="gclose">Tutup</button></div>
       </div>

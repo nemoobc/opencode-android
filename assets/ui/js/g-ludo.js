@@ -22,6 +22,7 @@
     B: [[11,2],[11,3],[12,2],[12,3]]
   };
   var SAFE = { '6,1': 1, '1,8': 1, '8,13': 1, '13,6': 1, '2,6': 1, '6,12': 1, '12,8': 1, '8,2': 1 };
+  var HOMESTART = { '6,1': 'R', '1,8': 'G', '8,13': 'Y', '13,6': 'B' };
   var COLOR = { R: '#E08A7B', G: '#3DDC84', Y: '#E8D9A0', B: '#6EC6FF' };
   var NAME = { R: 'Merah', G: 'Hijau (kamu)', Y: 'Kuning', B: 'Biru' };
   var ORDER = ['G', 'R', 'Y', 'B'];
@@ -124,9 +125,13 @@
     var t = setTimeout(function() { if (id === gest) fn(); }, ms);
     timers.push(t);
   }
-  function log(t) {
+  function log(t, cls) {
+    if (!L) return;
+    L.logs = L.logs || [];
+    L.logs.push(cls ? '<span class="' + cls + '">' + t + '</span>' : t);
+    if (L.logs.length > 3) L.logs.shift();
     var e = document.getElementById('lulog');
-    if (e) e.textContent = t;
+    if (e) e.innerHTML = L.logs.join('<br>');
   }
   function setScore() {
     var e = document.getElementById('gscore');
@@ -134,6 +139,18 @@
     var n = 0, arr = L.toks.G;
     for (var i = 0; i < 4; i++) if (arr[i] === 56) n++;
     e.textContent = '🏠 ' + n + '/4';
+    var tray = document.getElementById('lutray');
+    if (tray) {
+      var h = '';
+      for (var c = 0; c < ORDER.length; c++) {
+        var col = ORDER[c], dn = 0, ta = L.toks[col];
+        for (var j = 0; j < 4; j++) if (ta[j] === 56) dn++;
+        h += '<span><span class="ludot" style="background:' + COLOR[col] + ';display:inline-block;vertical-align:-1px"></span>';
+        for (var s = 0; s < 4; s++) h += '<span class="slot' + (s < dn ? ' fill' : '') + '"></span>';
+        h += '</span>';
+      }
+      tray.innerHTML = h;
+    }
   }
   function buildBoard() {
     var h = '';
@@ -148,6 +165,7 @@
       if (HOMECOL.Y.some(function(x) { return x[0] === r && x[1] === c; })) cls += ' homeY';
       if (HOMECOL.B.some(function(x) { return x[0] === r && x[1] === c; })) cls += ' homeB';
       if (SAFE[key]) cls += ' safe';
+      if (HOMESTART[key]) cls += ' homestart' + HOMESTART[key];
       if (r === 7 && c === 6) cls += ' triR';
       if (r === 6 && c === 7) cls += ' triG';
       if (r === 7 && c === 8) cls += ' triY';
@@ -198,6 +216,9 @@
         if (n > 1) { ox = (g % 2 ? 0.72 : 0.28); oy = (g < 2 ? 0.28 : 0.72); }
         btn.style.left = ((t.cell[1] + ox) / 15 * 100) + '%';
         btn.style.top = ((t.cell[0] + oy) / 15 * 100) + '%';
+        /* angka cuma pas numpuk, kalo sendiri polos + dot */
+        btn.textContent = n > 1 ? String(t.i + 1) : '';
+        btn.classList.remove('vblink');
         if (mvSet[t.color + ':' + t.i]) btn.classList.add('canmove');
         else btn.classList.remove('canmove');
         if (L.winner === t.color) btn.classList.add('winglow');
@@ -219,7 +240,7 @@
         tn.classList.add('swap');
       }
       tn.innerHTML = '<span class="ludot" style="background:' + COLOR[col] + '"></span> ' +
-        (col === 'G' ? 'Giliranmu!' : 'Giliran ' + NAME[col] + '...');
+        (col === 'G' ? 'Giliranmu!' : 'Giliran ' + NAME[col] + (L.thinking ? ' (mikir...)' : '...'));
     }
     setScore();
   }
@@ -229,12 +250,33 @@
     L = newState();
     var b = document.getElementById('gbody');
     b.innerHTML = '<div class="luturn" id="luturn"></div>' + buildBoard() +
+      '<div class="lutray" id="lutray"></div>' +
+      '<details class="lurules"><summary>📖 Aturan singkat</summary>Butuh <b>6</b> keluar markas. Injak lawan (bukan ★) = makan. <b>6</b> / makan / finis = jalan lagi. Finis harus pas. Duluan 4 finis menang!<br>Contoh: kocok <b>6</b> → tap bidak hijau yang berdenyut → jalan!</details>' +
       '<div class="lurow"><button class="ludice" id="ludice">⚀</button></div>' +
-      '<div class="lulog" id="lulog">Kocok dadu untuk mulai. Butuh 6 keluar markas!</div>';
+      '<div class="lulog" id="lulog"></div>';
     document.getElementById('gtitle').textContent = 'Ludo';
     document.getElementById('ludice').onclick = function() { humanRoll(id); };
     render(null);
     log('Giliranmu! Ketuk dadu 🎲');
+  }
+  function shakeBoard() {
+    var bo = document.querySelector('#gbody .luboard');
+    if (!bo) return;
+    bo.classList.remove('shake');
+    void bo.offsetWidth;
+    bo.classList.add('shake');
+  }
+  /* dadu pip custom — konsisten di semua HP (unicode ⚀ kecil di sebagian font) */
+  var PIPMAP = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  function diceShow(n) {
+    var d = document.getElementById('ludice');
+    if (!d) return;
+    var h = '<span class="pips">';
+    for (var i = 0; i < 9; i++) h += '<i class="' + (PIPMAP[n].indexOf(i) >= 0 ? 'on' : '') + '"></i>';
+    d.innerHTML = h + '</span>';
+    d.classList.remove('bounce');
+    void d.offsetWidth;
+    d.classList.add('bounce');
   }
   function diceAnim(id, done) {
     var d = document.getElementById('ludice');
@@ -242,7 +284,7 @@
     var n = 0;
     var iv = setInterval(function() {
       if (id !== gest) { clearInterval(iv); return; }
-      if (d) d.textContent = FACES[Math.floor(Math.random() * 6)];
+      diceShow(1 + Math.floor(Math.random() * 6));
       if (++n >= 6) {
         clearInterval(iv);
         done();
@@ -256,7 +298,8 @@
     diceAnim(id, function() {
       L.dice = 1 + Math.floor(Math.random() * 6);
       var d = document.getElementById('ludice');
-      if (d) { d.textContent = FACES[L.dice - 1]; d.classList.remove('bounce'); void d.offsetWidth; d.classList.add('bounce'); }
+      diceShow(L.dice);
+      if (L.dice === 6) shakeBoard();
       var moves = legalMoves(L, 'G', L.dice);
       if (!moves.length) {
         log('🎲 ' + L.dice + ' — ga bisa jalan.');
@@ -282,23 +325,112 @@
       if (moves[k].i === i) return doMove(id, 'G', moves[k]);
     }
   }
+  /* korban yang bakal dimakan — tanpa ubah state (buat blink dulu) */
+  function findVictims(st, color, mv) {
+    var out = [];
+    if (mv.to < 0 || mv.to > 50) return out;
+    var cell = cellFor(color, mv.to, mv.i);
+    if (SAFE[cell[0] + ',' + cell[1]]) return out;
+    for (var c in st.toks) {
+      if (c === color) continue;
+      var oa = st.toks[c];
+      for (var j = 0; j < 4; j++) {
+        var op = oa[j];
+        if (op >= 0 && op <= 50) {
+          var oc = cellFor(c, op, j);
+          if (oc[0] === cell[0] && oc[1] === cell[1]) out.push({ c: c, j: j });
+        }
+      }
+    }
+    return out;
+  }
   function doMove(id, color, mv) {
     if (id !== gest || !L || L.winner) return;
+    clearThink();
+    L.thinking = false;
+    L.phase = 'hop';
+    var from = L.toks[color][mv.i];
+    var victims = findVictims(L, color, mv);
+    /* korban kedip 3x sebelum dimakan */
+    if (victims.length && L.nodes) {
+      for (var v = 0; v < victims.length; v++) {
+        var nd = L.nodes[victims[v].c + victims[v].j];
+        if (nd && nd.isConnected) nd.classList.add('vblink');
+      }
+    }
+    /* lompat per sel (bukan 1 garis lurus) khusus jalan ring multi-langkah */
+    var hops = [];
+    if (from >= 0 && mv.to <= 50 && mv.to - from > 1) {
+      for (var s = from + 1; s <= mv.to; s++) hops.push(s);
+    }
+    var waitBlink = victims.length ? 480 : 0;
+    if (!hops.length) {
+      var layer0 = document.getElementById('lutoks');
+      if (layer0) layer0.style.setProperty('--lud', '0.3s');
+      return later(function() { finalizeMove(id, color, mv); }, waitBlink, id);
+    }
+    var hi = 0;
+    (function stepHop() {
+      if (id !== gest || !L || L.winner) return;
+      if (hi < hops.length) {
+        L.toks[color][mv.i] = hops[hi];
+        paintHop(color, mv.i);
+        hi++;
+        var t = setTimeout(stepHop, 75);
+        timers.push(t);
+      } else {
+        L.toks[color][mv.i] = from; /* kembalikan, finalize yang resmi */
+        finalizeMove(id, color, mv);
+      }
+    })();
+    function paintHop(cc, ii) {
+      if (!L || !L.nodes) return;
+      var nd = L.nodes[cc + ii];
+      var cell = cellFor(cc, L.toks[cc][ii], ii);
+      if (!nd || !cell) return;
+      nd.style.transitionDuration = '0.07s';
+      nd.style.left = ((cell[1] + 0.5) / 15 * 100) + '%';
+      nd.style.top = ((cell[0] + 0.5) / 15 * 100) + '%';
+      setTimeout(function() { nd.style.transitionDuration = ''; }, 120);
+    }
+  }
+  function finalizeMove(id, color, mv) {
+    if (id !== gest || !L || L.winner) return;
     var fromBase = L.toks[color][mv.i] < 0;
+    var layer = document.getElementById('lutoks');
+    if (layer) layer.style.setProperty('--lud', '0.3s');
     var res = applyMove(L, color, mv);
     render(null);
+    if (res.captured && layer && mv.to >= 0 && mv.to <= 50) {
+      (function() {
+        var cell = cellFor(color, mv.to, mv.i);
+        var boom = document.createElement('div');
+        boom.className = 'luboom';
+        boom.style.left = ((cell[1] + 0.5) / 15 * 100) + '%';
+        boom.style.top = ((cell[0] + 0.5) / 15 * 100) + '%';
+        layer.appendChild(boom);
+        setTimeout(function() { if (boom.parentNode) boom.parentNode.removeChild(boom); }, 600);
+      })();
+    }
     var nm = NAME[color].split(' ')[0];
-    if (res.captured) log('💥 ' + nm + ' makan lawan!');
-    else if (res.homed) log('🏠 ' + nm + ' finis 1 bidak!');
-    else log(nm + ' jalan ' + L.dice + (fromBase ? ' (keluar markas!)' : '.'));
+    if (res.captured) log('💥 ' + nm + ' makan lawan!', 'lg-eat');
+    else if (res.homed) log('🏠 ' + nm + ' finis 1 bidak!', 'lg-home');
+    else log(nm + ' jalan ' + L.dice + (fromBase ? ' (keluar markas!)' : '.'), L.dice === 6 ? 'lg-six' : '');
     if (allDone(L, color)) return win(id, color);
     var extra = (L.dice === 6 || res.captured || res.homed);
+    var wait = color === 'G' ? 750 : 600;
     later(function() {
       if (extra) {
         log(nm + ' jalan lagi!');
         beginTurn(id, false);
       } else nextTurn(id);
-    }, 750, id);
+    }, wait, id);
+  }
+  function clearThink() {
+    var layer = document.getElementById('lutoks');
+    if (!layer) return;
+    var els = layer.querySelectorAll('.lutok.think');
+    for (var i = 0; i < els.length; i++) els[i].classList.remove('think');
   }
   function beginTurn(id, advance) {
     if (id !== gest || !L || L.winner) return;
@@ -307,22 +439,32 @@
     L.dice = 0;
     var d = document.getElementById('ludice');
     if (color === 'G') {
-      if (d) { d.disabled = false; d.textContent = '🎲'; }
+      if (d) { d.disabled = false; d.textContent = '🎲'; d.classList.add('ready'); }
       render(null);
       log('Giliranmu! Ketuk dadu 🎲');
     } else {
-      if (d) { d.disabled = true; d.textContent = '🎲'; }
+      if (d) { d.disabled = true; d.textContent = '🎲'; d.classList.remove('ready'); }
       render(null);
-      later(function() { cpuTurn(id, color); }, 700, id);
+      later(function() { cpuTurn(id, color); }, 500, id);
     }
   }
   function cpuTurn(id, color) {
     if (id !== gest || !L || L.winner) return;
     L.phase = 'anim';
+    L.thinking = true;
+    render(null);
+    /* bidak CPU denyut pas mikir */
+    var layer = document.getElementById('lutoks');
+    if (layer && L.nodes) {
+      for (var k in L.nodes) {
+        if (k.charAt(0) === color && L.nodes[k].isConnected) L.nodes[k].classList.add('think');
+      }
+    }
     diceAnim(id, function() {
       L.dice = 1 + Math.floor(Math.random() * 6);
       var d = document.getElementById('ludice');
-      if (d) { d.textContent = FACES[L.dice - 1]; d.classList.remove('bounce'); void d.offsetWidth; d.classList.add('bounce'); }
+      diceShow(L.dice);
+      if (L.dice === 6) shakeBoard();
       var moves = legalMoves(L, color, L.dice);
       if (!moves.length) {
         log(NAME[color].split(' ')[0] + ' kocok ' + L.dice + ' — lewat.');
@@ -344,18 +486,40 @@
     L.winner = color;
     render(null);
     var d = document.getElementById('ludice');
-    if (d) d.disabled = true;
+    if (d) { d.disabled = true; d.classList.remove('ready'); }
     var you = color === 'G';
     if (you) {
       var w = parseInt(gbestGet('g-ludo-wins', '0'), 10) || 0;
       gbestSet('g-ludo-wins', w + 1);
     }
-    log(you ? '🏆 KAMU MENANG! Hebat!' : '😅 ' + NAME[color] + ' menang. Coba lagi!');
+    /* banner emas + hujan crown */
+    var tn = document.getElementById('luturn');
+    if (tn) {
+      tn.classList.remove('swap');
+      void tn.offsetWidth;
+      tn.classList.add('winb');
+      tn.innerHTML = (you ? '👑 <b>KAMU MENANG!</b> Hebat!' : '😅 ' + NAME[color] + ' menang.');
+    }
+    if (you) crownRain();
     var b = document.getElementById('gbody');
     var div = document.createElement('div');
-    div.innerHTML = '<button class="gbtn" id="lu-again" style="margin-top:4px">Main Lagi</button>';
+    div.innerHTML = '<button class="gbtn ghost2" id="lu-menu">‹ Menu</button> <button class="gbtn" id="lu-again" style="margin-top:4px">Main Lagi</button>';
     b.appendChild(div);
     document.getElementById('lu-again').onclick = function() { start(); };
+    document.getElementById('lu-menu').onclick = function() { showGMenu(); };
+  }
+  function crownRain() {
+    for (var i = 0; i < 18; i++) {
+      (function() {
+        var c = document.createElement('div');
+        c.className = 'crownfall';
+        c.textContent = '👑';
+        c.style.left = (Math.random() * 96) + 'vw';
+        c.style.animationDelay = (Math.random() * 0.8) + 's';
+        document.body.appendChild(c);
+        setTimeout(function() { if (c.parentNode) c.parentNode.removeChild(c); }, 3400);
+      })();
+    }
   }
   function stop() {
     gest++;

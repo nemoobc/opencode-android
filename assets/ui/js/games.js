@@ -33,15 +33,23 @@ function playGame(name, title) {
   window.Games.play(name);
 }
 function refreshGBest() {
-  var set = function(id, txt) {
+  var set = function(id, txt, has) {
     var e = document.getElementById(id);
-    if (e) e.textContent = txt;
+    if (!e) return;
+    e.textContent = txt;
+    if (has) e.classList.add('has');
+    else e.classList.remove('has');
   };
-  set('gb-snake', 'Terbaik: ' + gbestGet('g-snake-best', '0'));
-  set('gb-quiz', 'Terbaik: ' + gbestGet('g-quiz-best', '0'));
+  var sn = parseInt(gbestGet('g-snake-best', '0'), 10) || 0;
+  set('gb-snake', sn > 0 ? 'Terbaik: ' + sn : 'Belum main', sn > 0);
+  var qz = parseInt(gbestGet('g-quiz-best', '0'), 10) || 0;
+  set('gb-quiz', qz > 0 ? 'Terbaik: ' + qz : 'Belum main', qz > 0);
   var pm = gbestGet('g-puz-best', '');
-  set('gb-puzzle', pm ? 'Best: ' + pm + ' langkah' : 'Belum main');
-  set('gb-ludo', 'Menang: ' + gbestGet('g-ludo-wins', '0'));
+  set('gb-puzzle', pm ? 'Best: ' + pm + ' langkah' : 'Belum main', !!pm);
+  var lw = parseInt(gbestGet('g-ludo-wins', '0'), 10) || 0;
+  set('gb-ludo', lw > 0 ? 'Menang: ' + lw : 'Belum menang', lw > 0);
+  var tw = parseInt(gbestGet('g-tic-w', '0'), 10) || 0;
+  set('gb-tic', tw > 0 ? 'Menang: ' + tw : 'Belum menang', tw > 0);
 }
 document.getElementById('dgame').onclick = openGames;
 document.getElementById('gclose').onclick = closeGames;

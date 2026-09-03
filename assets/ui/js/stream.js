@@ -192,6 +192,7 @@ window.onStatus = function(m) {
 };
 window._onReadyRaw = function(ok, free) {
   window._srvOk = !!ok;
+  ovElapsedStop();
   /* selalu hapus splash — baik server siap maupun gagal */
   var sp = document.getElementById('splash');
   if (sp && !sp.classList.contains('out')) {
@@ -199,13 +200,31 @@ window._onReadyRaw = function(ok, free) {
     setTimeout(function() { if (sp && sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
   }
   if (ok) {
-    ov.classList.remove('show');
-    if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
-      chat.innerHTML = window._helloHTML;
-      bindChips();
-    }
-    dot.className = 'ok';
+    /* sequence siap: stepper penuh → ✓ 450ms → fade → hello stagger */
+    ovStep(2);
+    var ov = document.getElementById('ov');
+    if (ov) ov.classList.add('ready');
+    setTimeout(function() {
+      if (ov) ov.classList.remove('show');
+      if (!chat.querySelector('#hello') && !chat.querySelector('.msg')) {
+        chat.innerHTML = window._helloHTML;
+        bindChips();
+      }
+      var wrap = document.getElementById('chatwrap');
+      if (wrap) {
+        wrap.classList.remove('enter');
+        void wrap.offsetWidth;
+        wrap.classList.add('enter');
+      }
+      dot.className = 'ok';
+    }, 450);
   } else {
+    var ov2 = document.getElementById('ov');
+    if (ov2) {
+      ov2.classList.add('show', 'err');
+      var rb = document.getElementById('ovretry');
+      if (rb) rb.onclick = function() { toast('Tutup lalu buka ulang aplikasi'); };
+    }
     addNote('Server gagal start. Coba tutup lalu buka ulang aplikasi.', true, true);
   }
 };
@@ -219,12 +238,15 @@ function fadeSplash() {
 window.PAYLOAD_TOTAL = 4839338;
 window.FILE_TOTAL = 528;
 window._fileN = 0;
+window._mile = 0;
+window._done100at = 0;
 /* progress dicat ke overlay (#ov) DAN splash (#splash) — splash yang
    tampil duluan saat ekstrak jalan, jadi % harus kelihatan di sana.
    SATU label "N / total file • P%" — dulu dua format (file vs MB)
    rebutan satu label sampai kelihatan flicker. */
 function paintProgress(pct, label) {
   pct = Math.max(0, Math.min(100, pct));
+  var rpct = Math.round(pct);
   var f = document.getElementById('pfill');
   if (f) f.style.width = pct + '%';
   var p = document.getElementById('pnum');
@@ -232,7 +254,27 @@ function paintProgress(pct, label) {
   var sf = document.getElementById('spfill');
   if (sf) sf.style.width = pct + '%';
   var sp = document.getElementById('spnum');
-  if (sp) sp.textContent = Math.round(pct) + '%';
+  if (sp) sp.textContent = label;
+  /* milestone 25/50/75: kedip emas sekilas */
+  if (rpct >= 25 && window._mile < 25 && rpct < 100) flashMile(25);
+  else if (rpct >= 50 && window._mile < 50 && rpct < 100) flashMile(50);
+  else if (rpct >= 75 && window._mile < 75 && rpct < 100) flashMile(75);
+  if (rpct >= 100 && !window._done100at) {
+    window._done100at = Date.now();
+    var bar = document.getElementById('pbar');
+    if (bar) { bar.classList.add('done'); setTimeout(function() { bar.classList.remove('done'); }, 900); }
+    var sbar = document.getElementById('spbar');
+    if (sbar) { sbar.classList.add('done'); setTimeout(function() { sbar.classList.remove('done'); }, 900); }
+    if (p) p.textContent = '✓ ' + label;
+    if (sp) sp.textContent = '✓ ' + label;
+  }
+}
+function flashMile(m) {
+  window._mile = m;
+  var bar = document.getElementById('pbar');
+  if (bar) { bar.classList.add('mile'); setTimeout(function() { bar.classList.remove('mile'); }, 250); }
+  var sbar = document.getElementById('spbar');
+  if (sbar) { sbar.classList.add('mile'); setTimeout(function() { sbar.classList.remove('mile'); }, 250); }
 }
 function fileLabel(pct) {
   return window._fileN + ' / ' + window.FILE_TOTAL + ' file • ' + Math.round(pct) + '%';
@@ -246,19 +288,76 @@ window.setProgressBytes = function(b) {
   var pct = (b / window.PAYLOAD_TOTAL) * 100;
   paintProgress(pct, fileLabel(Math.min(100, pct)));
 };
-window.setStage = function(t) {
-  var p = document.getElementById('ovp');
-  if (p) p.textContent = t;
-  /* fase boot server tidak ada % (indefinite) → animasi geser, bukan 0% macet.
-     fase ekstrak → bar determinate biasa. */
-  var boot = /menyalakan/i.test(t || '');
-  var bar = document.getElementById('pbar');
-  if (bar) {
-    if (boot) bar.classList.add('indet');
-    else bar.classList.remove('indet');
+function ovStep(n) {
+  /* stepper 0=ekstrak 1=server 2=siap */
+  var ids = ['st0', 'st1', 'st2'], lns = ['ln0', 'ln1'];
+  for (var i = 0; i < 3; i++) {
+    var e = document.getElementById(ids[i]);
+    if (!e) continue;
+    e.classList.remove('on', 'ok');
+    if (i < n) e.classList.add('ok');
+    else if (i === n) e.classList.add('on');
   }
-  var num = document.getElementById('pnum');
-  if (num && boot) num.textContent = 'memuat server...';
+  for (var j = 0; j < 2; j++) {
+    var l = document.getElementById(lns[j]);
+    if (!l) continue;
+    if (j < n) l.classList.add('ok');
+    else l.classList.remove('ok');
+  }
+}
+function ovElapsedStop() {
+  if (window._ovTimer) { clearInterval(window._ovTimer); window._ovTimer = null; }
+  var t = document.getElementById('ovtime');
+  if (t) t.textContent = '';
+}
+window.setStage = function(t) {
+  t = t || '';
+  var apply = function() {
+    var p = document.getElementById('ovp');
+    if (p) {
+      p.textContent = t;
+      p.classList.remove('swap');
+      void p.offsetWidth;
+      p.classList.add('swap');
+    }
+    /* fase boot server tidak ada % (indefinite) → cincin + stepper.
+       fase ekstrak → bar determinate biasa. */
+    var boot = /menyalakan/i.test(t);
+    var ov = document.getElementById('ov');
+    if (ov) {
+      if (boot) ov.classList.add('boot');
+      else ov.classList.remove('boot');
+    }
+    var bar = document.getElementById('pbar');
+    if (bar) {
+      if (boot) bar.classList.add('indet');
+      else bar.classList.remove('indet');
+    }
+    var num = document.getElementById('pnum');
+    if (boot) {
+      ovStep(1);
+      ovElapsedStop();
+      window._bootAt = Date.now();
+      window._ovTimer = setInterval(function() {
+        var s = Math.floor((Date.now() - window._bootAt) / 1000);
+        var te = document.getElementById('ovtime');
+        if (!te) return;
+        te.textContent = s > 60
+          ? 'menyalakan server… ' + s + ' dtk — masih nyala, sabar…'
+          : 'menyalakan server… ' + s + ' dtk';
+      }, 1000);
+      if (num) num.textContent = 'memuat server...';
+    } else {
+      ovElapsedStop();
+      ovStep(0);
+    }
+  };
+  /* 100% baru kelar (<600ms): tahan ✓ sebentar sebelum mode boot nimpa */
+  if (/menyalakan/i.test(t) && window._done100at && Date.now() - window._done100at < 600) {
+    setTimeout(apply, 600);
+  } else {
+    apply();
+  }
 };
 window.onSaved = function() {
   document.getElementById('mconfig').classList.remove('show');

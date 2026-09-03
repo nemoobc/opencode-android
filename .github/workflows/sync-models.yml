@@ -1,9 +1,10 @@
 name: sync-models
 
 on:
-  schedule:
-    # setiap 6 jam (UTC): 00, 06, 12, 18
-    - cron: '0 */6 * * *'
+  # NONAKTIF sementara: marker AUTO-MODELS pindah ke assets/ui/js/models.js,
+  # skrip masih nulis ke index.html. Aktifkan lagi setelah skrip diretarget.
+  # schedule:
+  #   - cron: '0 */6 * * *'
   workflow_dispatch:
 
 permissions:

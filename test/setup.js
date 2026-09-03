@@ -19,8 +19,11 @@ const HTML = `<!DOCTYPE html>
     <div id="spnum">0%</div></div>
   <div id="ov"><div class="stage"><div class="glow"></div><div class="mark"></div></div>
     <h2>OpenCode</h2><p>Memuat...</p>
+    <div id="pring"></div><div id="ovready">Siap</div>
     <div id="pbar"><div id="pfill"></div></div>
-    <div id="pnum">0%</div><p id="ovp"></p></div>
+    <div id="pnum">0%</div><p id="ovp"></p><p id="ovtime"></p>
+    <div id="ovsteps"><span class="stp" id="st0"><i></i></span><span class="ln" id="ln0"></span><span class="stp" id="st1"><i></i></span><span class="ln" id="ln1"></span><span class="stp" id="st2"><i></i></span></div>
+    <button id="ovretry">Coba</button></div>
   <header>
     <button class="hbtn" id="bmenu"></button>
     <button id="mchip"><div id="dot" class="ok"></div><span class="lbl" id="mname">Model</span><span class="car"></span></button>

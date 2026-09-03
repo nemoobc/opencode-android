@@ -47,12 +47,12 @@
       </g>
       <rect x="238" y="238" width="118" height="118" rx="14" fill="none" stroke="#F2F2EC" stroke-width="3" opacity=".5" transform="rotate(8 297 297)"/>
       <!-- led status -->
-      <circle cx="352" cy="84" r="10" fill="#3DDC84"/>
-      <circle cx="352" cy="84" r="16" fill="none" stroke="#3DDC84" stroke-width="2" opacity=".4"/>
+      <circle class="led" cx="352" cy="84" r="10" fill="#3DDC84"/>
+      <circle class="ledhalo" cx="352" cy="84" r="16" fill="none" stroke="#3DDC84" stroke-width="2" opacity=".4"/>
     </svg>
   </div>
   <div class="nm"><b>Open</b><span style="color:#3DDC84">Code</span></div>
-  <div class="sub">Menyiapkan Server AI...</div>
+  <div class="sub">Menyiapkan Server AI <span class="dots"><i></i><i></i><i></i></span></div>
   <div id="spbar"><div id="spfill"></div></div>
   <p id="spnum">0%</p>
 </div>
@@ -204,9 +204,14 @@
   </div>
   <h2>BERSIAP...</h2>
   <p id="ovp">Menyiapkan...</p>
+  <div id="pring"><svg viewBox="0 0 46 46" fill="none"><circle cx="23" cy="23" r="19" stroke="#1E3A2F" stroke-width="5"/><path d="M23 4a19 19 0 0 1 16.5 9.5" stroke="#3DDC84" stroke-width="5" stroke-linecap="round"/></svg></div>
+  <div id="ovready">✓ Siap!</div>
   <div id="pbar"><div id="pfill"></div></div>
   <p id="pnum" style="margin-top:10px">0 file</p>
+  <p id="ovtime"></p>
+  <div id="ovsteps"><span class="stp" id="st0"><i></i>Ekstrak</span><span class="ln" id="ln0"></span><span class="stp" id="st1"><i></i>Server</span><span class="ln" id="ln1"></span><span class="stp" id="st2"><i></i>Siap</span></div>
   <div id="ovfx" aria-hidden="true"><span>❯</span><span>❯</span><span>❯</span><span>❯</span><span>❯</span></div>
+  <button id="ovretry">Coba Lagi</button>
 </div>
 
 <div class="modal" id="mmodel">

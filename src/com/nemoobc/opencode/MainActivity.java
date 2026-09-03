@@ -161,9 +161,9 @@ public class MainActivity extends Activity {
             Diagnostics.extra("versi", appInfoSafe());
         }
 
-        /* BUAT WebView LANGSUNG seperti desain asli: splash logo tampil selama
-           server boot, jadi UX tidak "beda/stuck". (Crash asli bukan karena RAM —
-           itu karena MainActivity.class hilang dari APK.) */
+        /* HYBRID: boot/progress NATIVE dulu (anti-timing-bug — progress Java
+           langsung, tidak tergantung page load), WebView cuma untuk chat.
+           WebView tetap dibuat + load di background, ditukar saat server siap. */
         web = new WebView(this);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -174,7 +174,15 @@ public class MainActivity extends Activity {
         web.setBackgroundColor(0xFF0C100E);
         web.addJavascriptInterface(new Bridge(), "Android");
         web.setVisibility(View.INVISIBLE);
+        try { web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, true); }
+        catch (Exception ignored) {}
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean onRenderProcessGone(WebView v, android.webkit.RenderProcessGoneDetail d) {
+                debugLog("web: renderer gone, crash=" + (d != null && d.didCrash()));
+                try { v.reload(); } catch (Exception ignored) {}
+                return true; /* ditangani: reload, bukan layar putih */
+            }
             @Override
             public void onPageFinished(WebView v, String u) {
                 debugLog("web: onPageFinished");
@@ -184,15 +192,15 @@ public class MainActivity extends Activity {
                 if (autotest) startAutoTest();
             }
         });
-        setContentView(web);
-        debugLog("webView: dibuat + setContentView");
+        setContentView(buildProgressUi());
+        debugLog("ui: native boot tampil dulu");
         web.loadUrl("file:///android_asset/ui/index.html");
-        debugLog("webView: loadUrl OK");
+        debugLog("webView: loadUrl background OK");
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try { ensureNativeLibs(); debugLog("bg: native siap"); } catch (Exception e) { debugLog("bg: ensureNativeLibs ERR " + e); push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); requestWeb(); return; }
+                try { ensureNativeLibs(); debugLog("bg: native siap"); } catch (Exception e) { debugLog("bg: ensureNativeLibs ERR " + e); push("window.onError(" + jq("Gagal siapkan binary: " + e) + ")"); showWeb(); requestWeb(); return; }
                 /* TUNGGU page WebView siap (max 10 dtk) SEBELUM ekstrak.
                    Dulu ekstrak jalan duluan: payload kecil (4.8MB) selesai
                    sebelum page load → semua push numpuk di pendingJs lalu
@@ -213,6 +221,7 @@ public class MainActivity extends Activity {
                     long payloadLen = 0;
                     try { payloadLen = getAssets().openFd("payload/rootfs.bin").getLength(); }
                     catch (Exception ignored) {}
+                    final long plTotal = payloadLen;
                     if (payloadLen > 0) {
                         final long pl = payloadLen;
                         push("window.PAYLOAD_TOTAL = " + pl + ";");
@@ -251,7 +260,8 @@ public class MainActivity extends Activity {
                             debugLog("bg: mulai ekstrak");
                             tmp.mkdirs();
                             push("window.setProgress(1)");
-                            progressUi(1);
+                            setIndet(false);
+                            progressUi(0);
                             InputStream raw = getAssets().open("payload/rootfs.bin");
                             /* Hitung byte KOMPRESI (asset), bukan dekompresi —
                                dulu % langsung 100% karena pembilangnya byte hasil ekstrak. */
@@ -261,17 +271,19 @@ public class MainActivity extends Activity {
                             TarExtractor.Progress cb = new TarExtractor.Progress() {
                                 @Override
                                 public void onEntry(int n) {
-                                    if (n % 10 == 0) { push("window.setProgress(" + n + ")"); progressUi(n); }
+                                    if (n % 10 == 0) { push("window.setProgress(" + n + ")"); }
                                 }
                                 @Override
                                 public void onBytes(long b) {
                                     /* onBytes = tick saja; nilai % dari counter kompresi.
                                        Throttle ±150KB supaya tidak banjir ratusan push
-                                       yang bikin UI lag & nilai basi ke-replay. */
+                                       yang bikin UI lag & nilai basi ke-replay.
+                                       Native ikut: % akurat yang sama. */
                                     long c = cin.count;
                                     if (c - lastPush[0] >= 150000) {
                                         lastPush[0] = c;
                                         push("window.setProgressBytes(" + c + ")");
+                                        if (plTotal > 0) progressUi((int) Math.min(99, c * 100 / plTotal));
                                     }
                                 }
                             };
@@ -312,17 +324,20 @@ public class MainActivity extends Activity {
                         if (!rootFs.exists() && old.exists()) moveDir(old, rootFs);
                         stageUi("Ekstraksi gagal — coba buka lagi");
                         push("window.onError(" + jq("Ekstraksi gagal: " + e) + ")");
+                        showWeb();
                         requestWeb();
                         return;
                     }
                     push("window.setStage(\"menyalakan server AI...\")");
                     stageUi("Menyalakan server AI...");
+                    setIndet(true);
                 } else {
                     /* Sudah diekstrak (buka ulang): tidak ada push progress sama
                        sekali di jalur ini, jadi overlay harus dikabari eksplisit —
                        kalau tidak, overlay stuck teks default "0 file". */
                     push("window.setStage(\"menyalakan server AI...\")");
                     stageUi("Menyalakan server AI...");
+                    setIndet(true);
                 }
                 if (!ready) {
                     String miss = "";
@@ -332,6 +347,7 @@ public class MainActivity extends Activity {
                     debugLog("bg: payload kurang: " + miss);
                     stageUi("Payload tidak lengkap");
                     push("window.onError(" + jq("payload tidak lengkap, kurang: " + miss) + ")");
+                    showWeb();
                     requestWeb();
                     return;
                 }
@@ -545,6 +561,25 @@ public class MainActivity extends Activity {
         }
     }
 
+    private volatile boolean webShown;
+
+    /* HYBRID swap: native boot → WebView chat. Idempoten — panggil di semua
+       jalur akhir boot (ready/error), yang pertama menang. */
+    private void showWeb() {
+        if (webShown) return;
+        webShown = true;
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    setContentView(web);
+                    web.requestFocus();
+                } catch (Exception ignored) {}
+                debugLog("ui: tukar ke WebView");
+            }
+        });
+    }
+
     private android.view.View buildProgressUi() {
         android.widget.LinearLayout ll = new android.widget.LinearLayout(this);
         ll.setOrientation(android.widget.LinearLayout.VERTICAL);
@@ -580,6 +615,16 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 if (progView != null) progView.setProgress(n);
+            }
+        });
+    }
+
+    /* boot server = tidak ada % pasti → bar native muter (indeterminate) */
+    private void setIndet(final boolean b) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                if (progView != null) progView.setIndeterminate(b);
             }
         });
     }
@@ -882,7 +927,7 @@ public class MainActivity extends Activity {
             if (warm > 0) {
                 serverUp = true;
                 long free = rootFs.getFreeSpace() / (1024 * 1024);
-                push("window.onReady(true," + free + ")");
+                push("window.onReady(true," + free + ")"); showWeb();
                 startEventStream();
                 return;
             }
@@ -1003,7 +1048,7 @@ public class MainActivity extends Activity {
                     if (autotest) Diagnostics.step("server-probe", "EXCEPTION " + pe);
                 }
                 stageUi("Server gagal start");
-                push("window.onError(" + jq("server gagal start: " + tail) + ")");
+                push("window.onError(" + jq("server gagal start: " + tail) + ")"); showWeb();
                 requestWeb();
                 return;
             }
@@ -1011,7 +1056,7 @@ public class MainActivity extends Activity {
             if (autotest) Diagnostics.step("server-up-detect", how);
             requestWeb();
             long free = rootFs.getFreeSpace() / (1024 * 1024);
-            push("window.onReady(true," + free + ")");
+            push("window.onReady(true," + free + ")"); showWeb();
             startEventStream();
             // sesi hangat: siapkan sebelum user minta
             try {

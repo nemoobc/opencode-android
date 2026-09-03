@@ -131,6 +131,9 @@ test('boot stage sets indeterminate bar', () => {
   const bar = sandbox.document.getElementById('pbar');
   assert.ok(bar.classList.contains('indet'), 'pbar should have indet class');
   assert.equal(sandbox.document.getElementById('pnum').textContent, 'memuat server...');
+  assert.ok(sandbox.document.getElementById('ov').classList.contains('boot'), 'ov boot mode');
+  assert.ok(sandbox.document.getElementById('st1').classList.contains('on'), 'stepper server on');
+  if (sandbox.window._ovTimer) { clearInterval(sandbox.window._ovTimer); sandbox.window._ovTimer = null; }
 });
 test('extract stage removes indeterminate bar', () => {
   sandbox.window.setStage('menyiapkan sistem — mengekstrak...');
@@ -254,7 +257,7 @@ test('updates pnum text', () => {
 });
 test('mirrors percent to splash spnum/spfill', () => {
   setProgress(264); // 50% of 528
-  assert.equal(sandbox.document.getElementById('spnum').textContent, '50%');
+  assert.equal(sandbox.document.getElementById('spnum').textContent, '264 / 528 file • 50%');
   assert.equal(sandbox.document.getElementById('spfill').style.width, '50%');
 });
 
@@ -269,7 +272,7 @@ test('updates pfill width and pnum text', () => {
 });
 test('mirrors percent to splash', () => {
   setProgressBytes(4839338); // 100%
-  assert.equal(sandbox.document.getElementById('spnum').textContent, '100%');
+  assert.ok(sandbox.document.getElementById('spnum').textContent.includes('100%'));
   assert.equal(sandbox.document.getElementById('spfill').style.width, '100%');
 });
 

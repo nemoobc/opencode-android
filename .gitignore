@@ -8,7 +8,6 @@ local.properties
 !keystore/ks.jks
 *.keystore
 node_modules/
-package-lock.json
 
 autodev-*.md
 

@@ -175,9 +175,11 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 
 .lutoks { position:absolute; inset:0; pointer-events:none; }
 .lutok { position:absolute; width:6.6%; height:6.6%; margin:-3.3% 0 0 -3.3%; background:none; border:none; pointer-events:auto; padding:0; transition:left var(--lud,.3s) ease-in-out, top var(--lud,.3s) ease-in-out, margin-top .09s ease-out; }
-.lutok::before { content:""; position:absolute; left:8%; top:2%; width:84%; height:84%; background:radial-gradient(circle at 38% 30%, #ffffff77 0%, transparent 36%), var(--c,#888); border-radius:50% 50% 50% 10%; transform:rotate(-45deg); border:2px solid rgba(0,0,0,.3); box-shadow:0 3px 7px #000a; }
-.lutok::after { content:""; position:absolute; left:50%; top:42%; width:34%; height:34%; margin:-17% 0 0 -17%; border-radius:50%; background:#fff; box-shadow:inset 0 -2px 4px #0003; }
+.lutok::before { content:""; position:absolute; left:8%; top:2%; width:84%; height:84%; background:radial-gradient(circle at 38% 30%, #ffffff 0%, #e8ecf1 55%, #c9d2dc 100%); border-radius:50% 50% 50% 10%; transform:rotate(-45deg); border:2px solid rgba(0,0,0,.25); box-shadow:0 3px 7px #000a; }
+.lutok::after { content:""; position:absolute; left:50%; top:44%; width:40%; height:40%; margin:-20% 0 0 -20%; border-radius:50%; background:var(--c,#888); box-shadow:inset 0 -2px 4px #0004; }
 .lutok.inyard { transform:scale(.82); }
+.lutok.inyard::before { border-radius:50%; transform:none; background:var(--c,#888); border-color:rgba(0,0,0,.25); }
+.lutok.inyard::after { display:none; }
 .lutok.think { animation:tokThink .7s ease-in-out infinite; }
 @keyframes tokThink { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 .luboom { position:absolute; width:10%; height:10%; margin:-5% 0 0 -5%; border-radius:50%; border:3px solid #FFE28A; pointer-events:none; animation:boomGo .5s ease-out forwards; }

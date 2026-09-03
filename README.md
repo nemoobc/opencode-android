@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/ui/icon.svg" width="120" alt="OpenCode Android">
+<img src="icon.svg" width="120" alt="OpenCode Android">
 
 # OpenCode Android
 

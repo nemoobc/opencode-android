@@ -178,6 +178,7 @@ OCX_ABI=x86_64 bash build.sh
 - Runtime sandbox: proot (GPLv3) · Rootfs: Alpine Linux
 - Game & UI: kode sendiri, ikon SVG gambar sendiri
 - Ikon new-chat terinspirasi "New Chat" (The Noun Project): https://thenounproject.com/icon/new-chat-5432702/
+- Ikon sematkan terinspirasi "Pin" (The Noun Project): https://thenounproject.com/icon/pin-3527215/
 
 > **Jujur soal lisensi:** APK ini membundel proot (GPLv3) dan rootfs Alpine
 > (BSD/GPL) dalam satu file install. Artinya distribusi biner APK tunduk pada

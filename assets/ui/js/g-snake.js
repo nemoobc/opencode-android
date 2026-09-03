@@ -57,6 +57,12 @@
   function speed() { return Math.max(70, 150 - S.score); }
   function level() { return Math.floor(S.score / 50); }
 
+  function nowMs() {
+    try {
+      if (typeof performance !== 'undefined' && performance.now) return performance.now();
+    } catch (e) {}
+    return Date.now();
+  }
   function lerpPos(prev, cur, t) {
     return [prev[0] + (cur[0] - prev[0]) * t, prev[1] + (cur[1] - prev[1]) * t];
   }
@@ -72,7 +78,7 @@
     S.floats.push({ x: x, y: y, txt: txt, col: col || '#3DDC84', life: 1 });
   }
   function draw(now) {
-    now = (now === undefined) ? performance.now() : now;
+    now = (now === undefined) ? nowMs() : now;
     var cv = document.getElementById('snk');
     if (!cv || !S) return;
     var g = cv.getContext('2d');
@@ -187,7 +193,7 @@
   }
   function frame(id, now) {
     if (id !== gest || !S) return;
-    draw(now || performance.now());
+    draw(now || nowMs());
     if (S.alive) requestAnimationFrame(function(t) { frame(id, t); });
   }
   function loop(id) {
@@ -196,14 +202,14 @@
     if (S.dying > 0) {
       S.dying--;
       S.stepMs = 350;
-      S.stepAt = performance.now();
+      S.stepAt = nowMs();
       if (S.dying <= 0) return gameOver(id);
       timer = setTimeout(function() { loop(id); }, S.stepMs);
       return;
     }
     S.prev = S.snake.map(function(p) { return [p[0], p[1]]; });
     S.stepMs = speed();
-    S.stepAt = performance.now();
+    S.stepAt = nowMs();
     var lvBefore = level();
     var wasGold = S.foodGold;
     var r = advance(S);
@@ -212,7 +218,7 @@
       scorePop();
       burst(S.snake[0][0] + 0.5, S.snake[0][1] + 0.5);
       floatTxt(S.snake[0][0] + 0.5, S.snake[0][1], wasGold ? '+50' : '+10', wasGold ? '#E8D9A0' : '#3DDC84');
-      if (level() > lvBefore) S.flashAt = performance.now();
+      if (level() > lvBefore) S.flashAt = nowMs();
     }
     setScore('Skor ' + S.score + ' • ×' + S.snake.length);
     timer = setTimeout(function() { loop(id); }, S.stepMs);

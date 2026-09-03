@@ -177,5 +177,26 @@ test('default seed', () => {
   assert.ok(url.includes('dicebear.com'));
 });
 
+// --- update icon auto ---
+console.log('\nupdate icon:');
+test('cmpVer compares semver', () => {
+  const cmp = sandbox.cmpVer;
+  assert.equal(cmp('1.6.1', 'v1.6.1'), 0);
+  assert.equal(cmp('1.6.1', '1.6.2'), -1);
+  assert.equal(cmp('1.6.10', '1.6.2'), 1);
+  assert.equal(cmp('1.6.1', '1.6.10'), -1);
+});
+test('onUpToDate swaps complete icon', () => {
+  sandbox.window.onUpToDate();
+  const ic = sandbox.document.querySelector('#dupdate .ic');
+  assert.ok(ic.innerHTML.includes('M16 30'), 'complete svg');
+});
+test('onUpdate swaps now icon', () => {
+  sandbox.window.onUpdate('v9.9.9');
+  const ic = sandbox.document.querySelector('#dupdate .ic');
+  assert.ok(ic.innerHTML.includes('m27 25.586'), 'now svg');
+  sandbox.document.getElementById('ubanner').classList.remove('show');
+});
+
 console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed\n`);
 process.exit(failed > 0 ? 1 : 0);

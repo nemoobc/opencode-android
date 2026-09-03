@@ -176,6 +176,24 @@ test('onDone sets busy false', () => {
   drainTyper();
   assert.equal(sandbox.busy, false);
 });
+test('footer only when message used search', () => {
+  resetStream();
+  sandbox.WebSearch.lastResults = [{ title: 'T', url: 'https://x.com', snippet: '' }];
+  sandbox.window._usedSearch = true;
+  appendOut('jawaban final di sini');
+  sandbox.window._done = false;
+  onDone(0);
+  drainTyper();
+  assert.ok(sandbox.document.querySelector('.search-sources'), 'footer shown');
+  resetStream();
+  sandbox.WebSearch.lastResults = [{ title: 'T', url: 'https://x.com', snippet: '' }];
+  sandbox.window._usedSearch = false;
+  appendOut('jawaban lain');
+  sandbox.window._done = false;
+  onDone(0);
+  drainTyper();
+  assert.equal(sandbox.document.querySelectorAll('.search-sources').length, 0, 'no footer when off');
+});
 test('onDone clears _cur', () => {
   resetStream();
   appendOut('text');

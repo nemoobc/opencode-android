@@ -1710,6 +1710,9 @@ public class MainActivity extends Activity {
                         String tagVer = tag.startsWith("v") ? tag.substring(1) : tag;
                         if (!tagVer.equals(mine)) {
                             push("window.onUpdate(" + JSONObject.quote(tag) + ")");
+                        } else {
+                            /* sudah terbaru — kabari juga biar ikon jadi centang */
+                            push("window.onUpToDate()");
                         }
                     } finally { cx.disconnect(); }
                 } catch (Exception ignored) {}

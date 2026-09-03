@@ -145,8 +145,9 @@ function finishMarkdown(code) {
   go.classList.remove('stop');
   dot.className = code === 0 ? 'ok' : 'bad';
   document.getElementById('hint').textContent = '';
-  /* append search sources if available */
-  if (WebSearch.lastResults && WebSearch.lastResults.length) {
+  /* append search sources if available — HANYA bila pesan ini pakai search.
+     Tanpa flag ini, sisa hasil chat web-ON lama bisa bocor ke chat web-OFF. */
+  if (window._usedSearch && WebSearch.lastResults && WebSearch.lastResults.length) {
     var srcHTML = WebSearch.buildSourcesHTML();
     if (srcHTML) {
       /* find the last AI message and append sources */
@@ -363,8 +364,18 @@ window.onUpdate = function(tag, body) {
   document.getElementById('utag').textContent = tag;
   document.getElementById('ubanner').classList.add('show');
   window._upTag = tag;
+  setUpdateIcon(false);
   toast('Update ' + tag + ' tersedia');
 };
+/* sudah versi terbaru → ikon centang */
+window.onUpToDate = function() {
+  setUpdateIcon(true);
+};
+function setUpdateIcon(done) {
+  var ic = document.querySelector('#dupdate .ic');
+  if (!ic) return;
+  ic.innerHTML = done ? window.UP_SVG_OK : window.UP_SVG_NOW;
+}
 
 /* ===== wrapper: tunda onReady kalau splash masih ada =====
    Java bisa panggil onReady(true) sebelum splash fade (server warm).

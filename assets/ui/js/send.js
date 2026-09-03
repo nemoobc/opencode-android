@@ -61,6 +61,7 @@ function send(t, label, imgPrev, retryMode, noAsk) {
     WebSearch.search(searchQuery).then(function(results) {
       clearInterval(window._swTimer);
       WebSearch.lastResults = results;
+      window._usedSearch = true;
       var dt = ((Date.now() - t0) / 1000).toFixed(1);
       st.innerHTML = '<span>📖 ' + results.length + ' sumber • ' + dt + ' dtk</span>';
       setTimeout(function() {
@@ -73,6 +74,7 @@ function send(t, label, imgPrev, retryMode, noAsk) {
     });
   } else {
     WebSearch.lastResults = [];
+    window._usedSearch = false;
     doSend(t, label, imgPrev, retryMode, null, noAsk);
   }
 }

@@ -324,12 +324,53 @@ document.getElementById('pdelete').onclick = function() {
 document.getElementById('dsource').onclick = function() { closeDrawer(); document.getElementById('msource').classList.add('show'); };
 document.getElementById('sourceclose').onclick = function() { document.getElementById('msource').classList.remove('show'); };
 
+/* ===== update: ikon auto (now = ada update, complete = terbaru) ===== */
+window.UP_SVG_NOW = '<svg viewBox="0 0 32 32" width="18" height="18" fill="#3DDC84"><path d="m27 25.586l-2-2V21h-2v3.414L25.586 27z"/><path d="M24 31a7 7 0 1 1 7-7a7.01 7.01 0 0 1-7 7m0-12a5 5 0 1 0 5 5a5.006 5.006 0 0 0-5-5m-8 9A12.013 12.013 0 0 1 4 16H2a14.016 14.016 0 0 0 14 14ZM12 8H7.078A11.984 11.984 0 0 1 28 16h2A13.978 13.978 0 0 0 6 6.234V2H4v8h8Z"/></svg>';
+window.UP_SVG_OK = '<svg viewBox="0 0 32 32" width="18" height="18" fill="#3DDC84"><path d="M16 30C8.28 30 2 23.72 2 16h2c0 6.617 5.383 12 12 12zM12 8H7.078C9.336 5.476 12.545 4 16 4c6.617 0 12 5.383 12 12h2c0-7.72-6.28-14-14-14A13.92 13.92 0 0 0 6 6.234V2H4v8h8zm10 19.18l-2.59-2.59L18 26l4 4l8-8l-1.41-1.41z"/></svg>';
 /* ===== update ===== */
 document.getElementById('dupdate').onclick = function() {
   closeDrawer();
   Android.checkUpdate();
   toast('Memeriksa update...');
 };
+/* auto-detect saat load (khusus web http/https — di app file:// diblokir,
+   di sana native checkUpdate yang kabari via onUpdate/onUpToDate) */
+function cmpVer(a, b) {
+  function parts(v) {
+    return String(v || '').replace(/^v/i, '').split('.').map(function(x) { return parseInt(x, 10) || 0; });
+  }
+  var pa = parts(a), pb = parts(b);
+  for (var i = 0; i < 3; i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) < (pb[i] || 0) ? -1 : 1;
+  }
+  return 0;
+}
+window.cmpVer = cmpVer;
+(function autoUpdateCheck() {
+  try {
+    if (!/^https?:/.test(location.protocol)) return;
+    var mine = '1.6.1';
+    try {
+      if (typeof Android !== 'undefined' && Android && Android.appInfo) {
+        var m = String(Android.appInfo()).match(/(\d+\.\d+\.\d+)/);
+        if (m) mine = m[1];
+      }
+    } catch (e) {}
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://api.github.com/repos/nemoobc/opencode-android/releases/latest', true);
+    xhr.timeout = 8000;
+    xhr.onload = function() {
+      if (xhr.status !== 200) return;
+      try {
+        var tag = JSON.parse(xhr.responseText).tag_name || '';
+        var latest = String(tag).replace(/^v/i, '');
+        if (latest && cmpVer(mine, latest) < 0) setUpdateIcon(false);
+        else if (latest) setUpdateIcon(true);
+      } catch (e) {}
+    };
+    xhr.send();
+  } catch (e) {}
+})();
 document.getElementById('ubtn').onclick = function() {
   Android.openUrl('https://github.com/nemoobc/opencode-android/releases/tag/' + (window._upTag || 'latest'));
 };

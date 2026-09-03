@@ -65,7 +65,7 @@
 .md blockquote { border-left:3px solid var(--accent)66; padding:4px 14px; margin:10px 0; color:#A8BFB1; background:var(--surface); border-radius:0 8px 8px 0; }
 .md a { color:var(--accent); text-decoration:none; word-break:break-all; }
 .md a:hover { text-decoration:underline; }
-.md img { max-width:100%; height:auto; border-radius:12px; }
+.md img { max-width:100%; height:auto; max-height:340px; object-fit:contain; border-radius:12px; background:var(--surface); }
 .md hr { border:none; border-top:1px solid var(--input-bg); margin:16px 0; }
 .md strong { color:var(--card-text); }
 .md table { border-collapse:collapse; margin:10px 0 14px; font-size:13.5px; display:block; overflow-x:auto; max-width:100%; }

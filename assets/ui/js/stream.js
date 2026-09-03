@@ -42,7 +42,11 @@ function tickTyper() {
     if (window._done && window._ff) {
       window._ff = false;
       finishMarkdown(window._doneCode || 0);
+      return;
     }
+    /* idle: matiin interval (hemat CPU/baterai).
+       startTyper nyala lagi otomatis pas delta baru masuk. */
+    stopTyper();
     return; /* nunggu delta berikutnya */
   }
   if (!rend) cur.textContent = ''; /* clear dots di reveal pertama */

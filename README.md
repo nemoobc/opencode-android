@@ -167,6 +167,31 @@ bash build-ui.sh
 - Runtime sandbox: proot (GPLv3) · Rootfs: Alpine Linux
 - Kode aplikasi & UI: **MIT** — bebas dipakai dan dimodifikasi.
 
+> **Jujur soal lisensi:** APK ini membundel proot (GPLv3) dan rootfs Alpine
+> (BSD/GPL) dalam satu file install. Artinya distribusi biner APK tunduk pada
+> kewajiban GPLv3 (tawarkan source + skrip build — repo ini SUDAH memenuhinya:
+> `build.sh`, `TarExtractor.java`, dan semua source terbuka di sini).
+> Kode buatan sendiri (`assets/ui`, `MainActivity.java` UI) tetap MIT.
+> Kalau kamu fork + distribusi ulang APK, kewajiban GPLv3 ikut berlaku.
+
+---
+
+## Troubleshooting
+
+| Gejala | Sebab | Fix |
+|--------|-------|-----|
+| `ERR_FILE_NOT_FOUND android_asset` | APK lama (assets path) | Install ulang dari Releases terbaru |
+| "Paket bentrok / tidak terinstall" | Key beda (keystore ke-reset) | Uninstall sekali → install baru. Lalu backup `Documents/opencode-keystore/` ke Drive |
+| Stuck "0 file" / % ga jalan | Ekstrak belum mulai / server boot | Tunggu max 2 menit. Masih stuck → tutup paksa → buka lagi (rootfs.tmp dibersihkan otomatis) |
+| "Server gagal start" | Boot proot lama di HP kentang | Tunggu 1–2 menit, jangan spam buka-tutup |
+| Web search ga ada hasil | Toggle mati / offline | Nyalakan toggle 🌐 di input, cek internet |
+| Model error / 429 | Rate limit provider gratis | Tunggu sebentar / ganti model cepat |
+| Chat lemot, ketikan telat | Respons panjang + HP panas | Stop dulu, tanya lebih spesifik/pendek |
+|Riwayat hilang setelah update| Uninstall (bukan timpa) | Update selalu TIMPA, jangan uninstall. Backup berkala via menu |
+
+Detail tiap masalah: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+Riwayat versi: [CHANGELOG.md](CHANGELOG.md).
+
 ---
 
 <div align="center">

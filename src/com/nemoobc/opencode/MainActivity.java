@@ -1160,8 +1160,12 @@ public class MainActivity extends Activity {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+                /* backoff eksponensial: server down lama → reconnect jarang
+                   (hemat CPU + baterai). Reset tiap ada event masuk. */
+                int fails = 0;
                 while (running) {
                     HttpURLConnection c = null;
+                    boolean gotEvent = false;
                     try {
                         c = (HttpURLConnection)
                                 new URL("http://127.0.0.1:" + PORT + "/event").openConnection(Proxy.NO_PROXY);
@@ -1174,6 +1178,7 @@ public class MainActivity extends Activity {
                         String line;
                         while (running && (line = r.readLine()) != null) {
                             if (!line.startsWith("data: ")) continue;
+                            gotEvent = true;
                             handleEvent(line.substring(6).trim());
                         }
                         r.close();
@@ -1183,9 +1188,12 @@ public class MainActivity extends Activity {
                     } finally {
                         if (c != null) c.disconnect();
                     }
+                    if (gotEvent) fails = 0; else fails++;
                     /* selalu sleep sebelum reconnect — tanpa sleep, thread SSE
                        tight-loop saat server down (CPU 100%, baterai habis). */
-                    try { Thread.sleep(running ? 1500 : 500); } catch (InterruptedException ignored) {}
+                    long wait = 1500;
+                    if (fails >= 3) wait = Math.min(30000, 1500L << Math.min(fails - 2, 5));
+                    try { Thread.sleep(running ? wait : 500); } catch (InterruptedException ignored) {}
                 }
             }
         });

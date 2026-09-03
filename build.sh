@@ -151,20 +151,57 @@ else
     echo "  skipped (no align tool)"
 fi
 
-# [7/7] sign (keystore PERMANEN di keystore/ — jangan di build/,
-#  karena build/ boleh dihapus. Key beda = install bentrok.)
+# [7/7] sign — keystore TERTANAM di repo (keystore/ks.jks, ikut clone).
+#  Reset Termux / clone baru = langsung build, key SAMA, update selalu timpa.
+#  Shared storage = cadangan kedua otomatis tiap build.
 echo -e "${YELLOW}[7/7] sign...${NC}"
 KS_FILE="keystore/ks.jks"
+KS_SHARED="$HOME/storage/shared/Documents/opencode-keystore/ks.jks"
 mkdir -p keystore
+if [ ! -f "$KS_FILE" ] && [ -f "$KS_SHARED" ]; then
+    cp "$KS_SHARED" "$KS_FILE"
+    echo "  keystore dipulihkan dari shared storage"
+fi
 if [ ! -f "$KS_FILE" ]; then
     "$KEYTOOL" -genkeypair -keystore "$KS_FILE" -alias oc \
         -keyalg RSA -keysize 2048 -validity 10000 \
         -storepass "$KS_PASS" -keypass "$KS_PASS" \
         -dname "CN=OpenCode, O=nemoobc, C=ID" 2>/dev/null
-    echo "  keystore baru: $KS_FILE (JAGA — ganti key = install bentrok)"
-else
-    echo "  keystore lama dipakai: $KS_FILE"
+    echo "  keystore BARU dibuat (satu-satunya — dijaga otomatis)"
 fi
+# cadangkan ke shared storage (tahan reset) + ingatkan backup luar
+if mkdir -p "$(dirname "$KS_SHARED")" 2>/dev/null && cp "$KS_FILE" "$KS_SHARED" 2>/dev/null; then
+    echo "  keystore aman: lokal + shared storage"
+else
+    echo -e "${RED}  ! shared storage ga bisa tulis — jalanin termux-setup-storage${NC}"
+    echo "  ! keystore cuma lokal. BACKUP MANUAL: copy keystore/ks.jks ke Drive"
+fi
+echo "  TIPS: copy Documents/opencode-keystore/ks.jks ke Drive/PC. Hilang = update bentrok permanen."
+
+# PENGAMAN: pastikan key = key APK yang sudah terpasang/rilis.
+# Kalau beda, GAGALKAN build — jangan hasilkan APK bentrok diam-diam.
+cert_fp_ks() {
+    "$KEYTOOL" -list -v -keystore "$1" -storepass "$KS_PASS" 2>/dev/null \
+        | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//I' | tr -d ' :' | tr 'a-z' 'A-Z'
+}
+cert_fp_apk() {
+    "$APKSIGNER" verify --print-certs "$1" 2>/dev/null \
+        | grep -i "SHA-256" | head -1 | sed 's/.*digest: *//I' | tr -d ' :' | tr 'a-z' 'A-Z'
+}
+CUR_FP="$(cert_fp_ks "$KS_FILE")"
+for REF_APK in "$APK_OUT" "$HOME/storage/shared/Documents/OpenCode-v${VER_NAME}.apk"; do
+    [ -f "$REF_APK" ] || continue
+    REF_FP="$(cert_fp_apk "$REF_APK")"
+    [ -z "$REF_FP" ] && continue
+    if [ "$CUR_FP" != "$REF_FP" ]; then
+        echo -e "${RED}FATAL: keystore beda dari key $REF_APK${NC}"
+        echo "JANGAN lanjut — hasilnya APK bentrok, ga bisa timpa install."
+        echo "Pulihkan: copy keystore bener ke keystore/ks.jks (cek Drive / Documents/opencode-keystore/)"
+        echo "Atau sadar: uninstall app di HP dulu, baru install APK baru (data chat hilang)."
+        exit 1
+    fi
+done
+[ -n "$CUR_FP" ] && echo "  key cocok dgn APK sebelumnya, aman timpa"
 
 "$APKSIGNER" sign --ks "$KS_FILE" --ks-pass pass:"$KS_PASS" \
     --out "$APK_OUT" build/base.apk

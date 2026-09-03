@@ -28,7 +28,6 @@
     xhr.onload = function() {
       if (xhr.status === 200) {
         try { _ocSession = JSON.parse(xhr.responseText).data.id; } catch(e) {}
-        console.log('[oc] session:', _ocSession);
       } else {
         retrySession();
       }
@@ -39,7 +38,6 @@
   function retrySession() {
     _ocRetries++;
     if (_ocRetries > 15) {
-      console.error('[oc] server tidak terdeteksi');
       return;
     }
     setTimeout(createSession, 2000);

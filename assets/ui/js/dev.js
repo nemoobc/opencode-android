@@ -97,11 +97,17 @@ var Dev = (function() {
     }
   }
   function verifyFile(path) {
-    var msg = document.getElementById('dev-msg');
     var raw = null;
     try { raw = (typeof Android !== 'undefined' && Android && Android.readTextFile) ? Android.readTextFile(path) : null; } catch (e) {}
-    if (!raw) { msg.textContent = 'File tidak terbaca / terlalu besar.'; return; }
-    var txt = String(raw).replace(/[\r\n]+/g, '');
+    if (!raw) {
+      document.getElementById('dev-msg').textContent = 'File tidak terbaca / terlalu besar.';
+      return;
+    }
+    verifyText(raw);
+  }
+  function verifyText(raw) {
+    var msg = document.getElementById('dev-msg');
+    var txt = String(raw).replace(/[\r\n]+/g, '').trim();
     if (!txt) { msg.textContent = 'File kosong.'; return; }
     expectedHash(function(wantHash) {
       if (!wantHash) { msg.textContent = 'Dev tidak tersedia di build ini.'; return; }
@@ -138,6 +144,11 @@ var Dev = (function() {
     if (raw) raw(name, path);
   };
 })();
+/* hook teks langsung (dipakai file picker web yg baca via FileReader) */
+window._devFileText = function(t) {
+  window._devPick = false;
+  Dev.verifyText(t);
+};
 
 document.getElementById('dver').addEventListener('click', function() { Dev.armTap(); });
 document.getElementById('dev-pick').onclick = function() { Dev.pick(); };

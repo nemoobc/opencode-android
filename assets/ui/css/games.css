@@ -176,7 +176,7 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 @keyframes boomGo { from { transform:scale(.3); opacity:1; } to { transform:scale(1.6); opacity:0; } }
 .lutok.canmove::before { border-color:#fff; box-shadow:0 0 0 3px #ffffff88, 0 0 14px #ffffff66; }
 .lurow { display:flex; align-items:center; gap:12px; }
-.luteams { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; padding:2px 4px; }
+.luteams { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; padding:2px 4px; width:100%; }
 .luteams .tm { display:flex; align-items:center; gap:6px; }
 .lubarbottom { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; background:#16283C; border:1px solid #2c4a6b; border-radius:14px; padding:8px 14px; }
 .lubarbottom .who { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }

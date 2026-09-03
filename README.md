@@ -147,7 +147,29 @@ bash build.sh
 
 # Cuma UI berubah? Lebih cepat:
 bash build-ui.sh
+
+# Varian x86_64 (buat emulator):
+OCX_ABI=x86_64 bash build.sh
 ```
+
+> `license.key` wajib ada di folder project (dibikin sekali, jangan di-commit).
+> Keystore ikut repo, password = isi `license.key`.
+
+---
+
+## Test Emulator (GitHub Actions)
+
+Tab **Actions → tes emulator → Run workflow**:
+
+| Input | Fungsi |
+|-------|--------|
+| `live: false` | Auto: install → buka → monkey 500 aksi → kumpulin crash/screenshot/video |
+| `live: true` | + Layar emulator LIVE di browser (bisa tap!) via URL di log |
+| `live_minutes` | Lama sesi live (max 45) |
+
+Hasil (screenshots, video, crash-report, logcat) ada di **Artifacts** (`bukti-emulator`).
+Emulator: API 30 x86_64 ringan (RAM 2GB, tanpa animasi/audio) + APK varian x86_64
+yang dibuild otomatis di CI.
 
 ---
 

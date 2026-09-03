@@ -74,7 +74,14 @@
 @keyframes citeHl { 0%,100% { background:none; } 30% { background:#C9A22755; } }
 .honest { margin-top:8px; font-size:12px; color:var(--muted); font-style:italic; }
 /* ===== AI gambar & file ===== */
-.aimg { max-width:100%; height:auto; border-radius:14px; border:1px solid var(--surface-border); background:var(--surface); }
+.aimg { max-width:100%; height:auto; border-radius:14px; border:1px solid var(--surface-border); background:var(--surface); cursor:zoom-in; }
+/* lightbox gambar: Keluar + Simpan di atas */
+#imgview { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:100; display:none; flex-direction:column; }
+#imgview.show { display:flex; }
+#imgview .ivtop { display:flex; gap:8px; padding:12px; }
+#imgview .ivtop button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:12px; border-radius:12px; border:1px solid var(--surface-border); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; }
+#imgview .ivtop button:active { transform:scale(.97); }
+#imgview #ivimg { flex:1; object-fit:contain; width:100%; min-height:0; }
 .imgskeleton { width:100%; max-width:320px; aspect-ratio:1; border-radius:14px; background:linear-gradient(100deg,var(--surface) 30%,var(--input-bg) 50%,var(--surface) 70%); background-size:200% 100%; animation:skShimmer 1.2s linear infinite; }
 @keyframes skShimmer { to { background-position:-200% 0; } }
 .fchoice { background:var(--surface); border:1px solid var(--surface-border); border-radius:14px; padding:14px; }

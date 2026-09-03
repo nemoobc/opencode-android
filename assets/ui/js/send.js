@@ -230,5 +230,7 @@ chat.addEventListener('click', function(e) {
     return;
   }
   var a = e.target.closest('a[data-url]');
-  if (a) { var u = a.getAttribute('data-url'); if (/^https?:\/\//i.test(u)) Android.openUrl(u); }
+  if (a) { var u = a.getAttribute('data-url'); if (/^https?:\/\//i.test(u)) Android.openUrl(u); return; }
+  var im = e.target.closest('img.aimg');
+  if (im && im.src) { try { openImgViewer(im.src); } catch (err) {} }
 });

@@ -63,7 +63,11 @@ var Media = (function() {
   };
 })();
 
-/* ===== alur gambar: bubble loading → img → aksi ===== */
+/* ===== alur gambar: thinking → skeleton+timer → img / timeout =====
+   Regen MENAMBAH (append), tidak menimpa. Timeout 45s anti-stuck. */
+var IMG_SVG_NEW = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>';
+var IMG_SVG_X = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+var IMG_SVG_DL = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 function doImage(t, label) {
   window._warmingUp = false;
   var um = addMsg('user');
@@ -72,49 +76,130 @@ function doImage(t, label) {
   window._cur = null; window._plain = ''; window._canceling = false;
   window._done = false; window._aborted = false;
   window._lastPrompt = t;
+  window._lastImgPrompt = t;
   var body = addMsg('ai');
-  var q = Media.cleanImgPrompt(t);
-  body.innerHTML = '<div class="imgskeleton"></div><span class="elapsed">Gambar "' + esc(q) + '"...</span>';
+  body.innerHTML = '<div class="thinking-svg">' +
+    '<svg class="brain-pulse" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 4.5 2.8A4 4 0 0 1 20 8.5a4 4 0 0 1-1.2 2.9A4.5 4.5 0 0 1 17 18h-2a3 3 0 0 1-3-3v-1a3 3 0 0 0-3-3H7a4 4 0 0 1-1-7.9A5 5 0 0 1 12 2z"/></svg>' +
+    '</div><span class="elapsed">Siapkan kanvas...</span>';
   window._cur = body;
   busy = true;
   dot.className = 'work';
   go.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
   go.classList.add('stop');
   document.getElementById('hint').textContent = '';
-  window._lastImgPrompt = t;
+  setTimeout(function() { genImage(body, Media.cleanImgPrompt(t)); }, 650);
+}
+function genImage(body, q) {
+  if (!body.isConnected || window._aborted) return;
+  var sk = document.createElement('div');
+  sk.className = 'imgjob';
+  sk.innerHTML = '<div class="imgskeleton"></div><span class="elapsed">Gambar "' + esc(q) + '"... <span class="imgt">0</span> dtk</span>';
+  body.appendChild(sk);
+  var think = body.querySelector('.thinking-svg');
+  if (think) think.remove();
+  var eb = body.querySelectorAll('.elapsed');
+  for (var k = 0; k < eb.length - 1; k++) eb[k].remove();
+  var t0 = Date.now(), done = false;
+  var iv = setInterval(function() {
+    var e = sk.querySelector('.imgt');
+    if (e && e.isConnected) e.textContent = Math.floor((Date.now() - t0) / 1000);
+    else clearInterval(iv);
+  }, 1000);
+  var to = setTimeout(function() {
+    if (done || !sk.isConnected) return;
+    done = true;
+    clearInterval(iv);
+    sk.innerHTML = '<span style="color:#E08A7B">Kelamaan (45 dtk). Cek internet, coba tombol Baru.</span>';
+    imgFinish(body);
+  }, 45000);
   var src = Media.imgUrl(q);
-  window._lastImgUrl = src;
   var img = new Image();
   img.onload = function() {
-    if (window._done || window._aborted || window._cur !== body) return;
-    body.classList.remove('caret');
-    body.innerHTML = '<img class="aimg" src="' + src + '" alt="' + escAttr(q) + '">' +
-      '<div class="mact"><button data-imgnew>🔄 Baru</button>' +
-      '<button data-imgopen>🔗 Buka</button></div>';
-    body.querySelector('[data-imgnew]').onclick = function() {
-      if (busy) return;
-      busy = false; window._done = false;
-      doImage(window._lastImgPrompt);
-    };
-    body.querySelector('[data-imgopen]').onclick = function() { Android.openUrl(window._lastImgUrl); };
-    window._cur = null;
-    busy = false;
-    go.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
-    go.classList.remove('stop');
-    dot.className = 'ok';
-    histSaveCur();
+    if (done || !sk.isConnected) return;
+    done = true;
+    clearInterval(iv);
+    clearTimeout(to);
+    sk.innerHTML = '<img class="aimg" src="' + src + '" alt="' + escAttr(q) + '">';
+    ensureImgBar(body);
+    imgFinish(body);
   };
   img.onerror = function() {
-    if (window._done || window._aborted) return;
-    window._cur = null;
-    busy = false;
-    dot.className = 'bad';
-    go.classList.remove('stop');
-    body.innerHTML = '<span style="color:#E08A7B">Gagal bikin gambar. Cek internet, coba lagi.</span>';
+    if (done || window._aborted || !sk.isConnected) return;
+    done = true;
+    clearInterval(iv);
+    clearTimeout(to);
+    sk.innerHTML = '<span style="color:#E08A7B">Gagal bikin gambar. Cek internet, coba tombol Baru.</span>';
+    ensureImgBar(body);
+    imgFinish(body);
   };
   img.src = src;
 }
-window._reImg = function() {};
+function ensureImgBar(body) {
+  if (body.querySelector('[data-imgnew]')) return;
+  var d = document.createElement('div');
+  d.className = 'mact';
+  d.innerHTML = '<button data-imgnew>' + IMG_SVG_NEW + ' Baru</button>';
+  body.appendChild(d);
+  d.querySelector('[data-imgnew]').onclick = function() {
+    if (busy && window._cur) return;
+    busy = true; window._done = false; window._aborted = false;
+    dot.className = 'work';
+    genImage(body, Media.cleanImgPrompt(window._lastImgPrompt || ''));
+  };
+}
+function imgFinish(body) {
+  var pending = body.querySelector('.imgskeleton');
+  if (pending) return; /* masih ada yang loading */
+  window._cur = null;
+  busy = false;
+  go.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
+  go.classList.remove('stop');
+  dot.className = 'ok';
+  document.getElementById('hint').textContent = '';
+  histSaveCur();
+}
+/* ===== lightbox gambar ala chatgpt: Keluar + Simpan di atas ===== */
+var _ivSrc = '';
+function openImgViewer(src) {
+  _ivSrc = src;
+  var v = document.getElementById('imgview');
+  if (!v) {
+    v = document.createElement('div');
+    v.id = 'imgview';
+    v.innerHTML = '<div class="ivtop"><button data-x>' + IMG_SVG_X + ' Keluar</button>' +
+      '<button data-sv>' + IMG_SVG_DL + ' Simpan</button></div><img id="ivimg" alt="">';
+    document.body.appendChild(v);
+    v.querySelector('[data-x]').onclick = closeImgViewer;
+    v.querySelector('[data-sv]').onclick = function() { saveImg(_ivSrc); };
+    v.addEventListener('click', function(e) { if (e.target === v) closeImgViewer(); });
+  }
+  document.getElementById('ivimg').src = src;
+  v.classList.add('show');
+}
+function closeImgViewer() {
+  var v = document.getElementById('imgview');
+  if (v) v.classList.remove('show');
+}
+function saveImg(url) {
+  try {
+    fetch(url).then(function(r) {
+      if (!r.ok) throw 0;
+      return r.blob();
+    }).then(function(b) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'ai-gambar.jpg';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { try { URL.revokeObjectURL(a.href); } catch (e) {} a.remove(); }, 800);
+      toast('Menyimpan gambar...');
+    }).catch(function() {
+      try { Android.openUrl(url); } catch (e) { toast('Gagal simpan'); }
+    });
+  } catch (e) {
+    try { Android.openUrl(url); } catch (e2) { toast('Gagal simpan'); }
+  }
+}
 
 /* ===== alur file: tanya dulu chat/file, baru jalan ===== */
 function askFileMode(t) {

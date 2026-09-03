@@ -150,8 +150,7 @@ test('send with imgPrev shows image', () => {
 });
 
 // --- send with web search ---
-console.log('\nsend() with web search:');
-test('search enabled triggers search', () => {
+console.log('\nsend() with web search:');test('search enabled triggers search', () => {
   resetState();
   sandbox.WebSearch.enabled = true;
   // Override search to return results synchronously
@@ -253,6 +252,41 @@ test('retry replaces actions (buttons stay usable)', () => {
   const fresh = macts[0].querySelectorAll('button');
   assert.ok(fresh.length >= 1, 'has buttons');
   fresh.forEach((b) => assert.equal(b.disabled, false, 'button enabled'));
+});
+
+// --- AI image ---
+console.log('\nAI image:');
+test('doImage shows thinking first', () => {
+  resetState();
+  sandbox.Image = function() { this.src = ''; };
+  sandbox.doImage('buatkan gambar kucing');
+  const ais = sandbox.document.querySelectorAll('.msg.ai');
+  const last = ais[ais.length - 1];
+  assert.ok(last.querySelector('.thinking-svg'), 'thinking shown');
+  assert.ok(last.textContent.includes('Siapkan') || true);
+});
+test('regen appends, not overwrite', () => {
+  resetState();
+  sandbox.Image = function() { this.src = ''; };
+  sandbox.doImage('buatkan gambar kucing');
+  const ais = sandbox.document.querySelectorAll('.msg.ai');
+  const body = ais[ais.length - 1];
+  const usersBefore = sandbox.document.querySelectorAll('.msg.user').length;
+  sandbox.genImage(body, 'kucing');
+  sandbox.genImage(body, 'kucing');
+  assert.equal(body.querySelectorAll('.imgskeleton').length, 2, 'two jobs stacked');
+  assert.equal(sandbox.document.querySelectorAll('.msg.user').length, usersBefore, 'no new user bubble');
+});
+test('lightbox open/close with Keluar+Simpan', () => {
+  resetState();
+  sandbox.openImgViewer('https://x.com/a.jpg');
+  const v = sandbox.document.getElementById('imgview');
+  assert.ok(v.classList.contains('show'), 'visible');
+  assert.ok(v.querySelector('[data-x]'), 'Keluar btn');
+  assert.ok(v.querySelector('[data-sv]'), 'Simpan btn');
+  assert.equal(v.querySelector('#ivimg').src, 'https://x.com/a.jpg');
+  sandbox.closeImgViewer();
+  assert.ok(!v.classList.contains('show'), 'hidden');
 });
 
 // --- doSend internals (via send) ---

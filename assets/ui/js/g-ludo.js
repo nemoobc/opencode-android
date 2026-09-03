@@ -206,6 +206,7 @@
           btn = document.createElement('button');
           btn.className = 'lutok';
           btn.style.setProperty('--c', COLOR[t.color]);
+          btn.innerHTML = '<svg viewBox="0 0 24 36"><path d="M12 1C6.4 1 2 5.6 2 10.8 2 17.5 12 26.5 12 26.5S22 17.5 22 10.8C22 5.6 17.6 1 12 1z" fill="' + COLOR[t.color] + '" stroke="rgba(0,0,0,.3)" stroke-width="1.5"/><circle cx="12" cy="10.8" r="4.4" fill="#fff"/><circle cx="12" cy="31.5" r="2.6" fill="' + COLOR[t.color] + '" stroke="rgba(0,0,0,.3)"/></svg>';
           btn.onclick = function() { tapTok(t.color, t.i); };
           layer.appendChild(btn);
           L.nodes[nkey] = btn;

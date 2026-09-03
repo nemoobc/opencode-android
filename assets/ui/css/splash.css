@@ -22,12 +22,12 @@
 @keyframes pbarSlide { 0% { margin-left:-30%; } 100% { margin-left:100%; } }
 /* teks marching di bawah stage — animasi jalan berulang */
 #ovfx { display:flex; gap:10px; margin-top:14px; height:18px; overflow:hidden; }
-#ovfx span { color:var(--accent); font-size:14px; font-weight:700; opacity:0; animation:fxMarch 1.4s ease-in-out infinite; }
+#ovfx span { color:var(--accent); font-size:14px; font-weight:700; opacity:1; animation:fxMarch 1.4s ease-in-out infinite; }
 #ovfx span:nth-child(2) { animation-delay:.12s; }
 #ovfx span:nth-child(3) { animation-delay:.24s; }
 #ovfx span:nth-child(4) { animation-delay:.36s; }
 #ovfx span:nth-child(5) { animation-delay:.48s; }
-@keyframes fxMarch { 0% { opacity:0; transform:translateX(-8px); } 30% { opacity:1; } 70% { opacity:1; } 100% { opacity:0; transform:translateX(8px); } }
+@keyframes fxMarch { 0% { transform:translateX(-10px); } 100% { transform:translateX(10px); } }
 #pnum { margin-top:10px; font-variant-numeric:tabular-nums; letter-spacing:.3px; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
@@ -86,7 +86,7 @@
   background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%);
   animation:breathe 2.6s ease-in-out infinite;
 }
-@keyframes breathe { 0%,100% { transform:scale(1); opacity:.85; } 50% { transform:scale(1.08); opacity:1; } }
+@keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
 #splash .mark { width:112px; height:112px; position:relative; }
 #splash .frm path {
   stroke-dasharray:600; stroke-dashoffset:600;

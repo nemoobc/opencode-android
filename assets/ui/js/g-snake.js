@@ -51,43 +51,84 @@
   }
   function speed() { return Math.max(70, 150 - S.score); }
 
-  function draw() {
+  function lerpPos(prev, cur, t) {
+    return [prev[0] + (cur[0] - prev[0]) * t, prev[1] + (cur[1] - prev[1]) * t];
+  }
+  function draw(now) {
+    now = (now === undefined) ? performance.now() : now;
     var cv = document.getElementById('snk');
-    if (!cv) return;
+    if (!cv || !S) return;
     var g = cv.getContext('2d');
     g.fillStyle = '#08110C';
     g.fillRect(0, 0, COLS * CELL, ROWS * CELL);
+    /* umpan pulse */
+    var pr = CELL / 2 - 2 + Math.sin(now / 180) * 2;
     g.fillStyle = '#E85D5D';
     g.beginPath();
-    g.arc(S.food[0] * CELL + CELL / 2, S.food[1] * CELL + CELL / 2, CELL / 2 - 2, 0, 7);
+    g.arc(S.food[0] * CELL + CELL / 2, S.food[1] * CELL + CELL / 2, Math.max(2, pr), 0, 7);
     g.fill();
-    for (var i = S.snake.length - 1; i >= 0; i--) {
-      var p = S.snake[i];
+    g.fillStyle = '#E85D5D88';
+    g.beginPath();
+    g.arc(S.food[0] * CELL + CELL / 2, S.food[1] * CELL + CELL / 2, Math.max(3, pr + 3), 0, 7);
+    g.fill();
+    /* badan interpolasi: prev -> cur sesuai waktu antar langkah */
+    var t = S.prev ? Math.min(1, (now - S.stepAt) / S.stepMs) : 1;
+    var n = S.snake.length;
+    for (var i = n - 1; i >= 0; i--) {
+      var cur = S.snake[i];
+      var pv = (S.prev && S.prev[i]) ? S.prev[i] : cur;
+      /* segmen baru (makan): tumbuh dari ekor lama */
+      if (!S.prev || !S.prev[i]) pv = S.prev ? S.prev[S.prev.length - 1] : cur;
+      var xy = lerpPos(pv, cur, t);
       g.fillStyle = i === 0 ? '#3DDC84' : (i % 2 ? '#2BA866' : '#27945A');
-      g.fillRect(p[0] * CELL + 1, p[1] * CELL + 1, CELL - 2, CELL - 2);
+      g.fillRect(xy[0] * CELL + 1, xy[1] * CELL + 1, CELL - 2, CELL - 2);
     }
     /* mata kepala */
-    var hh = S.snake[0];
+    var hc = lerpPos((S.prev && S.prev[0]) ? S.prev[0] : S.snake[0], S.snake[0], t);
     g.fillStyle = '#0C100E';
-    var ex = hh[0] * CELL + CELL / 2 + S.dir[0] * 3, ey = hh[1] * CELL + CELL / 2 + S.dir[1] * 3;
+    var ex = hc[0] * CELL + CELL / 2 + S.dir[0] * 3, ey = hc[1] * CELL + CELL / 2 + S.dir[1] * 3;
     g.fillRect(ex - 3, ey - 1, 2, 2);
     g.fillRect(ex + 1, ey - 1, 2, 2);
   }
+  function frame(id, now) {
+    if (id !== gest || !S) return;
+    draw(now || performance.now());
+    if (S.alive) requestAnimationFrame(function(t) { frame(id, t); });
+  }
   function loop(id) {
     if (id !== gest || !S || !S.alive) return;
+    S.prev = S.snake.map(function(p) { return [p[0], p[1]]; });
+    S.stepMs = speed();
+    S.stepAt = performance.now();
     var r = advance(S);
     if (r === 'dead') return gameOver(id);
+    if (r === 'eat') scorePop();
     setScore('Skor ' + S.score);
-    draw();
-    timer = setTimeout(function() { loop(id); }, speed());
+    timer = setTimeout(function() { loop(id); }, S.stepMs);
   }
   function setScore(t) {
     var e = document.getElementById('gscore');
     if (e) e.textContent = t;
   }
+  function scorePop() {
+    var e = document.getElementById('gscore');
+    if (!e) return;
+    e.classList.remove('pop');
+    void e.offsetWidth;
+    e.classList.add('pop');
+  }
   function gameOver(id) {
     if (id !== undefined && id !== gest) return;
     S.alive = false;
+    /* flash merah + goyang, panel muncul 650ms kemudian */
+    var cv = document.getElementById('snk');
+    if (cv) cv.classList.add('dead');
+    setTimeout(function() {
+      if (id !== gest) return;
+      showOver();
+    }, 650);
+  }
+  function showOver() {
     var best = parseInt(gbestGet('g-snake-best', '0'), 10) || 0;
     if (S.score > best) { best = S.score; gbestSet('g-snake-best', best); }
     var b = document.getElementById('gbody');
@@ -133,6 +174,7 @@
       else turn(0, dy > 0 ? 1 : -1);
     }, { passive: true });
     draw();
+    requestAnimationFrame(function(t) { frame(id, t); });
     timer = setTimeout(function() { loop(id); }, 400);
   }
   function stop() {

@@ -159,10 +159,15 @@
   function render(moves) {
     var layer = document.getElementById('lutoks');
     if (!layer || !L) return;
-    var byCell = {};
-    var html = '';
+    /* node persistent per bidak — transisi left/top CSS jalan mulus
+       (dulu innerHTML rebuild tiap render = teleport, animasi mati) */
+    if (!L.nodes) L.nodes = {};
+    var seen = {};
     var mvSet = {};
     if (moves) for (var m = 0; m < moves.length; m++) mvSet[L.turn + ':' + moves[m].i] = 1;
+    /* hitung isi tiap sel utk offset susun */
+    var cellCount = {}, cellIdx = {};
+    var infos = [];
     for (var ci = 0; ci < ORDER.length; ci++) {
       var color = ORDER[ci];
       var arr = L.toks[color];
@@ -170,29 +175,49 @@
         var cell = cellFor(color, arr[i], i);
         if (!cell) continue;
         var key = cell[0] + ',' + cell[1];
-        (byCell[key] = byCell[key] || []).push({ color: color, i: i });
+        cellCount[key] = (cellCount[key] || 0) + 1;
+        infos.push({ color: color, i: i, cell: cell, key: key });
       }
     }
-    for (var k in byCell) {
-      var grp = byCell[k];
-      var rc = k.split(',');
-      var br = parseInt(rc[0], 10), bc = parseInt(rc[1], 10);
-      for (var g = 0; g < grp.length; g++) {
-        var t = grp[g];
+    for (var k = 0; k < infos.length; k++) {
+      (function(t) {
+        var nkey = t.color + t.i;
+        seen[nkey] = 1;
+        var btn = L.nodes[nkey];
+        if (!btn || !btn.isConnected) {
+          btn = document.createElement('button');
+          btn.className = 'lutok';
+          btn.style.background = COLOR[t.color];
+          btn.onclick = function() { tapTok(t.color, t.i); };
+          layer.appendChild(btn);
+          L.nodes[nkey] = btn;
+        }
+        var n = cellCount[t.key];
+        var g = (cellIdx[t.key] = (cellIdx[t.key] || 0) + 1) - 1;
         var ox = 0.5, oy = 0.5;
-        if (grp.length > 1) { ox = (g % 2 ? 0.72 : 0.28); oy = (g < 2 ? 0.28 : 0.72); }
-        var can = mvSet[t.color + ':' + t.i] ? ' canmove' : '';
-        html += '<button class="lutok' + can + '" data-c="' + t.color + '" data-i="' + t.i + '"' +
-          ' style="left:' + ((bc + ox) / 15 * 100) + '%;top:' + ((br + oy) / 15 * 100) + '%;background:' + COLOR[t.color] + '"></button>';
-      }
+        if (n > 1) { ox = (g % 2 ? 0.72 : 0.28); oy = (g < 2 ? 0.28 : 0.72); }
+        btn.style.left = ((t.cell[1] + ox) / 15 * 100) + '%';
+        btn.style.top = ((t.cell[0] + oy) / 15 * 100) + '%';
+        if (mvSet[t.color + ':' + t.i]) btn.classList.add('canmove');
+        else btn.classList.remove('canmove');
+        if (L.winner === t.color) btn.classList.add('winglow');
+        else btn.classList.remove('winglow');
+      })(infos[k]);
     }
-    layer.innerHTML = html;
-    layer.querySelectorAll('.lutok').forEach(function(btn) {
-      btn.onclick = function() { tapTok(btn.getAttribute('data-c'), parseInt(btn.getAttribute('data-i'), 10)); };
-    });
+    /* buang node bidak finis */
+    for (var nk in L.nodes) {
+      if (!seen[nk] && L.nodes[nk].parentNode) L.nodes[nk].parentNode.removeChild(L.nodes[nk]);
+      if (!seen[nk]) delete L.nodes[nk];
+    }
     var tn = document.getElementById('luturn');
     if (tn) {
       var col = ORDER[L.turn];
+      if (L.shownTurn !== L.turn) {
+        L.shownTurn = L.turn;
+        tn.classList.remove('swap');
+        void tn.offsetWidth;
+        tn.classList.add('swap');
+      }
       tn.innerHTML = '<span class="ludot" style="background:' + COLOR[col] + '"></span> ' +
         (col === 'G' ? 'Giliranmu!' : 'Giliran ' + NAME[col] + '...');
     }
@@ -231,7 +256,7 @@
     diceAnim(id, function() {
       L.dice = 1 + Math.floor(Math.random() * 6);
       var d = document.getElementById('ludice');
-      if (d) d.textContent = FACES[L.dice - 1];
+      if (d) { d.textContent = FACES[L.dice - 1]; d.classList.remove('bounce'); void d.offsetWidth; d.classList.add('bounce'); }
       var moves = legalMoves(L, 'G', L.dice);
       if (!moves.length) {
         log('🎲 ' + L.dice + ' — ga bisa jalan.');
@@ -297,7 +322,7 @@
     diceAnim(id, function() {
       L.dice = 1 + Math.floor(Math.random() * 6);
       var d = document.getElementById('ludice');
-      if (d) d.textContent = FACES[L.dice - 1];
+      if (d) { d.textContent = FACES[L.dice - 1]; d.classList.remove('bounce'); void d.offsetWidth; d.classList.add('bounce'); }
       var moves = legalMoves(L, color, L.dice);
       if (!moves.length) {
         log(NAME[color].split(' ')[0] + ' kocok ' + L.dice + ' — lewat.');

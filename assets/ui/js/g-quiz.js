@@ -71,7 +71,14 @@
       if (id !== gest || !Q || Q.lock) return;
       Q.left = Math.max(0, TIME - (Date.now() - t0) / 1000);
       var f = document.getElementById('qfill');
-      if (f) f.style.width = (Q.left / TIME * 100) + '%';
+      if (f) {
+        f.style.width = (Q.left / TIME * 100) + '%';
+        var bar = f.parentNode;
+        if (bar) {
+          if (Q.left <= 5) bar.classList.add('low');
+          else bar.classList.remove('low');
+        }
+      }
       if (Q.left <= 0) answer(id, -1);
     }, 100);
   }

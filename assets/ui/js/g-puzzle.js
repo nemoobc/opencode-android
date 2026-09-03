@@ -50,27 +50,73 @@
     var e = document.getElementById('gscore');
     if (e) e.textContent = t;
   }
+  var STEP = 98; /* 92px ubin + 6px gap */
+  function cellXY(i) {
+    return 'translate(' + ((i % N) * STEP) + 'px,' + (Math.floor(i / N) * STEP) + 'px)';
+  }
   function render() {
     var b = document.getElementById('gbody');
-    var html = '<div class="pzmeta"><span>⏱ <b id="pz-time">' + fmt(P.secs) + '</b></span><span>👆 <b id="pz-mv">' + P.moves + '</b> langkah</span></div><div class="pzgrid">';
-    for (var i = 0; i < 9; i++) {
-      var v = P.tiles[i];
-      if (v === 0) html += '<button class="pztile hole" data-i="' + i + '"></button>';
-      else html += '<button class="pztile' + (v === i + 1 ? ' ok' : '') + '" data-i="' + i + '">' + v + '</button>';
+    var board = document.getElementById('pzboard');
+    if (!board) {
+      b.innerHTML = '<div class="pzmeta"><span>⏱ <b id="pz-time">' + fmt(P.secs) + '</b></span><span>👆 <b id="pz-mv">' + P.moves + '</b> langkah</span></div>' +
+        '<div class="pzboard" id="pzboard"></div>';
+      board = document.getElementById('pzboard');
+      P.nodes = {};
+      for (var v = 1; v <= 8; v++) {
+        (function(val) {
+          var btn = document.createElement('button');
+          btn.className = 'pztile';
+          btn.textContent = val;
+          btn.onclick = function() { tapByVal(val); };
+          board.appendChild(btn);
+          P.nodes[val] = btn;
+        })(v);
+      }
     }
-    b.innerHTML = html + '</div>';
-    b.querySelectorAll('.pztile').forEach(function(btn) {
-      btn.onclick = function() { tap(parseInt(btn.getAttribute('data-i'), 10)); };
-    });
+    /* node persistent — cuma update transform, transisi CSS yang geser */
+    for (var i = 0; i < 9; i++) {
+      var vv = P.tiles[i];
+      if (vv === 0) continue;
+      var el = P.nodes[vv];
+      el.style.transform = cellXY(i);
+      el.dataset.i = i;
+      if (vv === i + 1) el.classList.add('ok');
+      else el.classList.remove('ok');
+    }
+    var mv = document.getElementById('pz-mv');
+    if (mv) mv.textContent = P.moves;
+  }
+  function tapByVal(v) {
+    if (!P) return;
+    var el = P.nodes[v];
+    var i = el ? parseInt(el.dataset.i, 10) : P.tiles.indexOf(v);
+    tap(i);
   }
   function tap(i) {
-    if (!P || !canMove(P.tiles, i)) return;
+    if (!P || P.lock || !canMove(P.tiles, i)) return;
     var h = P.tiles.indexOf(0);
     P.tiles[h] = P.tiles[i];
     P.tiles[i] = 0;
     P.moves++;
     setScore(P.moves + ' langkah');
-    if (isSolved(P.tiles)) return win();
+    if (isSolved(P.tiles)) {
+      render();
+      P.lock = true;
+      clearInterval(timer);
+      /* gelombang glow baru panel menang */
+      for (var v = 1; v <= 8; v++) {
+        (function(val) {
+          var el = P.nodes[val];
+          if (el) {
+            el.style.animationDelay = ((val - 1) * 0.06) + 's';
+            el.classList.add('win');
+          }
+        })(v);
+      }
+      var id = gest;
+      setTimeout(function() { if (id === gest) win(); }, 800);
+      return;
+    }
     render();
   }
   function win() {

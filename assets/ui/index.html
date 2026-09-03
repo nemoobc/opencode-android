@@ -227,8 +227,9 @@
   <div class="card">
     <div id="dev-lock">
       <h3>TERKUNCI</h3>
-      <p class="hint">Area developer. Pilih file <b>license.key</b> untuk membuka sesi ini.</p>
-      <div class="acts"><button class="bb" id="dev-pick">Pilih file</button><button class="bb ghost" id="dev-close">Tutup</button></div>
+      <p class="hint">Area developer. Masukkan PIN.</p>
+      <div class="acts"><input id="dev-pin" inputmode="numeric" placeholder="PIN" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:12px;padding:12px;font-size:16px;text-align:center;letter-spacing:6px"><button class="bb" id="dev-go">Buka</button></div>
+      <div class="acts"><button class="bb ghost" id="dev-close">Tutup</button></div>
       <p class="hint" id="dev-msg"></p>
     </div>
     <div id="dev-panel" style="display:none">

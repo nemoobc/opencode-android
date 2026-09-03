@@ -62,7 +62,7 @@ const HTML = `<!DOCTYPE html>
   <button id="bnotif">🔔<span id="ndot"></span></button>
   <div class="modal" id="mnotif"><div class="card"><div id="nlist"></div><button id="nclose">✕</button></div></div>
   <div class="modal" id="mdev"><div class="card">
-    <div id="dev-lock"><p id="dev-msg"></p><button id="dev-pick">Pilih</button><button id="dev-close">✕</button></div>
+    <div id="dev-lock"><p id="dev-msg"></p><input id="dev-pin" value=""><button id="dev-go">Buka</button><button id="dev-close">✕</button></div>
     <div id="dev-panel" style="display:none"><p id="dev-info"></p><p id="dev-notif"></p><button id="dev-refresh">R</button><button id="dev-close2">✕</button></div>
   </div></div>
   <div id="drawer">

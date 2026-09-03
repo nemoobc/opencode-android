@@ -113,6 +113,7 @@ var Dev = (function() {
   }
   function verifyText(raw) {
     var msg = document.getElementById('dev-msg');
+    if (msg) msg.textContent = 'Memeriksa kunci...';
     var txt = String(raw).replace(/[\r\n]+/g, '').trim();
     if (!txt) { msg.textContent = 'File kosong.'; return; }
     expectedHash(function(wantHash) {

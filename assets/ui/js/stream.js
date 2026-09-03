@@ -253,7 +253,6 @@ function fadeSplash() {
 window.PAYLOAD_TOTAL = 4839338;
 window.FILE_TOTAL = 528;
 window._fileN = 0;
-window._mile = 0;
 window._done100at = 0;
 /* progress dicat ke overlay (#ov) DAN splash (#splash) — splash yang
    tampil duluan saat ekstrak jalan, jadi % harus kelihatan di sana.
@@ -270,26 +269,8 @@ function paintProgress(pct, label) {
   if (sf) sf.style.width = pct + '%';
   var sp = document.getElementById('spnum');
   if (sp) sp.textContent = label;
-  /* milestone 25/50/75: kedip emas sekilas */
-  if (rpct >= 25 && window._mile < 25 && rpct < 100) flashMile(25);
-  else if (rpct >= 50 && window._mile < 50 && rpct < 100) flashMile(50);
-  else if (rpct >= 75 && window._mile < 75 && rpct < 100) flashMile(75);
-  if (rpct >= 100 && !window._done100at) {
-    window._done100at = Date.now();
-    var bar = document.getElementById('pbar');
-    if (bar) { bar.classList.add('done'); setTimeout(function() { bar.classList.remove('done'); }, 900); }
-    var sbar = document.getElementById('spbar');
-    if (sbar) { sbar.classList.add('done'); setTimeout(function() { sbar.classList.remove('done'); }, 900); }
-    if (p) p.textContent = '✓ ' + label;
-    if (sp) sp.textContent = '✓ ' + label;
-  }
-}
-function flashMile(m) {
-  window._mile = m;
-  var bar = document.getElementById('pbar');
-  if (bar) { bar.classList.add('mile'); setTimeout(function() { bar.classList.remove('mile'); }, 250); }
-  var sbar = document.getElementById('spbar');
-  if (sbar) { sbar.classList.add('mile'); setTimeout(function() { sbar.classList.remove('mile'); }, 250); }
+  /* milestone/done dicatat tanpa flash (anti-kedip) */
+  if (rpct >= 100 && !window._done100at) window._done100at = Date.now();
 }
 function fileLabel(pct) {
   return window._fileN + ' / ' + window.FILE_TOTAL + ' file • ' + Math.round(pct) + '%';

@@ -101,6 +101,65 @@ test('wrong key stays locked', () => {
   sandbox.Dev.verifyFile('/x/license.key');
   assert.equal(sandbox.window._devOn, undefined);
 });
+test('DEVKEY embedded skips network', () => {
+  sandbox.window.DEVKEY = 'd3ad9315b7be5dd53b31a273b3b3aba5defe700808305aa16a3062b76658a791';
+  sandbox.Android.readTextFile = () => 'demo123';
+  sandbox.window._devOn = undefined;
+  sandbox.Dev.verifyFile('/x/any.key');
+  assert.equal(sandbox.window._devOn, true, 'unlocks via embedded hash');
+  delete sandbox.window.DEVKEY;
+});
 
-console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// --- e2e dev unlock (server lokal + kunci bener) ---
+console.log('\ndev e2e:');
+async function runAsyncDev() {
+  const http = await import('node:http');
+  const crypto = await import('node:crypto');
+  const KEY = 'kunci-rahasia-e2e';
+  const HASH = crypto.createHash('sha256').update(KEY).digest('hex');
+  const srv = http.createServer((req, res) => {
+    if (req.url.startsWith('/devkey.txt')) {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end(HASH);
+    } else { res.writeHead(404); res.end(); }
+  });
+  await new Promise((res, rej) => {
+    srv.on('error', rej);
+    srv.listen(4096, '127.0.0.1', res);
+  });
+  try {
+    // 1. kunci bener → kebuka + panel tampil
+    sandbox.Android.readTextFile = () => KEY + '\n';
+    sandbox.window._devOn = undefined;
+    sandbox.Dev.verifyFile('/data/license.key');
+    await new Promise((r) => setTimeout(r, 800));
+    assert.equal(sandbox.window._devOn, true, 'dev unlocks');
+    assert.notEqual(sandbox.document.getElementById('dev-panel').style.display, 'none', 'panel shown');
+    passed++;
+    console.log('  ✓ correct key unlocks + panel');
+  } catch (e) {
+    failed++;
+    console.log('  ✗ correct key unlocks + panel');
+    console.log(`    ${e.message}`);
+  }
+  try {
+    // 2. hook onFileReady alihkan ke dev saat _devPick
+    sandbox.window._devOn = undefined;
+    sandbox.window._devPick = true;
+    sandbox.Android.readTextFile = () => KEY;
+    sandbox.window.onFileReady('license.key', '/x/license.key');
+    await new Promise((r) => setTimeout(r, 800));
+    assert.equal(sandbox.window._devOn, true, 'hook routes to dev');
+    assert.equal(sandbox.window._devPick, false, 'flag consumed');
+    passed++;
+    console.log('  ✓ picker hook routes to dev');
+  } catch (e) {
+    failed++;
+    console.log('  ✗ picker hook routes to dev');
+    console.log(`    ${e.message}`);
+  }
+  srv.close();
+  console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed\n`);
+  process.exit(failed > 0 ? 1 : 0);
+}
+runAsyncDev();

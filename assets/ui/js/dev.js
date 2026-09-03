@@ -72,8 +72,12 @@ var Dev = (function() {
     document.getElementById('mdev').classList.add('show');
   }
   function expectedHash(done) {
-    /* hash tertanam saat build (assets/ui/devkey.txt). Absen = dev mati. */
-    if (want !== null) { done(want); return; }
+    /* utama: tertanam build (tanpa network, anti-blokir file://) */
+    if (typeof window.DEVKEY === 'string' && /^[0-9a-f]{64}$/.test(window.DEVKEY)) {
+      done(window.DEVKEY);
+      return;
+    }
+    if (want) { done(want); return; }
     try {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', 'devkey.txt?t=' + Date.now(), true);

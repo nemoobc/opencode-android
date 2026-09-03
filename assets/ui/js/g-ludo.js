@@ -265,11 +265,12 @@
       '<details class="lurules"><summary>📖 Aturan singkat</summary>Butuh <b>6</b> keluar markas. Injak lawan (bukan ★) = makan. <b>6</b> / makan / finis = jalan lagi. Finis harus pas. Duluan 4 finis menang!<br>Contoh: kocok <b>6</b> → tap bidak hijau yang berdenyut → jalan!</details>' +
       '<div id="luarrow">▼</div>' +
       '<div class="lubarbottom"><span class="who"><span class="ludot" style="background:#2FBF71"></span>Kamu</span>' +
-      '<button class="ludice" id="ludice">⚀</button>' +
+      '<button class="ludice ready" id="ludice"></button>' +
       '<span class="who">CPU<span class="ludot" style="background:#8a8f98"></span></span></div>' +
       '<div class="lulog" id="lulog"></div>';
     document.getElementById('gtitle').textContent = 'Ludo';
     document.getElementById('ludice').onclick = function() { humanRoll(id); };
+    diceBlank();
     render(null);
     log('Giliranmu! Ketuk dadu 🎲');
   }
@@ -293,6 +294,13 @@
       void d.offsetWidth;
       d.classList.add('bounce');
     }
+  }
+  function diceBlank() {
+    var d = document.getElementById('ludice');
+    if (!d) return;
+    var h = '<span class="pips">';
+    for (var i = 0; i < 9; i++) h += '<i></i>';
+    d.innerHTML = h + '</span>';
   }
   function diceShow(n) { diceFaces(n, true); }
   function diceAnim(id, done) {
@@ -496,11 +504,11 @@
     L.dice = 0;
     var d = document.getElementById('ludice');
     if (color === 'G') {
-      if (d) { d.disabled = false; d.textContent = '🎲'; d.classList.add('ready'); }
+      if (d) { d.disabled = false; d.classList.add('ready'); diceBlank(); }
       render(null);
       log('Giliranmu! Ketuk dadu 🎲');
     } else {
-      if (d) { d.disabled = true; d.textContent = '🎲'; d.classList.remove('ready'); }
+      if (d) { d.disabled = true; d.classList.remove('ready'); diceBlank(); }
       render(null);
       later(function() { cpuTurn(id, color); }, 500, id);
     }

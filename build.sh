@@ -42,7 +42,7 @@ find_tool() {
 }
 
 AAPT=$(find_tool aapt)
-D8=$(find_tool d8)
+D8=${D8_CMD:-$(find_tool d8)}
 APKSIGNER=$(find_tool apksigner)
 KEYTOOL=$(find_tool keytool)
 PYTHON=$(find_tool python3)

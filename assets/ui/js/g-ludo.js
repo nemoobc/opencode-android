@@ -275,11 +275,7 @@
     log('Giliranmu! Ketuk dadu 🎲');
   }
   function shakeBoard() {
-    var bo = document.querySelector('#gbody .luboard');
-    if (!bo) return;
-    bo.classList.remove('shake');
-    void bo.offsetWidth;
-    bo.classList.add('shake');
+    /* dimatikan: papan diem (anti-getar). panggilannya dibiarkan no-op. */
   }
   /* dadu pip custom — konsisten di semua HP (unicode ⚀ kecil di sebagian font) */
   var PIPMAP = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };

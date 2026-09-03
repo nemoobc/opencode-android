@@ -73,6 +73,11 @@
 #hint b { color:var(--accent2); font-weight:600; }
 #hint svg.spin { animation:hintspin 1s linear infinite; }
 @keyframes hintspin { to { transform:rotate(360deg); } }
+/* bubble status web-search di dalam chat */
+.status { align-self:flex-start; max-width:88%; background:var(--surface); border:1px dashed var(--surface-border); border-radius:12px; padding:8px 12px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+.status b { color:var(--accent2); }
+.status .spin { width:13px; height:13px; border-radius:50%; border:2px solid var(--surface-border); border-top-color:var(--accent); animation:hintspin 1s linear infinite; flex:0 0 auto; }
+.status .sws { font-variant-numeric:tabular-nums; }
 
 /* ===== scroll btn ===== */
 #down { position:fixed; right:16px; bottom:96px; width:42px; height:42px; border-radius:50%; background:var(--surface); border:1px solid var(--surface-border); color:var(--muted2); font-size:16px; z-index:30; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px #0008; opacity:0; transform:translateY(10px) scale(.9); pointer-events:none; transition:.3s; }

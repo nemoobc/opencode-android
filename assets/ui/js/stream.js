@@ -49,6 +49,8 @@ function tickTyper() {
     stopTyper();
     return; /* nunggu delta berikutnya */
   }
+  /* jeda napas di tanda baca (ritme nulis manusia, bukan mesin) */
+  if (window._tskip > 0) { window._tskip--; return; }
   if (!rend) cur.textContent = ''; /* clear dots di reveal pertama */
   var remain = plain.length - rend.length;
   /* fast-forward pas done: kebut biar typing tetap kelihatan sekilas
@@ -60,11 +62,16 @@ function tickTyper() {
   window._rend = rend + tail;
   cur.textContent += tail;
   cur.classList.add('caret');
+  var lastCh = tail.charAt(tail.length - 1);
+  if (lastCh === ',') window._tskip = 2;
+  else if (lastCh === '\n') window._tskip = 3;
+  else if ('.?!'.indexOf(lastCh) >= 0) window._tskip = 4;
   follow();
 }
 window._tickTyper = tickTyper;
 window.flushStream = function() {
   stopTyper();
+  window._tskip = 0;
   if (window._cur) { window._rend = window._plain; window._cur.textContent = window._plain; follow(); }
 };
 function finishUI(code) {
@@ -101,6 +108,12 @@ window.onDone = function(code, tok) {
 };
 function finishMarkdown(code) {
   if (typeof stopTyper === 'function') stopTyper();
+  /* mode file: render kartu file, bukan markdown */
+  if (!window._canceling && window._fileMode && (window._plain || '').trim()) {
+    window._fileMode = null;
+    onFileDone(code, (window._plain || '').trim());
+    return;
+  }
   if (window._cur) {
     var plain = (window._plain || '').trim();
     if (window._canceling) {
@@ -142,8 +155,11 @@ function finishMarkdown(code) {
       var lastAI = aiMsgs.length ? aiMsgs[aiMsgs.length - 1] : null;
       if (lastAI) {
         var mdDiv = lastAI.querySelector('.md');
+        /* jujur: 0 sitasi di jawaban tapi sumber ada → label */
+        var hasCite = /\[\d+\]/.test(window._plain || '');
+        var honestHTML = hasCite ? '' : '<div class="honest">💡 Tanpa sitasi eksplisit — cek sumber di bawah.</div>';
         if (mdDiv) {
-          mdDiv.insertAdjacentHTML('beforeend', srcHTML);
+          mdDiv.insertAdjacentHTML('beforeend', honestHTML + srcHTML);
         } else {
           /* wrap existing content + sources in .md div */
           var existing = lastAI.innerHTML;

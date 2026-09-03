@@ -74,6 +74,12 @@ function mdRender(src) {
     }
     return out;
   }).join('');
+  /* sitasi [1][2]: bungkus TAPI jangan di dalam tag HTML (atribut aman)
+     dan JANGAN di code block (masih placeholder di titik ini, aman). */
+  txt = txt.split(/(<[^>]+>)/g).map(function(part, ix) {
+    if (ix % 2 === 1) return part;
+    return part.replace(/\[(\d+)\]/g, '<b class="cite hl">[$1]</b>');
+  }).join('');
   txt = txt.replace(/\u0000B(\d+)\u0000/g, function(m, i) {
     var b = blocks[+i];
     return '<div class="cb"><div class="cb-h"><span class="lang">' + esc(b.lang) +

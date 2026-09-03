@@ -23,7 +23,7 @@
   };
   var SAFE = { '6,1': 1, '1,8': 1, '8,13': 1, '13,6': 1, '2,6': 1, '6,12': 1, '12,8': 1, '8,2': 1 };
   var HOMESTART = { '6,1': 'R', '1,8': 'G', '8,13': 'Y', '13,6': 'B' };
-  var COLOR = { R: '#E08A7B', G: '#3DDC84', Y: '#E8D9A0', B: '#6EC6FF' };
+  var COLOR = { R: '#E0514A', G: '#2FBF71', Y: '#E8C93A', B: '#3FA7E8' };
   var NAME = { R: 'Merah', G: 'Hijau (kamu)', Y: 'Kuning', B: 'Biru' };
   var ORDER = ['G', 'R', 'Y', 'B'];
   var FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -166,13 +166,13 @@
       if (HOMECOL.B.some(function(x) { return x[0] === r && x[1] === c; })) cls += ' homeB';
       if (SAFE[key]) cls += ' safe';
       if (HOMESTART[key]) cls += ' homestart' + HOMESTART[key];
-      if (r === 7 && c === 6) cls += ' triR';
-      if (r === 6 && c === 7) cls += ' triG';
-      if (r === 7 && c === 8) cls += ' triY';
-      if (r === 8 && c === 7) cls += ' triB';
+      if (r >= 1 && r <= 4 && c >= 1 && c <= 4) cls += ' yard';
+      if (r >= 1 && r <= 4 && c >= 10 && c <= 13) cls += ' yard';
+      if (r >= 10 && r <= 13 && c >= 10 && c <= 13) cls += ' yard';
+      if (r >= 10 && r <= 13 && c >= 1 && c <= 4) cls += ' yard';
       h += '<div class="' + cls + '"></div>';
     }
-    return '<div class="luboard"><div class="lugrid">' + h + '</div><div class="lutoks" id="lutoks"></div></div>';
+    return '<div class="luboard"><div class="lugrid">' + h + '</div><div class="tric"></div><div class="lutoks" id="lutoks"></div></div>';
   }
   function render(moves) {
     var layer = document.getElementById('lutoks');
@@ -205,7 +205,7 @@
         if (!btn || !btn.isConnected) {
           btn = document.createElement('button');
           btn.className = 'lutok';
-          btn.style.background = COLOR[t.color];
+          btn.style.setProperty('--c', COLOR[t.color]);
           btn.onclick = function() { tapTok(t.color, t.i); };
           layer.appendChild(btn);
           L.nodes[nkey] = btn;
@@ -218,6 +218,9 @@
         btn.style.top = ((t.cell[0] + oy) / 15 * 100) + '%';
         /* angka cuma pas numpuk, kalo sendiri polos + dot */
         btn.textContent = n > 1 ? String(t.i + 1) : '';
+        /* di markas = kecil (kaya pion di kandang referensi) */
+        if (L.toks[t.color][t.i] < 0) btn.classList.add('inyard');
+        else btn.classList.remove('inyard');
         btn.classList.remove('vblink');
         if (mvSet[t.color + ':' + t.i]) btn.classList.add('canmove');
         else btn.classList.remove('canmove');
@@ -230,6 +233,11 @@
       if (!seen[nk] && L.nodes[nk].parentNode) L.nodes[nk].parentNode.removeChild(L.nodes[nk]);
       if (!seen[nk]) delete L.nodes[nk];
     }
+    var aw = document.getElementById('luarrow');
+    if (aw) {
+      if (ORDER[L.turn] === 'G' && L.phase === 'roll' && !L.winner) aw.classList.remove('hide');
+      else aw.classList.add('hide');
+    }
     var tn = document.getElementById('luturn');
     if (tn) {
       var col = ORDER[L.turn];
@@ -240,7 +248,7 @@
         tn.classList.add('swap');
       }
       tn.innerHTML = '<span class="ludot" style="background:' + COLOR[col] + '"></span> ' +
-        (col === 'G' ? 'Giliranmu!' : 'Giliran ' + NAME[col] + (L.thinking ? ' (mikir...)' : '...'));
+        (col === 'G' ? '<b style="color:' + COLOR[col] + '">Giliranmu!</b>' : 'Giliran <b style="color:' + COLOR[col] + '">' + NAME[col] + '</b>' + (L.thinking ? ' (mikir...)' : '...'));
     }
     setScore();
   }
@@ -249,10 +257,16 @@
     var id = ++gest;
     L = newState();
     var b = document.getElementById('gbody');
-    b.innerHTML = '<div class="luturn" id="luturn"></div>' + buildBoard() +
+    b.innerHTML = '<div class="luturn" id="luturn"></div>' +
+      '<div class="luteams"><span class="tm"><span class="ludot" style="background:#8a8f98"></span>CPU</span>' +
+      '<span class="tm">KAMU<span class="ludot" style="background:#2FBF71"></span></span></div>' +
+      buildBoard() +
       '<div class="lutray" id="lutray"></div>' +
       '<details class="lurules"><summary>📖 Aturan singkat</summary>Butuh <b>6</b> keluar markas. Injak lawan (bukan ★) = makan. <b>6</b> / makan / finis = jalan lagi. Finis harus pas. Duluan 4 finis menang!<br>Contoh: kocok <b>6</b> → tap bidak hijau yang berdenyut → jalan!</details>' +
-      '<div class="lurow"><button class="ludice" id="ludice">⚀</button></div>' +
+      '<div id="luarrow">▼</div>' +
+      '<div class="lubarbottom"><span class="who"><span class="ludot" style="background:#2FBF71"></span>Kamu</span>' +
+      '<button class="ludice" id="ludice">⚀</button>' +
+      '<span class="who">CPU<span class="ludot" style="background:#8a8f98"></span></span></div>' +
       '<div class="lulog" id="lulog"></div>';
     document.getElementById('gtitle').textContent = 'Ludo';
     document.getElementById('ludice').onclick = function() { humanRoll(id); };
@@ -268,28 +282,33 @@
   }
   /* dadu pip custom — konsisten di semua HP (unicode ⚀ kecil di sebagian font) */
   var PIPMAP = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  function diceShow(n) {
+  function diceFaces(n, bounce) {
     var d = document.getElementById('ludice');
     if (!d) return;
     var h = '<span class="pips">';
     for (var i = 0; i < 9; i++) h += '<i class="' + (PIPMAP[n].indexOf(i) >= 0 ? 'on' : '') + '"></i>';
     d.innerHTML = h + '</span>';
-    d.classList.remove('bounce');
-    void d.offsetWidth;
-    d.classList.add('bounce');
+    if (bounce) {
+      d.classList.remove('bounce');
+      void d.offsetWidth;
+      d.classList.add('bounce');
+    }
   }
+  function diceShow(n) { diceFaces(n, true); }
   function diceAnim(id, done) {
     var d = document.getElementById('ludice');
-    if (d) d.disabled = true;
+    if (d) { d.disabled = true; d.classList.add('rolling'); }
     var n = 0;
     var iv = setInterval(function() {
       if (id !== gest) { clearInterval(iv); return; }
-      diceShow(1 + Math.floor(Math.random() * 6));
-      if (++n >= 6) {
+      diceFaces(1 + Math.floor(Math.random() * 6), false);
+      if (++n >= 8) {
         clearInterval(iv);
+        var dd = document.getElementById('ludice');
+        if (dd) dd.classList.remove('rolling');
         done();
       }
-    }, 70);
+    }, 80);
     timers.push(iv);
   }
   function humanRoll(id) {
@@ -358,12 +377,19 @@
         if (nd && nd.isConnected) nd.classList.add('vblink');
       }
     }
-    /* lompat per sel (bukan 1 garis lurus) khusus jalan ring multi-langkah */
+    /* lompat per sel (bukan 1 garis lurus) khusus jalan ring multi-langkah.
+       tempo santai ala papan asli: angkat 90ms → geser 140ms → jeda 70ms. */
     var hops = [];
     if (from >= 0 && mv.to <= 50 && mv.to - from > 1) {
       for (var s = from + 1; s <= mv.to; s++) hops.push(s);
     }
     var waitBlink = victims.length ? 480 : 0;
+    /* keluar markas: arc spesial (angkat tinggi → melayang → debuk) */
+    if (from < 0) {
+      return exitHop(id, color, mv, function() {
+        finalizeMove(id, color, mv);
+      });
+    }
     if (!hops.length) {
       var layer0 = document.getElementById('lutoks');
       if (layer0) layer0.style.setProperty('--lud', '0.3s');
@@ -374,24 +400,55 @@
       if (id !== gest || !L || L.winner) return;
       if (hi < hops.length) {
         L.toks[color][mv.i] = hops[hi];
-        paintHop(color, mv.i);
-        hi++;
-        var t = setTimeout(stepHop, 75);
-        timers.push(t);
+        hopTo(color, mv.i, function() {
+          hi++;
+          var t = setTimeout(stepHop, 70);
+          timers.push(t);
+        });
       } else {
         L.toks[color][mv.i] = from; /* kembalikan, finalize yang resmi */
         finalizeMove(id, color, mv);
       }
     })();
-    function paintHop(cc, ii) {
-      if (!L || !L.nodes) return;
+    /* keluar markas: angkat TINGGI 180ms → melayang ke start 260ms → debuk */
+    function exitHop(eid, ecolor, emv, done) {
+      if (!L || !L.nodes) { done(); return; }
+      var nd = L.nodes[ecolor + emv.i];
+      var cell = cellFor(ecolor, 0, emv.i);
+      if (!nd || !cell || !nd.isConnected) { done(); return; }
+      nd.style.marginTop = 'calc(-3.2% - 26px)';
+      var t1 = setTimeout(function() {
+        if (eid !== gest || !nd.isConnected) { done(); return; }
+        nd.style.left = ((cell[1] + 0.5) / 15 * 100) + '%';
+        nd.style.top = ((cell[0] + 0.5) / 15 * 100) + '%';
+        nd.style.marginTop = '';
+        nd.classList.remove('land');
+        void nd.offsetWidth;
+        nd.classList.add('land');
+        var t2 = setTimeout(done, 260);
+        timers.push(t2);
+      }, 180);
+      timers.push(t1);
+    }
+    /* 1 lompatan: angkat 90ms → geser+turun 140ms → debuk */
+    function hopTo(cc, ii, done) {
+      if (!L || !L.nodes) { done(); return; }
       var nd = L.nodes[cc + ii];
       var cell = cellFor(cc, L.toks[cc][ii], ii);
-      if (!nd || !cell) return;
-      nd.style.transitionDuration = '0.07s';
-      nd.style.left = ((cell[1] + 0.5) / 15 * 100) + '%';
-      nd.style.top = ((cell[0] + 0.5) / 15 * 100) + '%';
-      setTimeout(function() { nd.style.transitionDuration = ''; }, 120);
+      if (!nd || !cell || !nd.isConnected) { done(); return; }
+      nd.style.marginTop = 'calc(-3.2% - 13px)';
+      var t1 = setTimeout(function() {
+        if (id !== gest || !nd.isConnected) { done(); return; }
+        nd.style.left = ((cell[1] + 0.5) / 15 * 100) + '%';
+        nd.style.top = ((cell[0] + 0.5) / 15 * 100) + '%';
+        nd.style.marginTop = '';
+        nd.classList.remove('land');
+        void nd.offsetWidth;
+        nd.classList.add('land');
+        var t2 = setTimeout(done, 140);
+        timers.push(t2);
+      }, 90);
+      timers.push(t1);
     }
   }
   function finalizeMove(id, color, mv) {

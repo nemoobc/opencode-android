@@ -46,6 +46,8 @@ function resetStream() {
   sandbox.window._gotDelta = false;
   sandbox.window._flushAt = 0;
   sandbox.window._fileN = 0;
+  sandbox.window._tskip = 0;
+  sandbox.window._ff = false;
   sandbox.busy = false;
   // Clear chat
   sandbox.document.getElementById('chat').innerHTML = '';
@@ -249,8 +251,27 @@ test('timeout shows friendly message', () => {
   assert.ok(text.includes('lambat') || text.includes('timeout'), 'should show timeout message, got: ' + text);
 });
 
-// --- setProgress ---
-console.log('\nsetProgress():');
+// --- typewriter punctuation ---
+console.log('\ntypewriter punctuation:');
+test('comma pauses 2 ticks', () => {
+  resetStream();
+  appendOut('ab,');
+  sandbox.window._tickTyper();
+  assert.equal(sandbox.window._tskip, 2);
+});
+test('period pauses 4 ticks', () => {
+  resetStream();
+  appendOut('ab.');
+  sandbox.window._tickTyper();
+  assert.equal(sandbox.window._tskip, 4);
+});
+test('flushStream clears skip', () => {
+  resetStream();
+  appendOut('ab,');
+  sandbox.window._tickTyper();
+  flushStream();
+  assert.equal(sandbox.window._tskip, 0);
+});
 test('updates pnum text', () => {
   setProgress(42);
   assert.equal(sandbox.document.getElementById('pnum').textContent, '42 / 528 file • 8%');

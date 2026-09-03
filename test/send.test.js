@@ -20,7 +20,7 @@ sandbox.Android.copyText = function() {};
 sandbox.Android.openUrl = function() {};
 
 loadScriptsInOrder(sandbox, [
-  'utils.js', 'init.js', 'websearch.js', 'stream.js', 'history.js', 'send.js', 'models.js'
+  'utils.js', 'init.js', 'websearch.js', 'stream.js', 'history.js', 'send.js', 'models.js', 'media.js'
 ]);
 
 const send = sandbox.send;
@@ -180,6 +180,28 @@ test('retryMode skips search', () => {
   sandbox.WebSearch.lastResults = [];
   send('hello', null, null, true);
   assert.ok(sandbox.WebSearch.lastResults.length === 0, 'should have no search results');
+});
+test('search shows status bubble with query', () => {
+  resetState();
+  sandbox.WebSearch.enabled = true;
+  sandbox.WebSearch.search = function() { return new Promise(function() {}); }; // never resolves
+  send('search for something long enough here');
+  const st = sandbox.document.querySelector('#chat .status');
+  assert.ok(st, 'status bubble exists');
+  assert.ok(st.textContent.includes('Mencari'), 'says searching');
+  assert.ok(st.textContent.includes('something long enough'), 'shows sanitized query');
+  clearInterval(sandbox.window._swTimer);
+  st.remove();
+});
+test('search replaces old status bubble', () => {
+  resetState();
+  sandbox.WebSearch.enabled = true;
+  sandbox.WebSearch.search = function() { return new Promise(function() {}); };
+  send('first search query long enough');
+  send('second search query long enough');
+  assert.equal(sandbox.document.querySelectorAll('#chat .status').length, 1, 'only one bubble');
+  clearInterval(sandbox.window._swTimer);
+  sandbox.document.getElementById('chat').innerHTML = '';
 });
 
 // --- doSend internals (via send) ---

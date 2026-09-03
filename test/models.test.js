@@ -7,7 +7,7 @@ import { createSandbox, loadScriptsInOrder } from './setup.js';
 
 const { dom, window, sandbox } = createSandbox();
 
-loadScriptsInOrder(sandbox, ['utils.js', 'init.js', 'websearch.js', 'stream.js', 'history.js', 'send.js', 'models.js']);
+loadScriptsInOrder(sandbox, ['utils.js', 'init.js', 'websearch.js', 'stream.js', 'history.js', 'send.js', 'models.js', 'media.js']);
 
 const MODELS = sandbox.MODELS;
 const modelName = sandbox.modelName;

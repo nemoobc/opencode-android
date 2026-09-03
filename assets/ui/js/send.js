@@ -20,20 +20,55 @@ function send(t, label, imgPrev, retryMode) {
   userHold = false;
   document.getElementById('down').classList.remove('show');
   window._flushAt = 0;
+  window._tskip = 0;
+  clearInterval(window._swTimer);
+
+  /* AI gambar: "buatkan gambar ..." → langsung generate, tanpa LLM */
+  if (!imgPrev && !retryMode && Media.imgRequest(t)) {
+    doImage(t, label);
+    return;
+  }
+  /* AI file: "buatkan file ..." → tanya dulu: chat atau file? */
+  if (!imgPrev && !retryMode && Media.fileRequest(t)) {
+    askFileMode(label || t);
+    return;
+  }
 
   /* determine if we should search */
   var shouldSearch = WebSearch.enabled && !imgPrev && !retryMode && t.length > 5;
   var searchQuery = shouldSearch ? WebSearch.sanitizeQuery(t) : null;
 
   if (searchQuery) {
-    /* show searching indicator in hint */
-    document.getElementById('hint').innerHTML = '<svg class="spin" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC84" stroke-width="2.5" style="vertical-align:-1px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Mencari: <b>' + esc(searchQuery) + '</b> <span class="dots"><i></i><i></i><i></i></span>';
+    /* bubble status DI CHAT (bukan hint kecil): spinner + query + detik.
+       morph jadi hasil → fade → doSend. */
+    var oldSt = chat.querySelector('.status');
+    if (oldSt) oldSt.remove();
+    clearInterval(window._swTimer);
+    var st = document.createElement('div');
+    st.className = 'status';
+    st.innerHTML = '<span class="spin"></span><span>🌐 Mencari <b>"' + esc(searchQuery) + '"</b> • <span class="sws">0</span> dtk</span>';
+    chat.appendChild(st);
+    follow();
     document.getElementById('dot').className = 'work';
+    var t0 = Date.now();
+    window._swTimer = setInterval(function() {
+      var se = st.querySelector('.sws');
+      if (se && se.isConnected) se.textContent = Math.floor((Date.now() - t0) / 1000);
+      else clearInterval(window._swTimer);
+    }, 1000);
 
     WebSearch.search(searchQuery).then(function(results) {
+      clearInterval(window._swTimer);
       WebSearch.lastResults = results;
-      document.getElementById('hint').textContent = '';
-      doSend(t, label, imgPrev, retryMode, results);
+      var dt = ((Date.now() - t0) / 1000).toFixed(1);
+      st.innerHTML = '<span>📖 ' + results.length + ' sumber • ' + dt + ' dtk</span>';
+      setTimeout(function() {
+        st.style.transition = 'opacity .3s';
+        st.style.opacity = '0';
+        setTimeout(function() { if (st.parentNode) st.parentNode.removeChild(st); }, 320);
+        document.getElementById('hint').textContent = '';
+        doSend(t, label, imgPrev, retryMode, results);
+      }, 700);
     });
   } else {
     WebSearch.lastResults = [];
@@ -94,6 +129,7 @@ function doSend(t, label, imgPrev, retryMode, searchResults) {
 function forceStop() {
   clearTimeout(window._cw);
   if (typeof stopTyper === 'function') stopTyper();
+  window._fileMode = null;
   if (window._done || !busy) return;
   window._done = true;
   busy = false;

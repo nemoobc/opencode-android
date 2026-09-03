@@ -1,7 +1,8 @@
 /* ===== chat ===== */
 #chatwrap { flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; background:radial-gradient(600px 400px at 50% -10%, var(--surface) 0%, transparent 60%), var(--bg); }
-#chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; overflow-x:hidden; }
-.msg { margin:18px 0; animation:rise .3s ease-out; }
+#chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; overflow-x:hidden; display:flex; flex-direction:column; }
+#chat .msg { width:100%; }
+.msg { margin:9px 0; animation:rise .3s ease-out; }
 @keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 .msg.user { display:flex; flex-direction:column; align-items:flex-end; }
 .msg.user .body {
@@ -68,6 +69,23 @@
 .md img { max-width:100%; height:auto; max-height:340px; object-fit:contain; border-radius:12px; background:var(--surface); }
 .md hr { border:none; border-top:1px solid var(--input-bg); margin:16px 0; }
 .md strong { color:var(--card-text); }
+.md b.cite { color:#E8D9A0; }
+.md b.cite.hl { animation:citeHl 1.8s ease-out 2; border-radius:4px; }
+@keyframes citeHl { 0%,100% { background:none; } 30% { background:#C9A22755; } }
+.honest { margin-top:8px; font-size:12px; color:var(--muted); font-style:italic; }
+/* ===== AI gambar & file ===== */
+.aimg { max-width:100%; height:auto; border-radius:14px; border:1px solid var(--surface-border); background:var(--surface); }
+.imgskeleton { width:100%; max-width:320px; aspect-ratio:1; border-radius:14px; background:linear-gradient(100deg,var(--surface) 30%,var(--input-bg) 50%,var(--surface) 70%); background-size:200% 100%; animation:skShimmer 1.2s linear infinite; }
+@keyframes skShimmer { to { background-position:-200% 0; } }
+.fchoice { background:var(--surface); border:1px solid var(--surface-border); border-radius:14px; padding:14px; }
+.fchoice-q { font-size:14px; font-weight:600; margin-bottom:10px; }
+.fchoice-btns { display:flex; gap:8px; }
+.fchoice-btns button { flex:1; padding:12px 8px; border-radius:12px; border:1px solid var(--surface-border); background:var(--bg); color:var(--text); font-size:13px; font-weight:600; }
+.fchoice-btns button:active { transform:scale(.96); border-color:var(--accent); }
+.fcard { background:var(--surface); border:1px solid var(--surface-border); border-radius:14px; padding:14px; }
+.fcard .fname { font-size:15px; font-weight:700; }
+.fcard .fmeta { font-size:12px; color:var(--muted); margin:4px 0 10px; }
+.fcard .mact { margin-top:2px; }
 .md table { border-collapse:collapse; margin:10px 0 14px; font-size:13.5px; display:block; overflow-x:auto; max-width:100%; }
 .md th,.md td { border:1px solid var(--card-border); padding:7px 11px; text-align:left; }
 .md th { background:var(--card-bg); color:var(--card-text); font-weight:600; }

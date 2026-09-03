@@ -5,19 +5,12 @@
 .gopt:active { transform:scale(.95); border-color:var(--accent)88; background:var(--surface); }
 .gopt:active .gicon svg { animation:wiggle .35s ease; }
 @keyframes wiggle { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-10deg) scale(1.1); } 60% { transform:rotate(8deg) scale(1.05); } }
-#mgames.show .gopt { animation:goIn .4s cubic-bezier(.2,.9,.3,1.2) backwards; }
-#mgames.show .gopt:nth-child(2) { animation-delay:.06s; }
-#mgames.show .gopt:nth-child(3) { animation-delay:.12s; }
-#mgames.show .gopt:nth-child(4) { animation-delay:.18s; }
-@keyframes goIn { from { opacity:0; transform:translateY(16px) scale(.9); } to { opacity:1; transform:none; } }
+
 #gstage { animation:stageIn .25s ease-out; }
 @keyframes stageIn { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:none; } }
 .gpanel .big { animation:goIn .35s cubic-bezier(.2,.9,.3,1.2) backwards; }
-.gicon svg { width:46px; height:46px; display:block; animation:floaty 3s ease-in-out infinite; }
-#mgames.show .gopt:nth-child(2) .gicon svg { animation-delay:.4s; }
-#mgames.show .gopt:nth-child(3) .gicon svg { animation-delay:.8s; }
-#mgames.show .gopt:nth-child(4) .gicon svg { animation-delay:1.2s; }
-@keyframes floaty { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+.gicon svg { width:46px; height:46px; display:block; }
+@keyframes goIn { from { opacity:0; transform:translateY(16px) scale(.9); } to { opacity:1; transform:none; } }
 .gname { font-size:14px; font-weight:600; }
 .gbest { font-size:11px; color:var(--muted); min-height:14px; }
 .gbest.has { color:#E8D9A0; font-weight:700; }
@@ -149,16 +142,18 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .luturn { display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; }
 .ludot { width:12px; height:12px; border-radius:50%; }
 .luboard { position:relative; width:min(92vw,360px); height:min(92vw,360px); }
-.lugrid { display:grid; grid-template-columns:repeat(15,1fr); grid-template-rows:repeat(15,1fr); width:100%; height:100%; border:2px solid var(--surface-border); border-radius:10px; overflow:hidden; background:var(--bg); }
-.lucell { border:.5px solid #ffffff10; }
-.lucell.baseR { background:#E08A7B26; } .lucell.baseG { background:#3DDC8426; }
-.lucell.baseY { background:#E8D9A026; } .lucell.baseB { background:#6EC6FF26; }
-.lucell.homeR { background:#E08A7B55; } .lucell.homeG { background:#3DDC8455; }
-.lucell.homeY { background:#E8D9A055; } .lucell.homeB { background:#6EC6FF55; }
-.lucell.safe { background:#ffffff14; position:relative; }
-.lucell.safe::after { content:"★"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:8px; color:#E8D9A0; }
-.lucell.homestartR { background:#E08A7B; } .lucell.homestartG { background:#3DDC84; }
-.lucell.homestartY { background:#E8D9A0; } .lucell.homestartB { background:#6EC6FF; }
+.lugrid { display:grid; grid-template-columns:repeat(15,1fr); grid-template-rows:repeat(15,1fr); width:100%; height:100%; border:3px solid #C9A227; border-radius:10px; overflow:hidden; background:#F6F1E3; box-shadow:0 0 0 1px #7a6414, 0 4px 18px #000a; }
+.lucell { border:.5px solid #00000020; }
+.lucell.baseR { background:#E0514A; } .lucell.baseG { background:#2FBF71; }
+.lucell.baseY { background:#E8C93A; } .lucell.baseB { background:#3FA7E8; }
+.lucell.yard { background:#FFFFFF; }
+.lucell.homeR { background:#E0514A; } .lucell.homeG { background:#2FBF71; }
+.lucell.homeY { background:#E8C93A; } .lucell.homeB { background:#3FA7E8; }
+.lucell.safe { background:#E8D9A022; position:relative; }
+.lucell.safe::after { content:"★"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; color:#8a8f98; text-shadow:none; }
+.lutok.inyard { transform:scale(.82); }
+.lucell.homestartR { background:#E0514A; } .lucell.homestartG { background:#2FBF71; }
+.lucell.homestartY { background:#E8C93A; } .lucell.homestartB { background:#3FA7E8; }
 .lucell.homeR::after, .lucell.homeG::after, .lucell.homeY::after, .lucell.homeB::after {
   content:"›"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   font-size:10px; font-weight:700; color:#ffffffAA;
@@ -177,12 +172,14 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .lulog .lg-home { color:#E8D9A0; font-weight:600; }
 .lulog .lg-six { color:#7FCF9F; }
 .crownfall { position:fixed; top:-30px; font-size:22px; z-index:99; pointer-events:none; animation:conFall 2.2s ease-in forwards; }
-.lucell.triR { background:#E08A7B; } .lucell.triG { background:#3DDC84; }
-.lucell.triY { background:#E8D9A0; } .lucell.triB { background:#6EC6FF; }
+.tric { position:absolute; left:40%; top:40%; width:20%; height:20%; background:conic-gradient(from 45deg,#E0514A 0 25%,#E8C93A 0 50%,#3FA7E8 0 75%,#2FBF71 0); pointer-events:none; }
+
 .lutoks { position:absolute; inset:0; pointer-events:none; }
-.lutok { position:absolute; width:6.4%; height:6.4%; margin:-3.2% 0 0 -3.2%; border-radius:50%; border:2px solid #fff8; pointer-events:auto; box-shadow:0 2px 6px #0009; transition:left var(--lud,.3s), top var(--lud,.3s); padding:0; font-size:9px; font-weight:700; color:#fff; line-height:1; }
+.lutok { position:absolute; width:6.6%; height:7.8%; margin:-4.6% 0 0 -3.3%; border-radius:50% 50% 50% 8%; transform:rotate(-45deg); border:2px solid rgba(0,0,0,.3); pointer-events:auto; background:radial-gradient(circle at 38% 30%, #ffffff77 0%, transparent 36%), var(--c,#888); box-shadow:0 3px 7px #000a; transition:left var(--lud,.3s) ease-in-out, top var(--lud,.3s) ease-in-out, margin-top .09s ease-out; padding:0; }
+.lutok.land { animation:landS .2s ease; }
+@keyframes landS { 0% { transform:scale(1,1); } 40% { transform:scale(1.3,.72); } 100% { transform:scale(1,1); } }
 .lutok::before { content:""; position:absolute; inset:-11px; }
-.lutok::after { content:""; position:absolute; left:50%; top:50%; width:30%; height:30%; margin:-15% 0 0 -15%; border-radius:50%; background:#ffffffDD; }
+.lutok::after { content:""; position:absolute; left:50%; top:50%; width:52%; height:52%; margin:-26% 0 0 -26%; border-radius:50%; background:#fff; box-shadow:inset 0 -2px 4px #0003; }
 .lutok.think { animation:tokThink .7s ease-in-out infinite; }
 @keyframes tokThink { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 .luboom { position:absolute; width:10%; height:10%; margin:-5% 0 0 -5%; border-radius:50%; border:3px solid #FFE28A; pointer-events:none; animation:boomGo .5s ease-out forwards; }
@@ -190,13 +187,23 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .lutok.canmove { animation:tokPulse 1s ease-in-out infinite; border-color:#fff; }
 @keyframes tokPulse { 0%,100% { box-shadow:0 0 0 0 #fff6; } 50% { box-shadow:0 0 0 6px #fff0; } }
 .lurow { display:flex; align-items:center; gap:12px; }
-.ludice { width:70px; height:70px; border-radius:16px; background:var(--bg); border:2px solid var(--surface-border); color:var(--text); font-size:42px; line-height:1; }
+.luteams { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; padding:2px 4px; }
+.luteams .tm { display:flex; align-items:center; gap:6px; }
+.lubarbottom { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; background:#16283C; border:1px solid #2c4a6b; border-radius:14px; padding:8px 14px; }
+.lubarbottom .who { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
+#luarrow { text-align:center; color:#E8C93A; font-size:20px; line-height:1; height:22px; animation:arrB 1s ease-in-out infinite; }
+@keyframes arrB { 0%,100% { transform:translateY(0); opacity:1; } 50% { transform:translateY(5px); opacity:.6; } }
+#luarrow.hide { visibility:hidden; }
+.ludice { width:70px; height:70px; border-radius:16px; background:#E8EDF2; border:3px solid #fff; color:#1c2b3a; font-size:42px; line-height:1; box-shadow:0 4px 14px #000a; }
+.ludice .pips i.on { background:#1c2b3a; }
 .ludice.ready { animation:wob 1.2s ease-in-out infinite; border-color:var(--accent)88; }
 @keyframes wob { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
 .luturn.winb { background:linear-gradient(135deg,#5C4A1E,#33290F); border:1px solid #E8D9A0; border-radius:12px; padding:8px 14px; animation:turnSwap .4s ease-out; }
 .ludice:disabled { opacity:.45; }
 .ludice:not(:disabled):active { transform:scale(.92); }
 .ludice.bounce { animation:diceB .45s ease; }
+.ludice.rolling { animation:diceShake .12s linear infinite; }
+@keyframes diceShake { 0% { transform:translate(0,0) rotate(0); } 25% { transform:translate(-2px,1px) rotate(-8deg); } 50% { transform:translate(2px,-1px) rotate(6deg); } 75% { transform:translate(-1px,-2px) rotate(-4deg); } 100% { transform:translate(1px,2px) rotate(3deg); } }
 @keyframes diceB { 0% { transform:scale(1) rotate(0); } 40% { transform:scale(1.18) rotate(10deg); } 70% { transform:scale(.94) rotate(-4deg); } 100% { transform:scale(1) rotate(0); } }
 .lutok.winglow { animation:winTok 1s ease-in-out infinite; border-color:#FFE28A; }
 @keyframes winTok { 0%,100% { box-shadow:0 0 0 0 #FFE28A66; } 50% { box-shadow:0 0 14px 4px #FFE28A88; } }

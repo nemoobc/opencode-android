@@ -130,6 +130,17 @@ test('mdRender unordered list', () => {
   assert.ok(result.includes('item1'));
   assert.ok(result.includes('item2'));
 });
+test('mdRender wraps citations', () => {
+  const result = mdRender('Naik [1] dan [2].');
+  assert.ok(result.includes('<b class="cite hl">[1]</b>'), 'cite wrapped');
+  assert.ok(result.includes('<b class="cite hl">[2]</b>'));
+});
+test('mdRender skips cites in links and code', () => {
+  const link = mdRender('[klik](https://x.com/a)');
+  assert.ok(!link.includes('cite'), 'link attr safe, got: ' + link);
+  const code = mdRender('```js\nvar a = x[1];\n```');
+  assert.ok(!code.includes('cite'), 'code safe');
+});
 test('mdRender ordered list', () => {
   const result = mdRender('1. first\n2. second');
   assert.ok(result.includes('<ol>'), 'should have ol');

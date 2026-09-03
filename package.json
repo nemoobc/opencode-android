@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "for f in assets/ui/js/*.js; do node --check \"$f\" || exit 1; done && echo SYNTAX-OK",
-    "test": "npm run check && node test/utils.test.js && node test/websearch.test.js && node test/models.test.js && node test/history.test.js && node test/stream.test.js && node test/send.test.js && node test/bridge.test.js && node test/init.test.js && node test/games.test.js"
+    "test": "npm run check && node test/utils.test.js && node test/websearch.test.js && node test/models.test.js && node test/history.test.js && node test/stream.test.js && node test/send.test.js && node test/bridge.test.js && node test/init.test.js && node test/games.test.js && node test/media.test.js"
   },
   "dependencies": {
     "jsdom": "^30.0.1"

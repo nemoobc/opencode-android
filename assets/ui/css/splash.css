@@ -80,9 +80,7 @@
 #splash .glow, #ov .glow {
   position:absolute; inset:-56px; border-radius:50%;
   background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%);
-  animation:breathe 2.6s ease-in-out infinite;
 }
-@keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
 #splash .mark { width:112px; height:112px; position:relative; }
 #splash .frm path {
   stroke-dasharray:600; stroke-dashoffset:600;

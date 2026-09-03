@@ -28,8 +28,9 @@ function send(t, label, imgPrev, retryMode) {
     doImage(t, label);
     return;
   }
-  /* AI file: "buatkan file ..." → tanya dulu: chat atau file? */
-  if (!imgPrev && !retryMode && Media.fileRequest(t)) {
+  /* AI file: "buatkan file ..." → tanya dulu: chat atau file?
+     (skip kalau _fileMode sudah dipilih — cegah loop tanya) */
+  if (!imgPrev && !retryMode && !window._fileMode && Media.fileRequest(t)) {
     askFileMode(label || t);
     return;
   }

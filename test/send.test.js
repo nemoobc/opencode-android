@@ -203,6 +203,16 @@ test('search replaces old status bubble', () => {
   clearInterval(sandbox.window._swTimer);
   sandbox.document.getElementById('chat').innerHTML = '';
 });
+test('file choice does not loop on enriched send', () => {
+  resetState();
+  sandbox.WebSearch.enabled = false;
+  send('buatkan file kode python ya');
+  assert.ok(sandbox.document.querySelector('.fchoice'), 'choice shown');
+  sandbox.window._pickMode('file');
+  assert.equal(sandbox.window._pendingPrompt, null, 'choice consumed');
+  assert.ok(sandbox.window._fileMode, 'file mode set');
+  assert.ok((sandbox.window._lastPrompt || '').includes('[OUTPUT HANYA'), 'enriched sent, no re-ask');
+});
 
 // --- doSend internals (via send) ---
 console.log('\ndoSend():');

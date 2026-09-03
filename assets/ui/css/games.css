@@ -1,4 +1,4 @@
-/* ===== games.css — menu + ular + quiz + puzzle + ludo ===== */
+/* ===== games.css — menu + tebak + quiz + puzzle + ludo + tic ===== */
 .gcard { max-width:560px; }
 .ggrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 4px; }
 .gopt { display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 10px 14px; background:var(--bg); border:1px solid var(--surface-border); border-radius:16px; color:var(--card-text); text-align:center; transition:transform .12s, border-color .2s, background .15s; }
@@ -26,22 +26,6 @@
 .gbtn { background:linear-gradient(135deg,var(--accent),#2BC474); border:none; color:var(--bg); font-weight:700; font-size:14px; padding:12px 26px; border-radius:13px; box-shadow:0 4px 16px var(--accent)33; }
 .gbtn:active { transform:scale(.96); }
 .gbtn.ghost2 { background:none; border:1px solid var(--input-border); color:var(--muted2); box-shadow:none; margin-left:8px; }
-
-/* ===== ular ===== */
-#snk { background:#08110C; border:1px solid var(--surface-border); border-radius:14px; touch-action:none; max-width:100%; }
-#snk.dead { animation:snkDie .65s ease; }
-#snk.zoom { transform:scale(1.06); transition:transform .6s ease; }
-@keyframes snkDie { 0% { filter:none; } 30% { filter:sepia(1) saturate(5) hue-rotate(-50deg); } 60% { transform:translateX(-6px); } 80% { transform:translateX(5px); } 100% { transform:none; filter:none; } }
-#gscore.pop { display:inline-block; animation:scorePop .3s ease; }
-@keyframes scorePop { 40% { transform:scale(1.4); color:var(--accent); } }
-.dpad { display:grid; grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,52px); gap:6px; justify-content:center; }
-.dpad button { background:var(--surface); border:1px solid var(--surface-border); color:var(--text); border-radius:50%; font-size:18px; width:52px; height:52px; transition:transform .1s; }
-.dpad button:active { background:var(--accent)33; transform:scale(.88); }
-.dpad button.on { background:var(--accent)44; border-color:var(--accent); }
-.dpad .du { grid-column:2; grid-row:1; }
-.dpad .dl { grid-column:1; grid-row:2; }
-.dpad .dd { grid-column:2; grid-row:2; }
-.dpad .dr { grid-column:3; grid-row:2; }
 
 /* ===== quiz ===== */
 .qprog { font-size:12px; color:var(--muted); }
@@ -114,6 +98,18 @@
 .pztile.ok { border-color:var(--accent)66; color:#7FCF9F; }
 .pztile.hole { background:transparent; border:1px dashed var(--input-border); }
 .pzmeta { display:flex; gap:16px; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ===== tebak kata (colorful) ===== */
+.tkcard { width:100%; background:var(--bg); border:2px solid; border-radius:16px; padding:18px 14px; text-align:center; animation:qIn .3s ease-out; }
+.tkq { font-size:17px; font-weight:700; line-height:1.55; }
+.tkquip { font-size:12px; color:var(--muted); font-style:italic; margin-top:8px; }
+.tkhint { font-size:15px; color:#E8D9A0; letter-spacing:3px; margin-top:10px; min-height:20px; font-weight:700; font-variant-numeric:tabular-nums; }
+.tkin { width:100%; background:var(--bg); border:1px solid var(--surface-border); color:var(--text); border-radius:13px; padding:13px 14px; font-size:15px; outline:none; font-family:inherit; }
+.tkin:focus { border-color:var(--accent)88; box-shadow:0 0 0 3px var(--accent)15; }
+.tkin.shakex { animation:shake .4s ease; border-color:var(--error); }
+.tkrow { display:flex; gap:8px; width:100%; }
+.tkrow .gbtn { flex:1; padding:12px 6px; font-size:13px; }
+.tkrow .ghost2 { flex:0.8; }
 
 /* ===== tictactoe ===== */
 .tstatus { font-size:14px; font-weight:600; min-height:20px; }

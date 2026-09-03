@@ -40,8 +40,8 @@ function refreshGBest() {
     if (has) e.classList.add('has');
     else e.classList.remove('has');
   };
-  var sn = parseInt(gbestGet('g-snake-best', '0'), 10) || 0;
-  set('gb-snake', sn > 0 ? 'Terbaik: ' + sn : 'Belum main', sn > 0);
+  var tk = parseInt(gbestGet('g-tebak-best', '0'), 10) || 0;
+  set('gb-tebak', tk > 0 ? 'Terbaik: ' + tk : 'Belum main', tk > 0);
   var qz = parseInt(gbestGet('g-quiz-best', '0'), 10) || 0;
   set('gb-quiz', qz > 0 ? 'Terbaik: ' + qz : 'Belum main', qz > 0);
   var pm = gbestGet('g-puz-best', '');

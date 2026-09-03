@@ -196,6 +196,17 @@ else
 fi
 echo "  TIPS: copy Documents/opencode-keystore/ks.jks ke Drive/PC. Hilang = update bentrok permanen."
 
+# DEV GATE: tanam hash license.key (bukan password!) ke assets.
+# Gerbang developer cocokkan sha256 file pilihan user dgn hash ini.
+# File devkey.txt diregenerate tiap build, TIDAK di-commit.
+if [ -f "license.key" ]; then
+    LK_FP="$(sha256sum license.key 2>/dev/null | cut -d' ' -f1 || openssl dgst -sha256 license.key 2>/dev/null | awk '{print $NF}')"
+    if [ -n "$LK_FP" ]; then
+        printf '%s' "$LK_FP" > assets/ui/devkey.txt
+        echo "  devkey tertanam (hash only)"
+    fi
+fi
+
 # PENGAMAN: pastikan key = key APK yang sudah terpasang/rilis.
 # Kalau beda, GAGALKAN build — jangan hasilkan APK bentrok diam-diam.
 cert_fp_ks() {

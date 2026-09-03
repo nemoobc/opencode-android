@@ -59,6 +59,12 @@ const HTML = `<!DOCTYPE html>
   <div id="down"></div>
   <div id="toast"></div>
   <div id="scrim"></div>
+  <button id="bnotif">🔔<span id="ndot"></span></button>
+  <div class="modal" id="mnotif"><div class="card"><div id="nlist"></div><button id="nclose">✕</button></div></div>
+  <div class="modal" id="mdev"><div class="card">
+    <div id="dev-lock"><p id="dev-msg"></p><button id="dev-pick">Pilih</button><button id="dev-close">✕</button></div>
+    <div id="dev-panel" style="display:none"><p id="dev-info"></p><p id="dev-notif"></p><button id="dev-refresh">R</button><button id="dev-close2">✕</button></div>
+  </div></div>
   <div id="drawer">
     <div class="d-head"><div class="mark"></div><div><b>OpenCode</b><span id="dver">v1.6.1</span></div></div>
     <div class="d-body">
@@ -156,7 +162,7 @@ const HTML = `<!DOCTYPE html>
       <div id="gmenu">
         <h3>GAME</h3>
         <div class="ggrid">
-          <button class="gopt" data-g="snake"><span class="gname">Ular</span><span class="gbest" id="gb-snake"></span></button>
+          <button class="gopt" data-g="tebak"><span class="gname">Tebak Kata</span><span class="gbest" id="gb-tebak"></span></button>
           <button class="gopt" data-g="quiz"><span class="gname">Quiz Otak</span><span class="gbest" id="gb-quiz"></span></button>
           <button class="gopt" data-g="puzzle"><span class="gname">Puzzle</span><span class="gbest" id="gb-puzzle"></span></button>
           <button class="gopt" data-g="ludo"><span class="gname">Ludo</span><span class="gbest" id="gb-ludo"></span></button>

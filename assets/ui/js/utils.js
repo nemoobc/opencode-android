@@ -125,8 +125,14 @@ function addNote(txt, isErr, canRetry) {
   scrollEnd();
 }
 function addActions(body, plain) {
-  /* don't add duplicate actions */
-  if (body.parentNode && body.parentNode.querySelector('.mact')) return;
+  /* GANTI tombol lama (jangan skip): tombol lama disabled permanen setelah
+     "Tanya lagi" diklik (bug: cuma bisa sekali). Selalu render fresh.
+     Cari descendant (bukan direct child) karena sources-append bisa
+     membungkus .mact lama ke dalam .md. */
+  if (body.parentNode) {
+    var olds = body.parentNode.querySelectorAll('.mact');
+    for (var i = 0; i < olds.length; i++) olds[i].remove();
+  }
   var d = document.createElement('div');
   d.className = 'mact';
   var b = document.createElement('button');

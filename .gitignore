@@ -14,3 +14,4 @@ autodev-*.md
 __pycache__/
 
 license.key
+assets/ui/devkey.txt

@@ -89,7 +89,7 @@
     <div><b>OpenCode</b></div>
   </div>
   <div class="d-body">
-    <button class="d-item primary" id="dnew"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12.5" height="10.5" rx="3.5"/><path d="M6.5 14.5V19l4-4"/><line x1="18.6" y1="13.4" x2="18.6" y2="20.4"/><line x1="15.1" y1="16.9" x2="22.1" y2="16.9"/></svg></span> Obrolan Baru</button>
+    <button class="d-item primary" id="dnew"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="12.5" height="10.5" rx="4"/><path d="M6 14.5v4l4.2-4"/><line x1="18.8" y1="13" x2="18.8" y2="20"/><line x1="15.3" y1="16.5" x2="22.3" y2="16.5"/></svg></span> Obrolan Baru</button>
     <div class="d-sep">RIWAYAT</div>
     <div id="hlist"></div>
     <button class="d-item" id="dconfig"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="#3DDC84"/><circle cx="16" cy="12" r="2" fill="#3DDC84"/><circle cx="10" cy="18" r="2" fill="#3DDC84"/></svg></span> Konfigurasi</button>
@@ -107,8 +107,9 @@
   <button class="hbtn" id="bmenu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <button id="mchip"><div id="dot"></div><span class="lbl" id="mname">Muse Spark</span><span class="car"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
   <div class="spacer"></div>
+  <button class="hbtn" id="bnotif" title="Pengumuman"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="ndot" id="ndot"></span></button>
   <button class="hbtn" id="blang" title="Bahasa balasan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2v3"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg></button>
-  <button class="hbtn" id="bnew" title="Obrolan Baru"><!-- ikon: inspired by "New Chat", Noun Project --><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12.5" height="10.5" rx="3.5"/><path d="M6.5 14.5V19l4-4"/><line x1="18.6" y1="13.4" x2="18.6" y2="20.4"/><line x1="15.1" y1="16.9" x2="22.1" y2="16.9"/></svg></button>
+  <button class="hbtn" id="bnew" title="Obrolan Baru"><!-- ikon: inspired by "New Chat", Noun Project --><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="12.5" height="10.5" rx="4"/><path d="M6 14.5v4l4.2-4"/><line x1="18.8" y1="13" x2="18.8" y2="20"/><line x1="15.3" y1="16.5" x2="22.3" y2="16.5"/></svg></button>
 </header>
 
 <div id="ubanner"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#E8D9A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Update Tersedia: <b id="utag"></b><button id="ubtn">LIHAT</button></div>
@@ -214,6 +215,34 @@
   <button id="ovretry">Coba Lagi</button>
 </div>
 
+<div class="modal" id="mnotif">
+  <div class="card">
+    <h3>PENGUMUMAN</h3>
+    <div id="nlist"></div>
+    <div class="acts"><button class="bb ghost" id="nclose">Tutup</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mdev">
+  <div class="card">
+    <div id="dev-lock">
+      <h3>TERKUNCI</h3>
+      <p class="hint">Area developer. Pilih file <b>license.key</b> untuk membuka sesi ini.</p>
+      <div class="acts"><button class="bb" id="dev-pick">Pilih file</button><button class="bb ghost" id="dev-close">Tutup</button></div>
+      <p class="hint" id="dev-msg"></p>
+    </div>
+    <div id="dev-panel" style="display:none">
+      <h3>DEVELOPER</h3>
+      <label>App</label>
+      <p class="hint" id="dev-info"></p>
+      <label>Notifikasi remote</label>
+      <p class="hint" id="dev-notif"></p>
+      <div class="acts"><button class="bb ghost" id="dev-refresh">Refresh notif</button><button class="bb ghost" id="dev-close2">Tutup</button></div>
+      <p class="hint">Kirim pengumuman: edit <b>notifications.json</b> di repo → push. App fetch saat dibuka.</p>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="mmodel">
   <div class="card">
     <h3>PILIH MODEL</h3>
@@ -230,7 +259,7 @@
       <h3>GAME</h3>
       <div class="gsub">pilih 1 buat main</div>
       <div class="ggrid">
-        <button class="gopt" data-g="snake"><span class="gicon"><svg viewBox="0 0 48 48" fill="none" stroke="#3DDC84" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 34c6 0 6-8 12-8s6 8 12 8 6-8 8-8"/><circle cx="42" cy="26" r="4" fill="#3DDC84" stroke="none"/><circle cx="43.5" cy="25" r="1.2" fill="#0C100E" stroke="none"/></svg></span><span class="gname">Ular</span><span class="gbest" id="gb-snake"></span></button>
+        <button class="gopt" data-g="tebak"><span class="gicon"><svg viewBox="0 0 48 48" fill="none" stroke="#E8A05D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h32v20H20l-8 8v-8H8z" transform="translate(0,2)"/><text x="24" y="31" font-size="13" font-weight="700" fill="#E8A05D" stroke="none" text-anchor="middle">?</text></svg></span><span class="gname">Tebak Kata</span><span class="gbest" id="gb-tebak"></span></button>
         <button class="gopt" data-g="quiz"><span class="gicon"><svg viewBox="0 0 48 48" fill="none" stroke="#6EC6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="17"/><path d="M18.5 19.5a5.5 5.5 0 0 1 10.6 1.5c0 3.5-5 4-5 7"/><circle cx="24.2" cy="33" r=".8" fill="#6EC6FF"/></svg></span><span class="gname">Quiz Otak</span><span class="gbest" id="gb-quiz"></span></button>
         <button class="gopt" data-g="puzzle"><span class="gicon"><svg viewBox="0 0 48 48" fill="none" stroke="#C9A227" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="3"/><rect x="26" y="9" width="13" height="13" rx="3"/><rect x="9" y="26" width="13" height="13" rx="3"/><rect x="26" y="26" width="13" height="13" rx="3" fill="#C9A227" stroke="none" opacity=".8"/></svg></span><span class="gname">Puzzle</span><span class="gbest" id="gb-puzzle"></span></button>
         <button class="gopt" data-g="ludo"><span class="gicon"><svg viewBox="0 0 48 48" fill="none" stroke="#E08A7B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="30" height="30" rx="7"/><circle cx="18" cy="18" r="2.4" fill="#E08A7B" stroke="none"/><circle cx="30" cy="18" r="2.4" fill="#E08A7B" stroke="none"/><circle cx="24" cy="24" r="2.4" fill="#E08A7B" stroke="none"/><circle cx="18" cy="30" r="2.4" fill="#E08A7B" stroke="none"/><circle cx="30" cy="30" r="2.4" fill="#E08A7B" stroke="none"/></svg></span><span class="gname">Ludo</span><span class="gbest" id="gb-ludo"></span></button>
@@ -366,8 +395,10 @@
 <script src="js/media.js"></script>
 <script src="js/history.js"></script>
 <script src="js/models.js"></script>
+<script src="js/notif.js"></script>
+<script src="js/dev.js"></script>
 <script src="js/games.js"></script>
-<script src="js/g-snake.js"></script>
+<script src="js/g-tebak.js"></script>
 <script src="js/g-quiz.js"></script>
 <script src="js/g-puzzle.js"></script>
 <script src="js/g-ludo.js"></script>

@@ -1598,6 +1598,28 @@ public class MainActivity extends Activity {
             }
         }
 
+        /* Baca file TEKS kecil (max 8KB) — KHUSUS gerbang developer
+           (verifikasi license.key). Bukan API umum. */
+        @JavascriptInterface
+        public String readTextFile(String path) {
+            try {
+                File f = new File(path);
+                if (!f.exists() || !f.isFile() || f.length() > 8192) return null;
+                byte[] b = new byte[(int) f.length()];
+                try (java.io.FileInputStream fin = new java.io.FileInputStream(f)) {
+                    int off = 0;
+                    while (off < b.length) {
+                        int r = fin.read(b, off, b.length - off);
+                        if (r < 0) break;
+                        off += r;
+                    }
+                }
+                return new String(b, StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
         @JavascriptInterface
         public void saveConfig(String provider, String key, String model) {
             try {

@@ -208,10 +208,51 @@ test('file choice does not loop on enriched send', () => {
   sandbox.WebSearch.enabled = false;
   send('buatkan file kode python ya');
   assert.ok(sandbox.document.querySelector('.fchoice'), 'choice shown');
+  const usersBefore = sandbox.document.querySelectorAll('.msg.user').length;
   sandbox.window._pickMode('file');
   assert.equal(sandbox.window._pendingPrompt, null, 'choice consumed');
   assert.ok(sandbox.window._fileMode, 'file mode set');
-  assert.ok((sandbox.window._lastPrompt || '').includes('[OUTPUT HANYA'), 'enriched sent, no re-ask');
+  assert.equal(sandbox.document.querySelectorAll('.msg.user').length, usersBefore, 'no duplicate user bubble');
+  const lastUser = sandbox.document.querySelectorAll('.msg.user');
+  const txt = lastUser[lastUser.length - 1].textContent;
+  assert.ok(txt.indexOf('[OUTPUT HANYA') < 0, 'enriched hidden, got: ' + txt.slice(0, 60));
+  assert.ok(!sandbox.document.querySelector('.fchoice'), 'no re-ask');
+});
+test('chat choice proceeds without loop or dup', () => {
+  resetState();
+  sandbox.WebSearch.enabled = false;
+  send('buatkan file kode python ya');
+  const usersBefore = sandbox.document.querySelectorAll('.msg.user').length;
+  sandbox.window._pickMode('chat');
+  assert.equal(sandbox.document.querySelectorAll('.msg.user').length, usersBefore, 'no duplicate');
+  assert.ok(!sandbox.document.querySelector('.fchoice'), 'choice gone, no re-ask');
+});
+test('retry replaces actions (buttons stay usable)', () => {
+  resetState();
+  sandbox.WebSearch.enabled = false;
+  send('answer one two three four five');
+  const ao = sandbox.window.appendOut;
+  ao('ini jawaban pertama yang cukup panjang');
+  sandbox.window._tickTyper();
+  sandbox.window._tickTyper();
+  sandbox.window.onDone(0);
+  for (let i = 0; i < 200 && sandbox.window._cur; i++) sandbox.window._tickTyper();
+  let macts = sandbox.document.querySelectorAll('.mact');
+  assert.equal(macts.length, 1, 'one actions row, got ' + macts.length);
+  // simulasi klik Tanya lagi: disable (bug lama) lalu retry
+  const btns = macts[0].querySelectorAll('button');
+  btns.forEach((b) => { b.disabled = true; });
+  sandbox.busy = false; sandbox.window._done = false;
+  send('answer one two three four five', null, null, true);
+  ao('ini jawaban kedua yang juga panjang');
+  sandbox.window._tickTyper();
+  sandbox.window.onDone(0);
+  for (let i = 0; i < 200 && sandbox.window._cur; i++) sandbox.window._tickTyper();
+  macts = sandbox.document.querySelectorAll('.mact');
+  assert.equal(macts.length, 1, 'still one row, got ' + macts.length);
+  const fresh = macts[0].querySelectorAll('button');
+  assert.ok(fresh.length >= 1, 'has buttons');
+  fresh.forEach((b) => assert.equal(b.disabled, false, 'button enabled'));
 });
 
 // --- doSend internals (via send) ---

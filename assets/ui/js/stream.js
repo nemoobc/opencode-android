@@ -10,13 +10,12 @@ window.appendOut = function(t) {
     window._rend = '';
     var body = addMsg('ai');
     body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
-    body.classList.add('caret');
     body.classList.add('plain');
     window._cur = body;
   } else if (!window._gotDelta) {
-    /* first delta: replace thinking animation with typing dots */
+    /* first delta: replace thinking animation with typing dots.
+       TANPA caret (garisnya ganggu) — caret muncul pas teks reveal. */
     window._cur.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
-    window._cur.classList.add('caret');
     window._cur.classList.add('plain');
   }
   window._plain += t;

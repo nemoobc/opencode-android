@@ -10,7 +10,7 @@ bsearchBtn.onclick = function() {
 };
 
 /* send with optional web search */
-function send(t, label, imgPrev, retryMode) {
+function send(t, label, imgPrev, retryMode, noAsk) {
   if (busy || !t) return;
   if (!window._srvOk) {
     addNote('⏳ Server Masih Menyala — Tunggu Sampai Siap, Lalu Kirim Ulang');
@@ -29,8 +29,8 @@ function send(t, label, imgPrev, retryMode) {
     return;
   }
   /* AI file: "buatkan file ..." → tanya dulu: chat atau file?
-     (skip kalau _fileMode sudah dipilih — cegah loop tanya) */
-  if (!imgPrev && !retryMode && !window._fileMode && Media.fileRequest(t)) {
+     (skip kalau _fileMode sudah dipilih / noAsk — cegah loop tanya) */
+  if (!imgPrev && !retryMode && !noAsk && !window._fileMode && Media.fileRequest(t)) {
     askFileMode(label || t);
     return;
   }
@@ -68,21 +68,26 @@ function send(t, label, imgPrev, retryMode) {
         st.style.opacity = '0';
         setTimeout(function() { if (st.parentNode) st.parentNode.removeChild(st); }, 320);
         document.getElementById('hint').textContent = '';
-        doSend(t, label, imgPrev, retryMode, results);
+        doSend(t, label, imgPrev, retryMode, results, noAsk);
       }, 700);
     });
   } else {
     WebSearch.lastResults = [];
-    doSend(t, label, imgPrev, retryMode, null);
+    doSend(t, label, imgPrev, retryMode, null, noAsk);
   }
 }
 
-function doSend(t, label, imgPrev, retryMode, searchResults) {
+function doSend(t, label, imgPrev, retryMode, searchResults, noUser) {
   window._warmingUp = false;  /* reset warm-up suppress saat user kirim pesan */
   var um;
   if (retryMode) {
     var userMsgs = chat.querySelectorAll('.msg.user');
     um = userMsgs.length ? userMsgs[userMsgs.length - 1] : addMsg('user');
+  } else if (noUser) {
+    /* dari pilihan chat/file: bubble user SUDAH ada (askFileMode).
+       Pakai ulang, JANGAN tulis ulang (dulu nimpa + bocorkan enriched). */
+    var ums = chat.querySelectorAll('.msg.user');
+    um = ums.length ? ums[ums.length - 1] : addMsg('user');
   } else {
     um = addMsg('user');
     msgCount++;
@@ -90,7 +95,7 @@ function doSend(t, label, imgPrev, retryMode, searchResults) {
   if (imgPrev) {
     um.innerHTML = '<img class="attimg" src="' + imgPrev + '"><span class="attname">' +
       esc(label || '') + '</span>';
-  } else if (!retryMode) {
+  } else if (!retryMode && !noUser) {
     um.textContent = label || t;
   }
   window._cur = null; window._plain = ''; window._canceling = false; window._done = false; window._aborted = false;

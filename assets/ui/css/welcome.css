@@ -115,3 +115,4 @@
 }
 .search-sources .src-link:active { background:var(--input-bg); }
 .search-sources .src-link b { color:var(--accent2); margin-right:4px; }
+.search-sources .src-fav { width:16px; height:16px; border-radius:4px; vertical-align:-3px; margin-right:6px; background:#fff; }

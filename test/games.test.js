@@ -6,7 +6,7 @@ import { createSandbox, loadScriptsInOrder } from './setup.js';
 
 const { dom, window, sandbox } = createSandbox();
 
-loadScriptsInOrder(sandbox, ['games.js', 'g-snake.js', 'g-quiz.js', 'g-puzzle.js', 'g-ludo.js', 'g-tic.js']);
+loadScriptsInOrder(sandbox, ['games.js', 'g-tebak.js', 'g-quiz.js', 'g-puzzle.js', 'g-ludo.js', 'g-tic.js']);
 
 const Games = sandbox.window.Games;
 
@@ -34,8 +34,8 @@ function eq(a, b, msg) {
 
 // --- shell ---
 console.log('shell:');
-test('registry has 4 games', () => {
-  assert.ok(Games._impl.snake, 'snake');
+test('registry has 5 games', () => {
+  assert.ok(Games._impl.tebak, 'tebak');
   assert.ok(Games._impl.quiz, 'quiz');
   assert.ok(Games._impl.puzzle, 'puzzle');
   assert.ok(Games._impl.ludo, 'ludo');
@@ -54,48 +54,41 @@ test('closeGames hides modal', () => {
 });
 test('best labels render', () => {
   sandbox.openGames();
-  assert.ok(sandbox.document.getElementById('gb-snake').textContent.includes('Belum main'));
-  sandbox.localStorage.setItem('g-snake-best', '120');
+  assert.ok(sandbox.document.getElementById('gb-tebak').textContent.includes('Belum main'));
+  sandbox.localStorage.setItem('g-tebak-best', '120');
   sandbox.openGames();
-  const el = sandbox.document.getElementById('gb-snake');
+  const el = sandbox.document.getElementById('gb-tebak');
   assert.ok(el.textContent.includes('120'));
   assert.ok(el.classList.contains('has'), 'gold class');
-  sandbox.localStorage.removeItem('g-snake-best');
+  sandbox.localStorage.removeItem('g-tebak-best');
   sandbox.closeGames();
 });
 
-// --- snake ---
-console.log('\nsnake:');
-test('advance moves without growing', () => {
-  const s = Games.SNAKE.newState();
-  s.food = [0, 0];
-  const n = s.snake.length;
-  assert.equal(Games.SNAKE.advance(s), 'move');
-  assert.equal(s.snake.length, n);
-  eq(s.snake[0], [6, Math.floor(Games.SNAKE.ROWS / 2)]);
+// --- tebak kata ---
+console.log('\ntebak kata:');
+test('registry tebak', () => {
+  assert.ok(Games._impl.tebak, 'tebak registered');
 });
-test('advance eats food and grows', () => {
-  const s = Games.SNAKE.newState();
-  const h = s.snake[0];
-  s.food = [h[0] + 1, h[1]];
-  const n = s.snake.length;
-  assert.equal(Games.SNAKE.advance(s), 'eat');
-  assert.equal(s.snake.length, n + 1);
-  assert.equal(s.score, 10);
+test('norm strips case/punct', () => {
+  assert.equal(Games.TEBAK.norm('  Beru-Ang! '), 'beruang');
 });
-test('advance dies on wall', () => {
-  const s = Games.SNAKE.newState();
-  s.snake = [[Games.SNAKE.COLS - 1, 5]];
-  s.dir = [1, 0];
-  s.food = [0, 0];
-  assert.equal(Games.SNAKE.advance(s), 'dead');
+test('match exact + fuzzy', () => {
+  assert.ok(Games.TEBAK.match('BERUANG', ['beruang']));
+  assert.ok(Games.TEBAK.match('jawabnya beruang kali', ['beruang']));
+  assert.ok(!Games.TEBAK.match('kucing', ['beruang']));
+  assert.ok(!Games.TEBAK.match('', ['beruang']));
 });
-test('advance rejects opposite direction', () => {
-  const s = Games.SNAKE.newState();
-  s.food = [0, 0];
-  s.queue.push([-1, 0]); // opposite of [1,0]
-  Games.SNAKE.advance(s);
-  eq(s.dir, [1, 0], 'dir unchanged');
+test('mask reveals progressively', () => {
+  assert.equal(Games.TEBAK.mask('beruang', 0), '_ _ _ _ _ _ _  (7 huruf)');
+  assert.equal(Games.TEBAK.mask('beruang', 2), 'b e _ _ _ _ _  (7 huruf)');
+});
+test('bank has 20 valid riddles', () => {
+  const b = Games.TEBAK.BANK;
+  assert.equal(b.length, 20);
+  b.forEach((r, i) => {
+    assert.ok(r.q && r.q.length > 5, 'q' + i);
+    assert.ok(r.a && r.a.length > 0, 'a' + i);
+  });
 });
 
 // --- quiz ---

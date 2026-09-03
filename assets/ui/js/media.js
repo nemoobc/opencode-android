@@ -24,9 +24,10 @@ var Media = (function() {
     s = s.replace(/\s+/g, ' ').trim();
     return s || 'random art';
   }
-  function imgUrl(prompt, seed) {
+  function imgUrl(prompt, seed, size) {
+    var s = size || 512; /* 512 = jauh lebih cepat dari 768 */
     return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) +
-      '?width=768&height=768&nologo=true&seed=' + (seed === undefined ? Math.floor(Math.random() * 100000) : seed);
+      '?width=' + s + '&height=' + s + '&nologo=true&seed=' + (seed === undefined ? Math.floor(Math.random() * 100000) : seed);
   }
 
   /* request file/kode? cth: "buatkan file kode python kalkulator" */
@@ -141,9 +142,9 @@ window._pickMode = function(mode) {
   if (mode === 'file') {
     window._fileMode = { at: Date.now() };
     var enriched = t + '\n\n[OUTPUT HANYA kode mentah dalam 1 blok ```, tanpa penjelasan di luar blok]';
-    send(enriched);
+    send(enriched, null, null, false, true);
   } else {
-    send(t);
+    send(t, null, null, false, true);
   }
 };
 
@@ -158,9 +159,9 @@ function onFileDone(code, plain) {
   var size = Math.round(new Blob([got.code]).size / 1024 * 10) / 10;
   cur.innerHTML = '<div class="fcard"><div class="fname">📄 ' + esc(name) + '</div>' +
     '<div class="fmeta">' + (lang || 'teks') + ' • ' + size + ' KB</div>' +
-    '<div class="mact"><button data-dl>⬇ Unduh</button>' +
-    '<button data-cp>📋 Salin</button>' +
-    '<button data-vw>👁 Lihat</button></div></div>';
+    '<div class="mact"><button data-dl><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="6 11 12 17 18 11"/><path d="M4 21h16"/></svg> Unduh</button>' +
+    '<button data-cp><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin</button>' +
+    '<button data-vw><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> Lihat</button></div></div>';
   cur.querySelector('[data-dl]').onclick = function() { dlFile(name, got.code); };
   cur.querySelector('[data-cp]').onclick = function() {
     Android.copyText(got.code);

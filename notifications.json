@@ -1,0 +1,19 @@
+{
+  "v": 1,
+  "announcements": [
+    {
+      "id": "welcome-1",
+      "date": "2026-09-04",
+      "title": "Selamat datang di OpenCode Android!",
+      "body": "Chat AI lokal tanpa API key. Ketuk ikon lonceng ini kapan saja untuk info terbaru.",
+      "link": ""
+    },
+    {
+      "id": "v161-game",
+      "date": "2026-09-03",
+      "title": "Baru di v1.6.1: 5 Game + AI Gambar + AI File",
+      "body": "Menu Game (Ular diganti Tebak Kata, TicTac baru), AI bisa bikinkan gambar dan kirim file kode. Update dari Releases.",
+      "link": "https://github.com/nemoobc/opencode-android/releases"
+    }
+  ]
+}

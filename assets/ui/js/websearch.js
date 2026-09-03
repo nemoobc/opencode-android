@@ -182,15 +182,24 @@ var WebSearch = (function() {
   /**
    * Build source footer for AI response
    */
+  function favicon(url) {
+    try {
+      var host = String(url || '').split('/')[2] || '';
+      if (!host) return '';
+      return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=64';
+    } catch (e) { return ''; }
+  }
   function buildSourcesHTML() {
     if (!_lastResults.length) return '';
-    /* daftar bernomor vertikal — nomornya nyambung ke sitasi [1][2] di jawaban.
-       data-url (bukan href) supaya tap dibuka via Android.openUrl. */
+    /* tiap sumber tampil LOGO situsnya otomatis (favicon) + nomor */
     var html = '<div class="search-sources"><div class="src-label">🌐 Sumber:</div>';
     for (var i = 0; i < _lastResults.length; i++) {
       var r = _lastResults[i];
       var shortTitle = r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title;
-      html += '<a class="src-link" href="#" data-url="' + esc(r.url) + '"><b>[' + (i + 1) + ']</b> ' + esc(shortTitle) + '</a>';
+      var fav = favicon(r.url);
+      html += '<a class="src-link" href="#" data-url="' + esc(r.url) + '">' +
+        (fav ? '<img class="src-fav" src="' + fav + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+        '<b>[' + (i + 1) + ']</b> ' + esc(shortTitle) + '</a>';
     }
     html += '</div>';
     return html;

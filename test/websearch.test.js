@@ -150,8 +150,8 @@ test('long title is truncated', () => {
   const longTitle = 'A'.repeat(60);
   WebSearch.lastResults = [{ title: longTitle, url: 'https://x.com', snippet: '' }];
   const html = WebSearch.buildSourcesHTML();
-  assert.ok(html.length < longTitle.length + 200); // truncated
-  assert.ok(html.includes('...'));
+  assert.ok(!html.includes(longTitle), 'full title absent');
+  assert.ok(html.includes('...'), 'truncated');
 });
 
 // --- enabled / toggle ---

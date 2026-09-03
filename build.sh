@@ -168,9 +168,10 @@ else
     echo "  skipped (no align tool)"
 fi
 
-# [7/7] sign — keystore TERTANAM di repo (keystore/ks.jks, ikut clone).
-#  Reset Termux / clone baru = langsung build, key SAMA, update selalu timpa.
-#  Shared storage = cadangan kedua otomatis tiap build.
+# [7/7] sign — keystore TIDAK di repo (rahasia).
+#  Urutan cari: keystore/ks.jks (lokal) → shared storage (auto-restore).
+#  Ga ada dua-duanya = bikin BARU (hati2: key baru = user uninstall dulu).
+#  Password dari file license.key (gitignored, jangan commit).
 echo -e "${YELLOW}[7/7] sign...${NC}"
 KS_FILE="keystore/ks.jks"
 KS_SHARED="$HOME/storage/shared/Documents/opencode-keystore/ks.jks"

@@ -39,10 +39,12 @@ Ular, Quiz Otak, Puzzle, dan Ludo lawan CPU.
 | Boot jujur | Progress ekstrak 1–100% beneran, mode animasi pas nyalain server |
 | Markdown rendering | Code block + copy, tabel, list (termasuk •), heading, gambar |
 | File attachment | Lampirkan gambar/file untuk analisis |
+| 🎨 AI Gambar | Minta gambar → AI bikinkan (tanpa API key) |
+| 📄 AI File | Minta kode/file → pilih tampil di chat atau kirim file |
 | Multi-model | 9 model gratis + API key sendiri buat model berbayar |
 | Riwayat lokal | Auto-save, pin, ganti nama, hapus, backup/impor terenkripsi |
 | 3 Tema | Default (Hijau), Putih, Hitam AMOLED |
-| 🎮 Game | Ular, Quiz Otak (15 soal), Puzzle geser, Ludo vs 3 CPU |
+| 🎮 Game | Ular, Quiz Otak (15 soal), Puzzle geser, Ludo vs 3 CPU, TicTac vs CPU |
 | Custom SVG icons | Semua ikon desain sendiri, tanpa emoji tempel |
 
 ---
@@ -89,6 +91,7 @@ Buka ☰ (garis tiga) → **Game**. Skor terbaik tersimpan otomatis di HP.
 | 🧠 Quiz Otak | 15 soal acak, timer 15 detik, streak bonus, grade S–D |
 | 🧩 Puzzle | Geser 3×3 sampai urut, dihitung langkah + waktu |
 | 🎲 Ludo | Kamu (hijau) vs 3 CPU — butuh 6 keluar markas, injak lawan makan, finis harus pas |
+| ⭕ TicTac | Kamu (X) vs CPU (O) — CPU pinter (menang > cegah > tengah) |
 
 ---
 
@@ -129,11 +132,12 @@ opencode-android/
 ├── assets/ui/
 │   ├── index.html
 │   ├── css/ (base, drawer, header, chat, welcome, splash, games)
-│   └── js/ (bridge, websearch, init, utils, stream, send, history,
-│            models, games, g-snake, g-quiz, g-puzzle, g-ludo)
+│   └── js/ (bridge, websearch, init, utils, stream, send, media,
+│            history, models, games, g-snake, g-quiz, g-puzzle,
+│            g-ludo, g-tic)
 ├── assets/payload/rootfs.bin
 ├── jniLibs/arm64-v8a/ (libopencode, libproot, dll)
-├── test/ (245 tests, Node + jsdom)
+├── test/ (270+ tests, Node + jsdom)
 ├── build.sh      # Build full (Java + UI)
 ├── build-ui.sh   # Build UI doang (HTML/JS/CSS)
 └── README.md
@@ -148,25 +152,9 @@ bash build.sh
 # Cuma UI berubah? Lebih cepat:
 bash build-ui.sh
 
-# Varian x86_64 (buat emulator):
+# Varian x86_64:
 OCX_ABI=x86_64 bash build.sh
 ```
-
----
-
-## Test Emulator (GitHub Actions)
-
-Tab **Actions → tes emulator → Run workflow**:
-
-| Input | Fungsi |
-|-------|--------|
-| `live: false` | Auto: install → buka → monkey 500 aksi → kumpulin crash/screenshot/video |
-| `live: true` | + Layar emulator LIVE di browser (bisa tap!) via URL di log |
-| `live_minutes` | Lama sesi live (max 45) |
-
-Hasil (screenshots, video, crash-report, logcat) ada di **Artifacts** (`bukti-emulator`).
-Emulator: API 30 x86_64 ringan (RAM 2GB, tanpa animasi/audio) + APK varian x86_64
-yang dibuild otomatis di CI.
 
 ---
 
@@ -174,7 +162,7 @@ yang dibuild otomatis di CI.
 
 | Versi | Isi |
 |-------|-----|
-| **v1.6.1** | Game (ular/quiz/puzzle/ludo/tictac) · Sitasi web [1][2] · Typewriter · Boot progress jujur |
+| **v1.6.1** | Game ×5 · AI gambar · AI file · Sitasi web [1][2] · Typewriter · Boot progress jujur |
 | v1.6.0 | Timeout realistis, warm-up model, bagikan obrolan |
 | v1.5.3 | Install instan |
 
@@ -189,6 +177,7 @@ yang dibuild otomatis di CI.
 - Binary AI: [OpenCode](https://github.com/anomalyco/opencode)
 - Runtime sandbox: proot (GPLv3) · Rootfs: Alpine Linux
 - Game & UI: kode sendiri, ikon SVG gambar sendiri
+- Ikon new-chat terinspirasi "New Chat" (The Noun Project): https://thenounproject.com/icon/new-chat-5432702/
 
 > **Jujur soal lisensi:** APK ini membundel proot (GPLv3) dan rootfs Alpine
 > (BSD/GPL) dalam satu file install. Artinya distribusi biner APK tunduk pada

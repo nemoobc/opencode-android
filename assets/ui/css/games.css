@@ -160,8 +160,6 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .lucell.homeG::after { transform:rotate(90deg); }
 .lucell.homeY::after { transform:rotate(180deg); }
 .lucell.homeB::after { transform:rotate(270deg); }
-.lutok.vblink { animation:vBlink .15s ease-in-out 3; }
-@keyframes vBlink { 50% { opacity:.15; } }
 .ludice .pips { display:grid; grid-template-columns:repeat(3,10px); grid-template-rows:repeat(3,10px); gap:3px; justify-content:center; align-content:center; width:100%; height:100%; }
 .ludice .pips i { width:10px; height:10px; border-radius:50%; background:transparent; }
 .ludice .pips i.on { background:var(--text); }
@@ -180,23 +178,19 @@ svg.tstrike line { stroke:url(#tgd); stroke-width:6; stroke-linecap:round; strok
 .lutok.inyard { transform:scale(.82); }
 .lutok.inyard::before { border-radius:50%; transform:none; background:var(--c,#888); border-color:rgba(0,0,0,.25); }
 .lutok.inyard::after { display:none; }
-.lutok.think { animation:tokThink .7s ease-in-out infinite; }
-@keyframes tokThink { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 .luboom { position:absolute; width:10%; height:10%; margin:-5% 0 0 -5%; border-radius:50%; border:3px solid #FFE28A; pointer-events:none; animation:boomGo .5s ease-out forwards; }
 @keyframes boomGo { from { transform:scale(.3); opacity:1; } to { transform:scale(1.6); opacity:0; } }
-.lutok.canmove::before { animation:tokPulse 1s ease-in-out infinite; border-color:#fff; }
-@keyframes tokPulse { 0%,100% { box-shadow:0 0 0 0 #fff6; } 50% { box-shadow:0 0 0 6px #fff0; } }
+.lutok.canmove::before { border-color:#fff; box-shadow:0 0 0 3px #ffffff88, 0 0 14px #ffffff66; }
 .lurow { display:flex; align-items:center; gap:12px; }
 .luteams { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; padding:2px 4px; }
 .luteams .tm { display:flex; align-items:center; gap:6px; }
 .lubarbottom { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; background:#16283C; border:1px solid #2c4a6b; border-radius:14px; padding:8px 14px; }
 .lubarbottom .who { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
-#luarrow { text-align:center; color:#E8C93A; font-size:20px; line-height:1; height:22px; animation:arrB 1s ease-in-out infinite; }
-@keyframes arrB { 0%,100% { transform:translateY(0); opacity:1; } 50% { transform:translateY(5px); opacity:.6; } }
+#luarrow { text-align:center; color:#E8C93A; font-size:20px; line-height:1; height:22px; }
 #luarrow.hide { visibility:hidden; }
 .ludice { width:70px; height:70px; border-radius:16px; background:#E8EDF2; border:3px solid #fff; color:#1c2b3a; font-size:42px; line-height:1; box-shadow:0 4px 14px #000a; }
 .ludice .pips i.on { background:#1c2b3a; }
-.ludice.ready { animation:wob 1.2s ease-in-out infinite; border-color:var(--accent)88; }
+.ludice.ready { border-color:var(--accent); box-shadow:0 0 14px var(--accent)66; }
 @keyframes wob { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
 .luturn.winb { background:linear-gradient(135deg,#5C4A1E,#33290F); border:1px solid #E8D9A0; border-radius:12px; padding:8px 14px; animation:turnSwap .4s ease-out; }
 .ludice:disabled { opacity:.45; }

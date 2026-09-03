@@ -10,16 +10,17 @@ Gejala → sebab → fix. Urut dari paling sering.
 
 ## 2. "Aplikasi tidak terinstall" / paket bentrok
 
-**Sebab:** Key penanda APK beda dari yang kepasang. Terjadi kalau keystore
-ke-reset (dulu: tiap `rm -rf build/` bikin key baru).
+**Sebab:** Key penanda APK beda dari yang kepasang (ganti keystore / keypair baru).
 **Fix:**
 1. Uninstall aplikasi di HP (data chat ikut hilang — backup dulu kalau bisa).
-2. Install APK baru.
-3. Setelah itu update selalu bisa timpa langsung (keystore sekarang permanen +
-   auto-backup ke `Documents/opencode-keystore/` tiap build).
+2. Install APK baru. Setelah itu update selalu timpa langsung.
 
-**Cegah:** copy `Documents/opencode-keystore/ks.jks` ke Drive/PC. File inilah
-nyawanya update. Hilang = ulangi langkah di atas.
+**Cegah (sistem license.key):**
+- File `license.key` (di folder project, TIDAK di-commit) + `keystore/ks.jks`
+  (di repo) = pasangan tetap. Jangan hapus/ganti salah satunya.
+- `license.key` asli tersimpan di `Documents/Lisensi Build APK/` + Drive kamu.
+- Build otomatis GAGAL dengan pesan jelas kalau key beda — tidak akan lahir
+  APK bentrok diam-diam.
 
 ## 3. Stuck "0 file" / persen ga jalan
 

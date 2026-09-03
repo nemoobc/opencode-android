@@ -16,7 +16,13 @@ NC='\033[0m'
 ABI="arm64-v8a"
 AJ="dl/android-34/android.jar"
 KS_FILE="keystore/ks.jks"
-KS_PASS="${OC_KEYSTORE_PASS:-opencode123}"
+# Password keystore dari file license.key (lihat build.sh). Tanpa ini = stop.
+if [ ! -f "license.key" ]; then
+    echo -e "${RED}FATAL: license.key tidak ada. Bikin: tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 > license.key${NC}"
+    exit 1
+fi
+KS_PASS="$(head -c 1024 license.key | tr -d '\r\n')"
+[ -z "$KS_PASS" ] && { echo -e "${RED}FATAL: license.key kosong.${NC}"; exit 1; }
 
 find_tool() {
     local name="$1"
@@ -58,16 +64,19 @@ fi
 # PENGAMAN key (lihat build.sh): gagalkan kalau beda dari APK existing
 if [ -n "$KEYTOOL" ]; then
     CUR_FP="$("$KEYTOOL" -list -v -keystore "$KS_FILE" -storepass "$KS_PASS" 2>/dev/null | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//I' | tr -d ' :' | tr 'a-z' 'A-Z')"
+    CHECKED=0
     for REF_APK in "$APK_OUT" "$HOME/storage/shared/Documents/OpenCode-v${VER_NAME}.apk"; do
         [ -f "$REF_APK" ] || continue
         REF_FP="$("$APKSIGNER" verify --print-certs "$REF_APK" 2>/dev/null | grep -i "SHA-256" | head -1 | sed 's/.*digest: *//I' | tr -d ' :' | tr 'a-z' 'A-Z')"
         [ -z "$REF_FP" ] && continue
+        CHECKED=1
         if [ "$CUR_FP" != "$REF_FP" ]; then
             echo -e "${RED}FATAL: keystore beda dari key $REF_APK — stop, anti APK bentrok${NC}"
             exit 1
         fi
     done
-    [ -n "$CUR_FP" ] && echo "  key cocok dgn APK sebelumnya, aman timpa"
+    [ "$CHECKED" = 1 ] && echo "  key cocok dgn APK sebelumnya, aman timpa"
+    [ "$CHECKED" = 0 ] && echo "  key baru (tidak ada APK pembanding) — pastikan HP uninstall versi lama dulu"
 fi
 
 # [1/4] aapt package (assets/ui terbaru langsung, tanpa minify-swap ribet)

@@ -2,6 +2,15 @@ name: tes emulator (manual)
 
 on:
   workflow_dispatch:
+    inputs:
+      live:
+        description: 'Tampilkan emulator LIVE di web (ws-scrcpy + tunnel)'
+        required: false
+        default: 'false'
+      live_minutes:
+        description: 'Berapa menit sesi live (maks 45)'
+        required: false
+        default: '15'
 
 jobs:
 
@@ -95,6 +104,9 @@ jobs:
     needs: build-x86
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      LIVE: ${{ inputs.live }}
+      LIVE_MINUTES: ${{ inputs.live_minutes }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -133,21 +145,19 @@ jobs:
             sleep 12
             adb exec-out screencap -p > shot-1-launch.png
             adb forward tcp:18096 tcp:4099
-            echo "=== nginx 8080 → 18096 + serveo ==="
-            sudo apt-get update -qq && sudo apt-get install -y -qq nginx openssh-client > /dev/null 2>&1
+            echo "=== nginx 8080 → 18096 + cloudflared (pengganti serveo yg sering mati) ==="
+            sudo apt-get update -qq && sudo apt-get install -y -qq nginx > /dev/null 2>&1
             sudo rm -f /etc/nginx/sites-enabled/default
             printf 'server{listen 8080;location /{proxy_pass http://127.0.0.1:18096;proxy_set_header Host $host;}location /app/{proxy_pass http://127.0.0.1:4096/;}}\n' | sudo tee /etc/nginx/sites-enabled/proxy > /dev/null
             sudo nginx -t && sudo service nginx restart || sudo nginx
             echo "nginx 8080 siap, test:"; curl -s -m 5 http://127.0.0.1:8080/ | head -c 120 || echo "nginx belum ada data (wajar sebelum autotest)"
-            echo "=== serveo tunnel 80:localhost:8080 (timeout 90 detik, tidak hang job) ==="
-            rm -f serveo.log serveo.url
-            timeout 90 ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -R 80:localhost:8080 serveo.net > serveo.log 2>&1 &
-            SSHPID=$!
-            sleep 4
-            # tunggu URL muncul (maks 20 detik)
-            URL=""; i=0; while [ $i -lt 10 ]; do URL=$(grep -o 'https://[a-z0-9.-]*\.serveo\.net' serveo.log | head -1); [ -n "$URL" ] && break; sleep 2; i=$((i+1)); done
-            if [ -n "$URL" ]; then echo "SERVEO_URL=$URL" | tee serveo.url; echo "URL publik: $URL (tahan 80 detik)"; else echo "serveo gagal / tidak dapat URL — log:"; cat serveo.log | head -20; fi
-            # jangan tunggu ssh sampai hang — biarkan jalan background, kill setelah autotest selesai
+            echo "=== cloudflared tunnel → :8080 (diagnosa JSON) ==="
+            curl -sL -o cloudflared "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64" && chmod +x cloudflared
+            rm -f cf-diag.log
+            ./cloudflared tunnel --url http://127.0.0.1:8080 > cf-diag.log 2>&1 &
+            CFPID=$!
+            DIAGURL=""; i=0; while [ $i -lt 15 ]; do DIAGURL=$(grep -o 'https://[a-z0-9.-]*\.trycloudflare\.com' cf-diag.log | head -1); [ -n "$DIAGURL" ] && break; sleep 2; i=$((i+1)); done
+            if [ -n "$DIAGURL" ]; then echo "DIAG_URL=$DIAGURL" | tee diag.url; echo "URL diagnosa: $DIAGURL"; else echo "tunnel gagal — log:"; head -20 cf-diag.log; fi
             echo "=== menunggu autotest (maks 3 menit) ==="
             SELESAI=false; LOGGED=0; i=0; while [ $i -lt 18 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 200)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
@@ -174,12 +184,38 @@ jobs:
             wait $SRPID 2>/dev/null || true
             adb exec-out "cat /data/local/tmp/interaksi.mp4" > video-interaksi.mp4 2>/dev/null || true
             ls -la video-interaksi.mp4 2>/dev/null && (file video-interaksi.mp4 || true)
-            echo "=== TUTUP SERVEO ==="
-            kill $SSHPID 2>/dev/null || true; wait $SSHPID 2>/dev/null || true
-            cat serveo.log 2>/dev/null | head -30 || true; cat serveo.url 2>/dev/null || echo "tidak ada serveo URL"
+            echo "=== TUTUP TUNNEL DIAG ==="
+            kill $CFPID 2>/dev/null || true; wait $CFPID 2>/dev/null || true
+            cat cf-diag.log 2>/dev/null | head -10 || true; cat diag.url 2>/dev/null || echo "tidak ada URL diagnosa"
             echo "=== DIAGNOSA JARINGAN KE MODEL (dari dalam app via server) ==="
             curl -s -m 10 "http://127.0.0.1:18096/extra" -o /dev/null || true
             echo "=== diagnosa ==="; cat hasil-diagnosa.json || true
+            if [ "$LIVE" = "true" ]; then
+              echo "=== LIVE VIEW: ws-scrcpy (layar emulator di browser, bisa tap!) ==="
+              npm i -g ws-scrcpy > /dev/null 2>&1 || npm i -g ws-scrcpy --force > /dev/null 2>&1 || true
+              (ws-scrcpy > ws-scrcpy.log 2>&1 &) || (npx -y ws-scrcpy > ws-scrcpy.log 2>&1 &)
+              sleep 6
+              rm -f cf-live.log
+              ./cloudflared tunnel --url http://127.0.0.1:8000 > cf-live.log 2>&1 &
+              CFLIVE=$!
+              LIVEURL=""; i=0; while [ $i -lt 15 ]; do LIVEURL=$(grep -o 'https://[a-z0-9.-]*\.trycloudflare\.com' cf-live.log | head -1); [ -n "$LIVEURL" ] && break; sleep 2; i=$((i+1)); done
+              MINS=$(echo "$LIVE_MINUTES" | grep -E '^[0-9]+$' || echo 15)
+              [ "$MINS" -gt 45 ] && MINS=45
+              if [ -n "$LIVEURL" ]; then
+                echo ""
+                echo "=================================================="
+                echo "  LIVE EMULATOR: $LIVEURL"
+                echo "  Buka di browser HP/PC, bisa lihat + tap langsung"
+                echo "  Sesi tahan $MINS menit"
+                echo "=================================================="
+                echo ""
+              else
+                echo "tunnel live gagal — log:"; head -20 cf-live.log; MINS=1
+              fi
+              sleep $((MINS * 60))
+              kill $CFLIVE 2>/dev/null || true
+              adb exec-out screencap -p > shot-live-end.png || true
+            fi
       - uses: actions/upload-artifact@v4
         with:
           name: bukti-emulator
@@ -192,6 +228,9 @@ jobs:
             shot-*.png
             logcat.txt
             video-interaksi.mp4
-            serveo.log
-            serveo.url
+            cf-diag.log
+            diag.url
+            cf-live.log
+            ws-scrcpy.log
+            shot-live-end.png
           if-no-files-found: warn

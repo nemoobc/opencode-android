@@ -13,7 +13,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-ABI="arm64-v8a"
+ABI="${OCX_ABI:-arm64-v8a}"
+if [ ! -d "jniLibs/$ABI" ]; then
+    echo -e "${RED}FATAL: jniLibs/$ABI tidak ada. OCX_ABI salah?${NC}"
+    exit 1
+fi
 AJ="dl/android-34/android.jar"
 KS_FILE="keystore/ks.jks"
 # Password keystore dari file license.key (lihat build.sh). Tanpa ini = stop.

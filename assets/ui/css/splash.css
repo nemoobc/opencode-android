@@ -79,7 +79,8 @@
 #splash { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .6s ease-out, visibility .6s; animation:bootFade .3s ease-out; }
 @keyframes bootFade { from { opacity:0; } }
 #splash.out { opacity:0; pointer-events:none; visibility:hidden; }
-#splash .stage { position:relative; width:112px; height:112px; }
+#splash .stage { position:relative; width:112px; height:112px; animation:stageHold 3s ease-in-out 1.5s infinite; }
+@keyframes stageHold { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-5px) scale(1.02); } }
 #splash .glow, #ov .glow {
   position:absolute; inset:-56px; border-radius:50%;
   background:radial-gradient(circle,rgba(61,220,132,.35) 0%,transparent 60%);

@@ -28,10 +28,9 @@ document.getElementById('mname').textContent = 'Mimo 2.5 Free';
    Overlay tampil SAAT splash fade — jadi user lihat transisi halus.
    Progress updates dari Java langsung kelihatan di overlay. */
 (function() {
-  /* fade splash setelah animasi selesai, lalu tampilkan overlay.
-     crossfade: overlay mulai muncul 200ms SEBELUM splash ilang (no jeda hitam).
-     logo kembar 112px di dua layar → otak baca "nyambung". */
-  var SP_DUR = 3200;
+  /* FLOW: logo 6 detik PENUH dulu (progress ekstrak jalan di splash),
+     BARU overlay bersiap. Jangan tampilkan loading lain sebelum itu. */
+  var SP_DUR = 6000;
   setTimeout(function() {
     /* overlay duluan (fade-in .5s berjalan di bawah splash yang masih ada) */
     if (ov && !window._pendingReady && !ov.classList.contains('show')) ov.classList.add('show');

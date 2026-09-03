@@ -10,7 +10,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-ABI="arm64-v8a"
+ABI="${OCX_ABI:-arm64-v8a}"
+if [ ! -d "jniLibs/$ABI" ]; then
+    echo -e "${RED}FATAL: jniLibs/$ABI tidak ada. OCX_ABI salah?${NC}"
+    exit 1
+fi
 AJ="dl/android-34/android.jar"
 # Password keystore dibaca dari file license.key (TIDAK di-commit, .gitignore).
 # File ini yang kamu jaga (1 file kecil). keystore/ks.jks boleh di repo.

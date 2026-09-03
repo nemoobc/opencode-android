@@ -54,17 +54,26 @@ var Dev = (function() {
   return { armTap: armTap, unlock: unlock, openPanel: openPanel, close: close };
 })();
 
-document.getElementById('dver').addEventListener('click', function() { Dev.armTap(); });
-document.getElementById('dev-go').onclick = function() {
+function bindBtn(id, fn) {
+  try {
+    var el = document.getElementById(id);
+    if (el) el.onclick = fn;
+  } catch (e) {}
+}
+try {
+  var dv = document.getElementById('dver');
+  if (dv) dv.addEventListener('click', function() { Dev.armTap(); });
+} catch (e) {}
+bindBtn('dev-go', function() {
   var inp = document.getElementById('dev-pin');
   Dev.unlock(inp ? inp.value : '');
-};
-document.getElementById('dev-close').onclick = function() { Dev.close(); };
-document.getElementById('dev-close2').onclick = function() { Dev.close(); };
-document.getElementById('dev-refresh').onclick = function() {
+});
+bindBtn('dev-close', function() { Dev.close(); });
+bindBtn('dev-close2', function() { Dev.close(); });
+bindBtn('dev-refresh', function() {
   Notif.init();
   setTimeout(function() {
     document.getElementById('dev-notif').textContent = (window._notifList || []).length + ' pengumuman termuat.';
   }, 2500);
   if (typeof toast === 'function') toast('Refresh notifikasi...');
-};
+});

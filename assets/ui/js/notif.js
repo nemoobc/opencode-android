@@ -96,6 +96,12 @@ var Notif = (function() {
   return { init: init, open: open, parseList: parseList, unread: unread, URL: URL_ };
 })();
 
-document.getElementById('bnotif').onclick = function() { Notif.open(); };
-document.getElementById('nclose').onclick = function() { document.getElementById('mnotif').classList.remove('show'); };
+function notifBind(id, fn) {
+  try {
+    var el = document.getElementById(id);
+    if (el) el.onclick = fn;
+  } catch (e) {}
+}
+notifBind('bnotif', function() { Notif.open(); });
+notifBind('nclose', function() { document.getElementById('mnotif').classList.remove('show'); });
 Notif.init();

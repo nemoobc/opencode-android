@@ -169,7 +169,7 @@ jobs:
             DIAGURL=""; i=0; while [ $i -lt 15 ]; do DIAGURL=$(grep -o 'https://[a-z0-9.-]*\.trycloudflare\.com' cf-diag.log | head -1); [ -n "$DIAGURL" ] && break; sleep 2; i=$((i+1)); done
             if [ -n "$DIAGURL" ]; then echo "DIAG_URL=$DIAGURL" | tee diag.url; echo "URL diagnosa: $DIAGURL"; else echo "tunnel gagal — log:"; head -20 cf-diag.log; fi
             echo "=== menunggu autotest (maks 3 menit) ==="
-            SELESAI=false; LOGGED=0; i=0; while [ $i -lt 18 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 200)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
+            SELESAI=false; LOGGED=0; i=0; while [ $i -lt 42 ]; do sleep 10; R=$(curl -s -m 5 http://127.0.0.1:18096/ || true); if [ -n "$R" ] && [ "$LOGGED" = "0" ]; then echo "poll pertama: $(echo "$R" | head -c 200)"; LOGGED=1; fi; echo "$R" | grep -q selesai && SELESAI=true && break; i=$((i+1)); done
             echo "=== BUG HUNTER: monkey 500 aksi acak ==="
             adb logcat -G 16M || true
             adb shell monkey -p com.nemoobc.opencode --throttle 250 --pct-touch 60 --pct-motion 20 --pct-app-switch 10 --pct-flip 5 -v 500 > monkey.log 2>&1 || true
@@ -200,33 +200,11 @@ jobs:
             echo "=== DIAGNOSA JARINGAN KE MODEL (dari dalam app via server) ==="
             curl -s -m 10 "http://127.0.0.1:18096/extra" -o /dev/null || true
             echo "=== diagnosa ==="; cat hasil-diagnosa.json || true
-            if [ "$LIVE" = "true" ]; then
-              echo "=== LIVE VIEW: ws-scrcpy (layar emulator di browser, bisa tap!) ==="
-              npm i -g ws-scrcpy > /dev/null 2>&1 || npm i -g ws-scrcpy --force > /dev/null 2>&1 || true
-              (ws-scrcpy > ws-scrcpy.log 2>&1 &) || (npx -y ws-scrcpy > ws-scrcpy.log 2>&1 &)
-              sleep 6
-              rm -f cf-live.log
-              ./cloudflared tunnel --url http://127.0.0.1:8000 > cf-live.log 2>&1 &
-              CFLIVE=$!
-              LIVEURL=""; i=0; while [ $i -lt 15 ]; do LIVEURL=$(grep -o 'https://[a-z0-9.-]*\.trycloudflare\.com' cf-live.log | head -1); [ -n "$LIVEURL" ] && break; sleep 2; i=$((i+1)); done
-              MINS=$(echo "$LIVE_MINUTES" | grep -E '^[0-9]+$' || echo 15)
-              [ "$MINS" -gt 45 ] && MINS=45
-              if [ -n "$LIVEURL" ]; then
-                echo ""
-                echo "=================================================="
-                echo "  LIVE EMULATOR: $LIVEURL"
-                echo "  Buka di browser HP/PC, bisa lihat + tap langsung"
-                echo "  Sesi tahan $MINS menit"
-                echo "=================================================="
-                echo ""
-              else
-                echo "tunnel live gagal — log:"; head -20 cf-live.log; MINS=1
-              fi
-              sleep $((MINS * 60))
-              kill $CFLIVE 2>/dev/null || true
-              adb exec-out screencap -p > shot-live-end.png || true
-            fi
+            # CATATAN: runner eksekusi script PER BARIS (sh -c per baris) — blok live
+            # HARUS 1 baris penuh. if multi-baris = "end of file unexpected".
+            [ "$LIVE" = "true" ] && { echo "=== LIVE VIEW: ws-scrcpy (layar emulator di browser, bisa tap!) ==="; npm i -g ws-scrcpy > ws-scrcpy.log 2>&1 || npm i -g ws-scrcpy --force >> ws-scrcpy.log 2>&1 || true; (ws-scrcpy >> ws-scrcpy.log 2>&1 &) || (npx -y ws-scrcpy >> ws-scrcpy.log 2>&1 &); sleep 6; rm -f cf-live.log; ./cloudflared tunnel --url http://127.0.0.1:8000 > cf-live.log 2>&1 & CFLIVE=$!; LIVEURL=""; i=0; while [ $i -lt 15 ]; do LIVEURL=$(grep -o 'https://[a-z0-9.-]*\.trycloudflare\.com' cf-live.log | head -1); [ -n "$LIVEURL" ] && break; sleep 2; i=$((i+1)); done; MINS=$(echo "$LIVE_MINUTES" | grep -E '^[0-9]+$' || echo 15); [ "$MINS" -gt 45 ] && MINS=45; [ -n "$LIVEURL" ] && echo "LIVE EMULATOR $LIVEURL tahan $MINS mnt, buka di browser" || { echo "tunnel live gagal:"; head -20 cf-live.log; MINS=1; }; sleep $((MINS * 60)); kill $CFLIVE 2>/dev/null || true; adb exec-out screencap -p > shot-live-end.png || true; } || echo "live off, skip"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: bukti-emulator
           path: |

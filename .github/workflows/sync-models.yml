@@ -1,10 +1,8 @@
 name: sync-models
 
 on:
-  # NONAKTIF sementara: marker AUTO-MODELS pindah ke assets/ui/js/models.js,
-  # skrip masih nulis ke index.html. Aktifkan lagi setelah skrip diretarget.
-  # schedule:
-  #   - cron: '0 */6 * * *'
+  schedule:
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -20,31 +18,29 @@ jobs:
         id: sync
         run: |
           python3 - <<'PY'
-          import json, urllib.request, re
+          import json, urllib.request, re, subprocess
 
           URL = "https://opencode.ai/zen/v1/models"
-          FPATH = "assets/ui/index.html"
+          FPATH = "assets/ui/js/models.js"
           START = "/* AUTO-MODELS-START */"
           END = "/* AUTO-MODELS-END */"
 
           with urllib.request.urlopen(urllib.request.Request(
-                  URL, headers={"User-Agent": "opencode-android/1.5.5 (sync-models; +https://github.com/nemoobc/opencode-android)"}),
+                  URL, headers={"User-Agent": "opencode-android (sync-models; +https://github.com/nemoobc/opencode-android)"}),
                   timeout=20) as r:
               data = json.load(r)
           ids = [m["id"] for m in data.get("data", [])]
 
-          # hanya model gratis resmi: akhiran -free + big-pickle (gratis tanpa suffix)
-          known_free = ["big-pickle"]
-          free_ids = [i for i in ids if i.endswith("-free")] + known_free
+          # hanya model gratis resmi (akhiran -free)
+          free_ids = [i for i in ids if i.endswith("-free")]
           free_ids = list(dict.fromkeys(free_ids))  # dedupe urut stabil
 
-          # nama tampilan ramah untuk id yang dikenal
+          # nama tampilan ramah untuk id yang dikenal (sisanya prettify otomatis)
           NAMES = {
-              "big-pickle": "Big Pickle",
-              "hy3-free": "Hy3 Free",
               "ling-3.0-flash-fin-free": "Ling 3.0 Flash",
               "nemotron-3.5-lightning-free": "Nemotron Lightning",
               "mimo-v2.5-free": "Mimo 2.5 Free",
+              "muse-spark-1.3-contributor-free": "Muse Spark 1.3",
               "muse-spark-1.2-contributor-free": "Muse Spark 1.2",
               "nemotron-3-ultra-free": "Nemotron 3 Ultra",
               "deepseek-v4-flash-free": "DeepSeek V4 Flash",
@@ -57,19 +53,18 @@ jobs:
               base = re.sub(r"-free$", "", i)
               return " ".join(w.capitalize() for w in base.split("-"))
 
-          # urutan: yang terverifikasi di atas, sisanya urut abjad
-          verified = ["big-pickle", "hy3-free"]
-          ordered = [i for i in free_ids if i in verified] + \
-                    [i for i in free_ids if i not in verified]
+          # urutan: mimo default dulu, sisanya urut abjad
+          ordered = (["mimo-v2.5-free"] if "mimo-v2.5-free" in free_ids else []) + \
+                    sorted([i for i in free_ids if i != "mimo-v2.5-free"])
 
           lines = []
           for i in ordered:
-              lines.append("  {id:'opencode/%s',  nm:'%s',  ds:'katalog resmi relay', tag:'GRATIS'},"
+              lines.append("  {id:'opencode/%s',  nm:'%s',  ds:'Katalog Resmi Relay', tag:'GRATIS'},"
                            % (i, nice_name(i)))
           # model PRO tetap (butuh api key) — workflow khusus FREE tidak mengubah ini
           lines += [
-              "  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'butuh api key anthropic', tag:'PRO'},",
-              "  {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'butuh api key openai',    tag:'PRO'}",
+              "  {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},",
+              "  {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'Butuh API Key OpenAI',    tag:'PRO'}",
           ]
 
           block = "var MODELS = [\n" + "\n".join(lines) + "\n];\n"
@@ -77,30 +72,21 @@ jobs:
           src = open(FPATH, encoding="utf-8").read()
           a = src.index(START)
           b = src.index(END)
-          # bunuh semua baris KODE dari region START..END (entri lama "{id:", baris
-          # "var MODELS", dan "];"); hanya komentar/baris kosong yang dipertahankan.
-          # Bug lama: filter cuma membuang "var MODELS", sehingga entri lama + "];"
-          # ikut nyangkut → script inline korup → splash app tidak pernah hilang.
           code_prefixes = ("{id:", "var MODELS")
           header = "\n".join([line for line in src[a:b].splitlines()
-                              if not (line.strip().startswith(code_prefixes) or line.strip() == "];")])
+                               if not (line.strip().startswith(code_prefixes) or line.strip() == "];")])
           new_src = src[:a] + header.rstrip() + "\n" + block + src[b:]
 
           if new_src == src:
               print("tidak-ada-perubahan")
           else:
-              # validasi: script inline index.html harus tetap JS valid —
-              # kalau korup, FAIL supaya tidak ter-commit (anti-korup berulang)
+              open(FPATH, "w", encoding="utf-8").write(new_src)
+              # validasi: models.js harus tetap JS valid
               try:
-                  m = re.search(r"<script>([\s\S]*?)</script>", new_src)
-                  if not m:
-                      raise SystemExit("validasi: script inline tidak ditemukan")
-                  subprocess.run(["node", "-e", "new Function(process.argv[1])", m.group(1)],
-                                 check=True, capture_output=True)
+                  subprocess.run(["node", "--check", FPATH], check=True, capture_output=True)
               except Exception as ex:
                   print("VALIDASI GAGAL:", ex)
                   raise SystemExit(1)
-              open(FPATH, "w", encoding="utf-8").write(new_src)
               print("diperbarui")
               print("jumlah-model-gratis:", len(ordered))
           PY
@@ -108,91 +94,15 @@ jobs:
       - name: commit & push + tanda perubahan
         id: commit
         run: |
-          if git diff --quiet -- assets/ui/index.html; then
+          if git diff --quiet -- assets/ui/js/models.js; then
             echo "tidak ada perubahan — selesai."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git config user.name "nemoobc"
             git config user.email "258114617+nemoobc@users.noreply.github.com"
-            git add assets/ui/index.html
+            git add assets/ui/js/models.js
             git commit -m "chore(model): sync daftar model gratis dari relay opencode"
             git push
             echo "commit & push selesai (author: nemoobc)."
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-
-      # ===== ada update model => build APK arm64 untuk HP & perbarui release v1.5.5 =====
-      - name: setup java (build APK)
-        if: steps.commit.outputs.changed == 'true'
-        uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 21 }
-
-      - name: alat build
-        if: steps.commit.outputs.changed == 'true'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq aapt apksigner unzip curl
-          curl -sL -o r8.jar "https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.5.35/r8-8.5.35.jar"
-          echo "D8_CMD=java -cp $PWD/r8.jar com.android.tools.r8.D8" >> "$GITHUB_ENV"
-
-      - name: unduh android.jar
-        if: steps.commit.outputs.changed == 'true'
-        run: |
-          mkdir -p dl
-          curl -sL -o dl/platform-34.zip "https://dl.google.com/android/repository/platform-34-ext7_r02.zip"
-          unzip -oq dl/platform-34.zip "*/android.jar" -d dl/
-
-      - name: build arm64-v8a (APK untuk HP)
-        if: steps.commit.outputs.changed == 'true'
-        run: |
-          mkdir -p dl/termux jniLibs/arm64-v8a assets/payload staging/rootfs
-          curl -sL -o dl/oc.tgz "https://registry.npmjs.org/opencode-linux-arm64-musl/-/opencode-linux-arm64-musl-1.18.25.tgz"
-          curl -sL -o dl/minirootfs.tar.gz "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/alpine-minirootfs-3.21.3-aarch64.tar.gz"
-          curl -sL -o dl/libgcc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/libgcc-14.2.0-r4.apk"
-          curl -sL -o dl/libstdc.apk "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/libstdc%2B%2B-14.2.0-r4.apk"
-          cd dl/termux
-          curl -sL -o Packages "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages"
-          for pkg in proot libtalloc libandroid-shmem; do
-            url=$(awk -v p="Package: $pkg" '$0==p{f=1} f&&/^Filename:/{print $2; exit}' Packages)
-            curl -sL -O "https://packages.termux.dev/apt/termux-main/${url}"
-          done
-          for d in *.deb; do dpkg-deb -x "$d" ex; done
-          find ex -name "proot" -type f -exec cp {} ./proot.bin \;
-          find ex -path "*libexec/proot/loader" -exec cp {} ./loader.bin \;
-          find ex -name "libtalloc.so*" -exec cp {} ./libtalloc.so \;
-          find ex -name "libandroid-shmem.so*" -exec cp {} ./libshmem.so \;
-          cd ../..
-          tar -xzf dl/minirootfs.tar.gz -C staging/rootfs
-          tar -xzf dl/oc.tgz -C staging/
-          cp staging/package/bin/opencode jniLibs/arm64-v8a/libopencode.so
-          mkdir -p staging/apks && mv dl/libgcc.apk dl/libstdc.apk staging/apks/
-          tar -xzf staging/apks/libgcc.apk -C staging/apks/ || true
-          tar -xzf staging/apks/libstdc.apk -C staging/apks/ || true
-          cp -a staging/apks/usr/lib/. staging/rootfs/usr/lib/
-          printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > staging/rootfs/etc/resolv.conf
-          mkdir -p staging/rootfs/root/.config/opencode staging/rootfs/tmp
-          printf '#!/bin/sh\nexport HOME=/root TMPDIR=/tmp XDG_CONFIG_HOME=/root/.config\nexec /usr/bin/opencode "$@"\n' > staging/rootfs/usr/bin/oc
-          chmod +x staging/rootfs/usr/bin/oc
-          cp dl/termux/proot.bin jniLibs/arm64-v8a/libproot.so
-          cp dl/termux/loader.bin jniLibs/arm64-v8a/libproot_loader.so
-          cp dl/termux/libtalloc.so jniLibs/arm64-v8a/libtalloc.so
-          cp dl/termux/libshmem.so jniLibs/arm64-v8a/libshmem.so
-          tar -czf assets/payload/rootfs.bin -C staging/rootfs .
-          OCX_ABI=arm64-v8a bash build.sh
-          ls -la build/OpenCode-*.apk
-
-      - name: perbarui release (asset APK baru)
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # nama tag & file APK mengikuti versi di manifest — jangan hardcode
-          VER="v$(grep -o 'android:versionName="[^"]*"' AndroidManifest.xml | head -1 | sed 's/.*="\([^"]*\)"/\1/')"
-          # hapus asset APK lama supaya release cuma punya satu APK terkini
-          for a in $(gh api repos/${{ github.repository }}/releases/tags/$VER --jq '.assets[].name' | grep '^OpenCode-.*\.apk$' || true); do
-            echo "hapus asset lama: $a"
-            gh release delete-asset "$VER" "$a" --yes --repo ${{ github.repository }} || true
-          done
-          APK=$(ls build/OpenCode-*.apk | head -1)
-          [ -n "$APK" ] && gh release upload "$VER" "$APK" --clobber --repo ${{ github.repository }}
-          echo "APK arm64 $VER diperbarui di release (tag tidak berubah)."

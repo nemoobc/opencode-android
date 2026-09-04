@@ -9,15 +9,14 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* ===== model switcher ===== */
 /* AUTO-MODELS-START */
 var MODELS = [
-  {id:'opencode/hy3-free',  nm:'Hy3 Free',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/big-pickle',  nm:'Big Pickle',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/deepseek-v4-flash-free',  nm:'DeepSeek V4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/muse-spark-1.2-contributor-free',  nm:'Muse Spark 1.2',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.5-free',  nm:'Mimo 2.5 Free',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/deepseek-v4-flash-free',  nm:'DeepSeek V4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/laguna-s-2.1-free',  nm:'Laguna S 2.1',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/ling-3.0-flash-fin-free',  nm:'Ling 3.0 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/muse-spark-1.2-contributor-free',  nm:'Muse Spark 1.2',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/muse-spark-1.3-contributor-free',  nm:'Muse Spark 1.3',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3-ultra-free',  nm:'Nemotron 3 Ultra',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/laguna-s-2.1-free',  nm:'Laguna S 2.1',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'Butuh API Key OpenAI',    tag:'PRO'}
 ];
@@ -32,7 +31,7 @@ function openModels() {
   MODELS.forEach(function(m) {
     var b = document.createElement('button');
     b.className = 'mopt' + (m.id === curModel ? ' sel' : '');
-    var spd = m.id.indexOf('muse-spark') >= 0 ? '~5s' : m.id.indexOf('hy3') >= 0 ? '~6s' : m.id.indexOf('lightning') >= 0 ? '~4s' : m.id.indexOf('flash') >= 0 ? '~7s' : '';
+    var spd = m.id.indexOf('muse-spark') >= 0 ? '~5s' : m.id.indexOf('lightning') >= 0 ? '~4s' : m.id.indexOf('flash') >= 0 ? '~7s' : '';
     b.innerHTML = '<div><div class="nm">' + m.nm + (spd ? '<span class="spd">' + spd + '</span>' : '') + '</div><div class="ds">' + m.id + ' \u2022 ' + m.ds + '</div></div>' +
       (m.tag === 'GRATIS' ? '<span class="tag">GRATIS</span>' : '');
     b.onclick = function() { setModel(m.id); };

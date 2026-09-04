@@ -97,9 +97,16 @@ public class MainActivity extends Activity {
             try { android.util.Log.d("OpenCode", msg); } catch (Throwable ignored) {}
             String line = new java.text.SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date())
                     + " " + msg + "\n";
-            /* HANYA tulis file internal (cepat, aman dari storage publik). */
+            /* HANYA tulis file internal (cepat, aman dari storage publik).
+               ROTASI: max 200KB — tanpa ini file tumbuh tanpa batas
+               (dulu bikin app gemuk ratusan MB). */
             try {
                 File f = new File(getFilesDir(), "debug.txt");
+                if (f.length() > 200 * 1024) {
+                    File old = new File(getFilesDir(), "debug.old.txt");
+                    if (old.exists()) old.delete();
+                    f.renameTo(old);
+                }
                 try (FileOutputStream fo = new FileOutputStream(f, true)) {
                     fo.write(line.getBytes());
                 }
@@ -202,6 +209,33 @@ public class MainActivity extends Activity {
                     while (!webLoaded && w < 30000) { Thread.sleep(200); w += 200; }
                     debugLog("bg: webLoaded=" + webLoaded + " setelah tunggu " + w + "ms");
                 } catch (InterruptedException ignored) {}
+                /* Lampiran lama (>7 hari, hanya file yg dicatat picked.log)
+                   dihapus tiap boot. Asli user aman (ini cuma copy). */
+                try {
+                    File man = new File(getFilesDir(), "picked.log");
+                    if (man.exists()) {
+                        java.io.BufferedReader br = new java.io.BufferedReader(
+                                new java.io.FileReader(man));
+                        StringBuilder keep = new StringBuilder();
+                        String ln;
+                        long week = 7L * 24 * 3600 * 1000;
+                        long now = System.currentTimeMillis();
+                        int gone = 0;
+                        while ((ln = br.readLine()) != null) {
+                            File pf = new File(ln.trim());
+                            if (pf.exists() && now - pf.lastModified() > week) {
+                                if (pf.delete()) gone++;
+                            } else if (pf.exists()) {
+                                keep.append(ln.trim()).append('\n');
+                            }
+                        }
+                        br.close();
+                        try (java.io.FileOutputStream fo = new java.io.FileOutputStream(man, false)) {
+                            fo.write(keep.toString().getBytes());
+                        }
+                        if (gone > 0) debugLog("bg: lampiran tua dibuang=" + gone);
+                    }
+                } catch (Exception ignored) {}
                 boolean ready = readyOk();
                 debugLog("bg: ready awalnya=" + ready);
                 if (!ready) {
@@ -858,6 +892,14 @@ public class MainActivity extends Activity {
                     while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
                 }
                 push("window.onFileReady(" + jq(name) + ", " + jq(dest.getAbsolutePath()) + ")");
+                /* catat copy lampiran (asli user tetap di tempatnya) supaya bisa
+                   dibersihkan otomatis kalau sudah tua — tanpa ini menumpuk. */
+                try {
+                    File man = new File(getFilesDir(), "picked.log");
+                    try (java.io.FileOutputStream fo = new java.io.FileOutputStream(man, true)) {
+                        fo.write((dest.getAbsolutePath() + "\n").getBytes());
+                    }
+                } catch (Exception ignored) {}
             } catch (Exception e) {
                 push("window.onFileError(" + jq(String.valueOf(e)) + ")");
             }

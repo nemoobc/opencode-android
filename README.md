@@ -25,7 +25,7 @@ Tanpa server luar, tanpa API key — install, buka, langsung chat.
 
 Di balik layar, aplikasi menjalankan [OpenCode](https://github.com/anomalyco/opencode)
 sebagai server lokal via proot di `127.0.0.1:4096`. Plus ada **menu Game** buat selingan:
-Ular, Quiz Otak, Puzzle, dan Ludo lawan CPU.
+Tebak Kata, Quiz Otak, Puzzle, Ludo dan TicTac lawan CPU.
 
 ---
 
@@ -44,7 +44,8 @@ Ular, Quiz Otak, Puzzle, dan Ludo lawan CPU.
 | Multi-model | 9 model gratis + API key sendiri buat model berbayar |
 | Riwayat lokal | Auto-save, pin, ganti nama, hapus, backup/impor terenkripsi |
 | 3 Tema | Default (Hijau), Putih, Hitam AMOLED |
-| 🎮 Game | Ular, Quiz Otak (15 soal), Puzzle geser, Ludo vs 3 CPU, TicTac vs CPU |
+| 🎮 Game | Tebak Kata, Quiz Otak (15 soal), Puzzle geser, Ludo vs 3 CPU, TicTac vs CPU |
+| 🔔 Pengumuman | Info update remote + mode maintenance |
 | Custom SVG icons | Semua ikon desain sendiri, tanpa emoji tempel |
 
 ---
@@ -87,7 +88,7 @@ Buka ☰ (garis tiga) → **Game**. Skor terbaik tersimpan otomatis di HP.
 
 | Game | Main |
 |------|------|
-| 🐍 Ular | Swipe / tombol arah, makan, makin cepat, jangan nabrak |
+| 🎭 Tebak Kata | Teka-teki ala Cak Lontong, ketik jawaban, hint, streak |
 | 🧠 Quiz Otak | 15 soal acak, timer 15 detik, streak bonus, grade S–D |
 | 🧩 Puzzle | Geser 3×3 sampai urut, dihitung langkah + waktu |
 | 🎲 Ludo | Kamu (hijau) vs 3 CPU — butuh 6 keluar markas, injak lawan makan, finis harus pas |

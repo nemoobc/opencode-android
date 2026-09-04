@@ -296,6 +296,7 @@ test('updates pnum text', () => {
 });
 test('mirrors percent to splash spnum/spfill', () => {
   setProgress(264); // 50% of 528
+  sandbox.window.flushProgress();
   assert.equal(sandbox.document.getElementById('spnum').textContent, '264 / 528 file • 50%');
   assert.equal(sandbox.document.getElementById('spfill').style.width, '50%');
 });
@@ -304,6 +305,7 @@ test('mirrors percent to splash spnum/spfill', () => {
 console.log('\nsetProgressBytes():');
 test('updates pfill width and pnum text', () => {
   setProgressBytes(2419669); // 50% of 4839338
+  sandbox.window.flushProgress();
   const fill = sandbox.document.getElementById('pfill');
   const num = sandbox.document.getElementById('pnum');
   assert.equal(fill.style.width, '50%');
@@ -311,6 +313,7 @@ test('updates pfill width and pnum text', () => {
 });
 test('mirrors percent to splash', () => {
   setProgressBytes(4839338); // 100%
+  sandbox.window.flushProgress();
   assert.ok(sandbox.document.getElementById('spnum').textContent.includes('100%'));
   assert.equal(sandbox.document.getElementById('spfill').style.width, '100%');
 });

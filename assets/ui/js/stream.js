@@ -334,17 +334,53 @@ window._done100at = 0;
    tampil duluan saat ekstrak jalan, jadi % harus kelihatan di sana.
    SATU label "N / total file • P%" — dulu dua format (file vs MB)
    rebutan satu label sampai kelihatan flicker. */
+window._pctShown = 0;
+window._pctTarget = 0;
+window._tweenOn = false;
+/* snap instan (dipakai test) */
+window.flushProgress = function() {
+  window._pctShown = window._pctTarget;
+  paintBars(window._pctTarget);
+  window._tweenOn = false;
+};
+function paintBars(pct) {
+  var f = document.getElementById('pfill');
+  if (f) f.style.width = pct + '%';
+  var sf = document.getElementById('spfill');
+  if (sf) sf.style.width = pct + '%';
+}
+function tweenStep() {
+  var cur = window._pctShown, tgt = window._pctTarget;
+  var d = tgt - cur;
+  if (Math.abs(d) < 0.4) {
+    window._pctShown = tgt;
+    paintBars(tgt);
+    window._tweenOn = false;
+    return;
+  }
+  /* ease 18% per frame + kecepatan min ~1.5%/frame biar lompatan gede
+     tetap kelar ~1 detik (kelihatan nyapu, ga kedip) */
+  var step = d * 0.18;
+  if (step > 0) step = Math.max(step, 1.5);
+  else step = Math.min(step, -1.5);
+  if (Math.abs(step) > Math.abs(d)) step = d;
+  window._pctShown = cur + step;
+  paintBars(window._pctShown);
+  requestAnimationFrame(tweenStep);
+}
 function paintProgress(pct, label) {
   pct = Math.max(0, Math.min(100, pct));
   var rpct = Math.round(pct);
-  var f = document.getElementById('pfill');
-  if (f) f.style.width = pct + '%';
+  window._pctTarget = pct;
   var p = document.getElementById('pnum');
   if (p) p.textContent = label;
-  var sf = document.getElementById('spfill');
-  if (sf) sf.style.width = pct + '%';
   var sp = document.getElementById('spnum');
   if (sp) sp.textContent = label;
+  if (!window._tweenOn) {
+    window._tweenOn = true;
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tweenStep);
+    else { window._pctShown = pct; paintBars(pct); window._tweenOn = false; }
+  }
   /* milestone/done dicatat tanpa flash (anti-kedip) */
   if (rpct >= 100 && !window._done100at) window._done100at = Date.now();
 }

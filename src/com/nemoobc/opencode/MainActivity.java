@@ -199,7 +199,7 @@ public class MainActivity extends Activity {
                    ke-replay instan → user TIDAK PERNAH lihat % jalan 1-100. */
                 try {
                     int w = 0;
-                    while (!webLoaded && w < 10000) { Thread.sleep(200); w += 200; }
+                    while (!webLoaded && w < 30000) { Thread.sleep(200); w += 200; }
                     debugLog("bg: webLoaded=" + webLoaded + " setelah tunggu " + w + "ms");
                 } catch (InterruptedException ignored) {}
                 boolean ready = readyOk();
@@ -270,7 +270,7 @@ public class MainActivity extends Activity {
                                        yang bikin UI lag & nilai basi ke-replay.
                                        Native ikut: % akurat yang sama. */
                                     long c = cin.count;
-                                    if (c - lastPush[0] >= 150000) {
+                                    if (c - lastPush[0] >= 100000) {
                                         lastPush[0] = c;
                                         push("window.setProgressBytes(" + c + ")");
                                     }

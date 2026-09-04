@@ -94,8 +94,13 @@ test('"jadwal" triggers search', () => {
 test('"cuaca" triggers search', () => {
   assert.equal(WebSearch.needsSearch('cuaca besok'), true);
 });
-test('plain question no trigger', () => {
-  assert.equal(WebSearch.needsSearch('apa itu python'), false);
+test('plain greeting no trigger', () => {
+  assert.equal(WebSearch.needsSearch('hai apa kabar'), false);
+});
+test('"apa itu" auto triggers search', () => {
+  assert.equal(WebSearch.needsSearch('apa itu python'), true);
+  assert.equal(WebSearch.needsSearch('siapa presiden indonesia'), true);
+  assert.equal(WebSearch.needsSearch('jelaskan gravitasi'), true);
 });
 test('empty string', () => {
   assert.equal(WebSearch.needsSearch(''), false);

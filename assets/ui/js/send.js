@@ -11,7 +11,27 @@ bsearchBtn.onclick = function() {
 
 /* send with optional web search */
 function send(t, label, imgPrev, retryMode, noAsk) {
-  if (busy || !t) return;
+  if (busy || !t) {
+    try {
+      if (busy && t && window._streamChat && window._streamChat !== window._chatId && typeof toast === 'function')
+        toast('⏳ AI masih jalan di chat lain — balik buat liat / batalkan');
+    } catch (e) {}
+    return;
+  }
+  /* maintenance (dev): blokir kirim + gambar + file, kecuali retry internal.
+     Scope teks + dev-bypass + non-teks (gambar/file/game) tetap lewat. */
+  if (!retryMode) {
+    try {
+      if (typeof Dev !== 'undefined' && Dev && typeof Dev.isMaint === 'function' && Dev.isMaint()) {
+        var allowMaint = false;
+        try { allowMaint = typeof Dev.maintAllow === 'function' && Dev.maintAllow(t, imgPrev); } catch (e) {}
+        if (!allowMaint) {
+          addNote('🚧 ' + Dev.maintMsg(), true);
+          return;
+        }
+      }
+    } catch (e) {}
+  }
   if (!window._srvOk) {
     addNote('⏳ Server Masih Menyala — Tunggu Sampai Siap, Lalu Kirim Ulang');
     return;
@@ -35,8 +55,31 @@ function send(t, label, imgPrev, retryMode, noAsk) {
     return;
   }
 
-  /* determine if we should search */
-  var shouldSearch = WebSearch.enabled && !imgPrev && !retryMode && t.length > 5;
+  /* Auto game: "main ludo/quiz/puzzle/tictac/tebak" -> buka game langsung.
+     Pola ketat (main|buka|open|play di depan) biar "jelaskan ludo" tetap ke AI. */
+  if (!imgPrev && !retryMode && !noAsk) {
+    var gm = String(t || '').toLowerCase().trim().match(/^(main|buka|open|play)\s+(game\s+)?(tebak|kata|quiz|puzzle|ludo|tic|tac|tictac)\b/);
+    if (gm) {
+      var gk = gm[3];
+      var gid = (gk === 'kata' || gk === 'tebak') ? 'tebak' : (gk === 'tac' || gk === 'tictac') ? 'tic' : gk;
+      var gtitle = { tebak: 'Tebak Kata', quiz: 'Quiz Otak', puzzle: 'Puzzle', ludo: 'Ludo', tic: 'TicTac' }[gid] || gid;
+      try {
+        if (typeof playGame === 'function') {
+          var um0 = addMsg('user');
+          um0.textContent = label || t;
+          msgCount++;
+          playGame(gid, gtitle);
+          return;
+        }
+      } catch (e) { /* jatuh ke kirim biasa */ }
+    }
+  }
+
+  /* determine if we should search: toggle ON, atau AUTO kalau butuh
+     (apa itu / harga / berita / ...). Tetap skip buat gambar/file/retry/pendek. */
+  var autoNeed = false;
+  try { autoNeed = typeof WebSearch.needsSearch === 'function' && WebSearch.needsSearch(t); } catch (e) {}
+  var shouldSearch = (WebSearch.enabled || autoNeed) && !imgPrev && !retryMode && t.length > 5;
   var searchQuery = shouldSearch ? WebSearch.sanitizeQuery(t) : null;
 
   if (searchQuery) {
@@ -124,20 +167,32 @@ function doSend(t, label, imgPrev, retryMode, searchResults, noUser) {
   go.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
   go.classList.add('stop');
 
-  /* build prompt with search context if available */
+  /* build prompt with search context if available + niat otomatis */
   var promptToSend = searchResults && searchResults.length
     ? WebSearch.buildPrompt(t, searchResults)
     : langPromp(t);
+  try { if (typeof taskPromp === 'function') promptToSend = taskPromp(promptToSend); } catch (e) {}
 
   document.getElementById('hint').innerHTML = 'Mengirim ke server...';
   var jTok = Android.send(promptToSend);
   if (typeof jTok === 'number' && jTok > 0) window._reqTok = jTok;
+  /* pemilik stream: biar pindah chat ga bunuh AI + riwayat bisa animasi.
+     Hapus stash lama chat ini (run baru gantikan). */
+  window._streamChat = window._chatId;
+  window._streamTok = (typeof jTok === 'number') ? jTok : window._reqTok;
+  try {
+    window._promptByChat = window._promptByChat || {};
+    window._promptByChat[window._chatId] = t;
+    window._bgFinished = window._bgFinished || {};
+    delete window._bgFinished[window._chatId];
+  } catch (e) {}
 }
 
 function forceStop() {
   clearTimeout(window._cw);
   if (typeof stopTyper === 'function') stopTyper();
   window._fileMode = null;
+  window._streamChat = null; /* stop manual = stream mati, indikator ikut mati */
   if (window._done || !busy) return;
   window._done = true;
   busy = false;

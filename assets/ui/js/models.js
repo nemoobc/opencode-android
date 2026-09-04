@@ -134,6 +134,17 @@ function langPromp(t) {
   if (lang === 'en') return '(system instruction: ALWAYS reply in English, regardless of the question language.)\n\n' + t;
   return t;
 }
+/* ===== taskPromp — niat otomatis: kode -> contoh runnable, cara -> langkah =====
+   Jalan bareng langPromp. Deteksi sempit biar obrolan biasa ga kena. */
+function taskPromp(t) {
+  var s = String(t || '');
+  var low = s.toLowerCase();
+  var isCode = /(kode|code|coding|skrip|script|program\b|function|error|bug|debug|exception|python|javascript|typescript|java\b|html|css\b|sql|api\b|regex|looping|array|database)/.test(low);
+  if (isCode) return '(instruksi: kalau menjawab, sertakan contoh kode runnable yang benar + penjelasan singkat per bagian penting. Jangan cuma teori.)\n\n' + s;
+  var isHow = /(cara |tutorial|langkah-langkah|langkah |step by step|gimana cara|bagaimana cara)/.test(low);
+  if (isHow) return '(instruksi: jawab dengan langkah-langkah bernomor yang singkat dan urut. Akhiri dengan 1 tips.)\n\n' + s;
+  return s;
+}
 document.getElementById('blang').onclick = openLang;
 document.getElementById('lclose').onclick = function() { document.getElementById('mlang').classList.remove('show'); };
 renderLangBtn();

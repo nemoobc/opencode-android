@@ -44,6 +44,7 @@
 #save:active { transform:scale(.97); }
 .ghost { background:none; border:1px solid var(--input-border); color:var(--muted2); }
 .ghost:active { background:var(--input-bg); }
+.ghost.on { border-color:var(--accent); color:var(--accent); box-shadow:0 0 0 3px var(--accent)12; }
 
 /* ===== avatar ===== */
 .avatar-opt img { width:100%; height:100%; object-fit:cover; border-radius:50%; }

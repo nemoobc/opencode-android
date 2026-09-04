@@ -20,12 +20,45 @@ window.appendOut = function(t) {
   }
   window._plain += t;
   window._gotDelta = true;
+  /* stream milik chat lain (user pindah tanpa bunuh): tampung di _plain,
+     cukup nyalakan indikator list. JANGAN render ke chat yg lagi dibuka. */
+  if (window._streamChat && window._streamChat !== window._chatId) {
+    try {
+      var dl = document.getElementById('drawer');
+      if (dl && dl.classList.contains('show') && typeof histRender === 'function') histRender();
+    } catch (e) {}
+    return;
+  }
+  /* mode file: JANGAN reveal teks chat. Kumpulin aja, tampil placeholder + timer idup.
+     Final kartu file keluar di onDone -> onFileDone. */
+  if (window._fileMode) {
+    try {
+      if (window._cur && !window._cur.querySelector('.filewait')) {
+        window._cur.innerHTML = '<span class="dots"><i></i><i></i><i></i></span><span class="filewait">Menyiapkan file... <span class="filet">0</span> dtk</span>';
+        window._fileT0 = Date.now();
+        if (window._fileIv) { try { clearInterval(window._fileIv); } catch (e) {} }
+        window._fileIv = setInterval(function () {
+          try {
+            var el = window._cur && window._cur.querySelector('.filet');
+            if (el && el.isConnected && window._fileMode) el.textContent = Math.floor((Date.now() - (window._fileT0 || Date.now())) / 1000);
+            else { clearInterval(window._fileIv); window._fileIv = null; }
+          } catch (e) { try { clearInterval(window._fileIv); } catch (ex) {} window._fileIv = null; }
+        }, 1000);
+      }
+    } catch (e) {}
+    return;
+  }
   startTyper();
 };
+function clearFileIv() {
+  try { if (window._fileIv) { clearInterval(window._fileIv); window._fileIv = null; } } catch (e) {}
+}
 /* ===== typewriter: teks muncul bertahap biar kelihatan "mengetik" =====
    Delta dari server sering datang bergerombol (1 burst besar) sehingga
    tanpa pacer, jawaban langsung pop penuh. Pacer reveal bertahap 50ms. */
 function startTyper() {
+  if (window._typer) return;
+  try { tickTyper(); } catch (e) {} /* cat pertama langsung, ga nunggu 50ms */
   if (window._typer) return;
   window._typer = setInterval(function() { tickTyper(); }, 50);
 }
@@ -35,6 +68,7 @@ function stopTyper() {
 function tickTyper() {
   var cur = window._cur;
   if (!cur || !cur.isConnected) { stopTyper(); return; }
+  if (window._fileMode) { stopTyper(); return; } /* file: ga reveal */
   var plain = window._plain || '', rend = window._rend || '';
   if (rend.length >= plain.length) {
     /* kejar-kejaran selesai saat done: render markdown final */
@@ -53,11 +87,16 @@ function tickTyper() {
   if (!rend) cur.textContent = ''; /* clear dots di reveal pertama */
   var remain = plain.length - rend.length;
   /* fast-forward pas done: kebut biar typing tetap kelihatan sekilas
-     tapi jawaban langsung jadi (timing pas, ga ngegantung) */
+     tapi jawaban langsung jadi (timing pas, ga ngegantung).
+     Jalan biasa: kejar backlog (1/6 sisa) + berhenti di batas kata biar rapi. */
   var step = window._ff
     ? Math.max(120, Math.ceil(remain / 3))
-    : Math.max(4, Math.min(120, Math.ceil(remain / 10)));
+    : Math.max(8, Math.min(300, Math.ceil(remain / 6)));
   var tail = plain.substring(rend.length, rend.length + step);
+  if (!window._ff && tail.length >= step) {
+    var sp = tail.search(/\s\S*$/);
+    if (sp > 8) tail = tail.slice(0, sp);
+  }
   window._rend = rend + tail;
   cur.textContent += tail;
   cur.classList.add('caret');
@@ -71,6 +110,7 @@ window._tickTyper = tickTyper;
 window.flushStream = function() {
   stopTyper();
   window._tskip = 0;
+  if (window._fileMode) return; /* file: tetap placeholder sampai onFileDone */
   if (window._cur) { window._rend = window._plain; window._cur.textContent = window._plain; follow(); }
 };
 function finishUI(code) {
@@ -88,6 +128,36 @@ window.onDone = function(code, tok) {
   if (window._done) return;
   window._done = true;
   clearInterval(window._tm);
+  /* stream milik chat lain: JANGAN render ke chat yg dibuka (nimpa).
+     Sukses -> simpan hasil buat dipasang pas balik. Gagal/cancel/file ->
+     bereskan state aja, user kirim ulang dari chatnya. */
+  if (window._streamChat && window._streamChat !== window._chatId) {
+    try {
+      var sid = window._streamChat;
+      if (code === 0 && !window._fileMode && (window._plain || '').trim()) {
+        window._bgFinished = window._bgFinished || {};
+        window._bgFinished[sid] = window._plain;
+        try { if (typeof toast === 'function') toast('✅ AI selesai di chat lain — buka riwayat buat liat'); } catch (e) {}
+      } else if (!window._fileMode) {
+        try { if (typeof toast === 'function') toast('AI di chat lain berhenti (kode ' + code + ')'); } catch (e) {}
+      }
+      window._streamChat = null;
+      busy = false;
+      if (typeof stopTyper === 'function') stopTyper();
+      go.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
+      go.classList.remove('stop');
+      dot.className = code === 0 ? 'ok' : 'bad';
+      document.getElementById('hint').textContent = '';
+      try { var dl2 = document.getElementById('drawer'); if (dl2 && dl2.classList.contains('show') && typeof histRender === 'function') histRender(); } catch (e) {}
+    } catch (e) {}
+    return;
+  }
+  /* mode file: langsung kartu, jangan fast-forward teks (bocor chat). */
+  if (window._fileMode) {
+    if (typeof stopTyper === 'function') stopTyper();
+    finishMarkdown(code);
+    return;
+  }
   var el = window._cur ? window._cur.querySelector('.elapsed') : null;
   if (el) el.remove();
   /* teks belum selesai ke-reveal (burst cepat): JANGAN langsung swap ke
@@ -110,12 +180,15 @@ function finishMarkdown(code) {
   /* mode file: render kartu file, bukan markdown */
   if (!window._canceling && window._fileMode && (window._plain || '').trim()) {
     window._fileMode = null;
+    try { if (typeof clearFileIv === 'function') clearFileIv(); } catch (e) {}
     onFileDone(code, (window._plain || '').trim());
     return;
   }
   if (window._cur) {
     var plain = (window._plain || '').trim();
     if (window._canceling) {
+      window._fileMode = null; /* batal: buka kunci biar tanya-file bisa lagi */
+      try { if (typeof clearFileIv === 'function') clearFileIv(); } catch (e) {}
       if (plain) {
         window._cur.classList.remove('plain');
         window._cur.innerHTML = '<div class="md">' + mdRender(plain) + '</div>';
@@ -197,6 +270,8 @@ window.onError = function(m, tok) {
   }
   window._done = true;
   clearInterval(window._tm);
+  window._fileMode = null; /* gagal: buka kunci biar tanya-file bisa lagi */
+  try { if (typeof clearFileIv === 'function') clearFileIv(); } catch (e) {}
   ov.classList.remove('show');
   killHello();
   if (first) addNote(friendlyErr(m), true, true);

@@ -96,7 +96,7 @@
         else sec.classList.remove('low');
       }
       if (Q.left <= 0) answer(id, -1);
-    }, 100);
+    }, 250);
   }
   function escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

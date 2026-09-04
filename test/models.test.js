@@ -13,6 +13,7 @@ const MODELS = sandbox.MODELS;
 const modelName = sandbox.modelName;
 const detectLang = sandbox.detectLang;
 const langPromp = sandbox.langPromp;
+const taskPromp = sandbox.taskPromp;
 const avatarEmoji = sandbox.avatarEmoji;
 const avatarName = sandbox.avatarName;
 const avatarUrl = sandbox.avatarUrl;
@@ -139,6 +140,21 @@ test('cached detection reused', () => {
   sandbox.window._langDetected = 'id';
   const result = langPromp('anything');
   assert.ok(result.includes('bahasa Indonesia'), 'should use cached detection');
+});
+
+// --- taskPromp (niat otomatis) ---
+console.log('\ntaskPromp():');
+test('coding intent minta contoh runnable', () => {
+  const result = taskPromp('jelaskan error python ini');
+  assert.ok(result.includes('runnable'), 'code instruction');
+  assert.ok(result.includes('jelaskan error python ini'), 'original kept');
+});
+test('cara intent minta langkah', () => {
+  const result = taskPromp('cara daftar bpjs');
+  assert.ok(result.includes('langkah-langkah'), 'steps instruction');
+});
+test('obrolan biasa polos', () => {
+  assert.equal(taskPromp('halo apa kabar'), 'halo apa kabar');
 });
 
 // --- avatarEmoji ---

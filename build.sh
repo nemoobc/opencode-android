@@ -119,19 +119,6 @@ else
     echo "  skipped (no python, using original)"
 fi
 
-# [3b/7] DEV GATE: tanam hash license.key (bukan password!) sebagai JS.
-# HARUS di sini (sebelum aapt) supaya masuk APK. Diregenerate tiap build,
-# TIDAK di-commit (langsung baca, tanpa fetch — fetch file:// sering diblokir).
-if [ -f "license.key" ]; then
-    LK_FP="$(sha256sum license.key 2>/dev/null | cut -d' ' -f1 || openssl dgst -sha256 license.key 2>/dev/null | awk '{print $NF}')"
-    if [ -n "$LK_FP" ]; then
-        printf 'window.DEVKEY="%s";\n' "$LK_FP" > assets/ui/js/devkey.js
-        rm -rf build/ui
-        cp -a assets/ui build/ui
-        echo "  devkey tertanam (hash only)"
-    fi
-fi
-
 # [4/7] aapt package (pakai minified assets)
 echo -e "${YELLOW}[4/7] aapt package...${NC}"
 if [ -d "build/ui" ]; then
@@ -209,7 +196,17 @@ else
 fi
 echo "  TIPS: copy Documents/opencode-keystore/ks.jks ke Drive/PC. Hilang = update bentrok permanen."
 
-# (devkey ditanam di step 3b, sebelum aapt — lihat atas)
+# DEV GATE: tanam hash license.key (bukan password!) sebagai JS.
+# Gerbang developer cocokkan sha256 file pilihan user dgn hash ini.
+# File devkey.js diregenerate tiap build, TIDAK di-commit (langsung baca,
+# tanpa fetch — fetch file:// sering diblokir WebView).
+if [ -f "license.key" ]; then
+    LK_FP="$(sha256sum license.key 2>/dev/null | cut -d' ' -f1 || openssl dgst -sha256 license.key 2>/dev/null | awk '{print $NF}')"
+    if [ -n "$LK_FP" ]; then
+        printf 'window.DEVKEY="%s";\n' "$LK_FP" > assets/ui/js/devkey.js
+        echo "  devkey tertanam (hash only)"
+    fi
+fi
 
 # PENGAMAN: pastikan key = key APK yang sudah terpasang/rilis.
 # Kalau beda, GAGALKAN build — jangan hasilkan APK bentrok diam-diam.

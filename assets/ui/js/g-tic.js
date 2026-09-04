@@ -175,7 +175,6 @@
         status('CPU menang!', 0);
       }
     }
-    paint(r === 'D' ? null : r.line);
     var b = document.getElementById('gbody');
     var div = document.createElement('div');
     div.innerHTML = '<button class="gbtn ghost2" id="tic-menu">‹ Menu</button> <button class="gbtn" id="tic-again" style="margin-top:6px">Main Lagi</button>';

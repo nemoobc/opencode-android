@@ -107,6 +107,37 @@ test('dev-go button unlocks', () => {
   sandbox.window._devOn = undefined;
   sandbox.document.getElementById('mdev').classList.remove('show');
 });
+test('custom PIN replaces default', () => {
+  sandbox.localStorage.setItem('oc-dev-pin', '9999');
+  sandbox.window._devOn = undefined;
+  assert.equal(sandbox.Dev.unlock('112233'), false);
+  assert.equal(sandbox.Dev.unlock('9999'), true);
+  sandbox.localStorage.removeItem('oc-dev-pin');
+  sandbox.window._devOn = undefined;
+  sandbox.document.getElementById('mdev').classList.remove('show');
+  sandbox.document.getElementById('dev-lock').style.display = '';
+  sandbox.document.getElementById('dev-panel').style.display = 'none';
+});
+test('PIN tersimpan samaran bukan plaintext', () => {
+  sandbox.localStorage.removeItem('oc-dev-pin');
+  sandbox.localStorage.removeItem('oc-dev-fails');
+  sandbox.document.getElementById('dev-npin2').value = '4321';
+  sandbox.document.getElementById('dev-npinsave').click();
+  const stored = sandbox.localStorage.getItem('oc-dev-pin');
+  assert.ok(stored && stored.indexOf('4321') < 0 && stored.indexOf('h1.') === 0, 'obfuscated, got: ' + stored);
+  assert.equal(sandbox.Dev.unlock('4321'), true);
+  sandbox.localStorage.removeItem('oc-dev-pin');
+  sandbox.localStorage.removeItem('oc-dev-fails');
+  sandbox.window._devOn = undefined;
+});
+test('5x salah dikunci 5 menit', () => {
+  sandbox.localStorage.removeItem('oc-dev-fails');
+  sandbox.window._devOn = undefined;
+  for (let i = 0; i < 5; i++) assert.equal(sandbox.Dev.unlock('zzzz'), false);
+  assert.equal(sandbox.Dev.unlock('112233'), false, 'locked even correct');
+  assert.ok(sandbox.document.getElementById('dev-msg').textContent.includes('Terkunci'));
+  sandbox.localStorage.removeItem('oc-dev-fails');
+});
 
 console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed\n`);
 process.exit(failed > 0 ? 1 : 0);

@@ -61,10 +61,12 @@ var userHold = false;
 var msgCount = 0;
 function follow() {
   if (userHold) return;
-  if (wrap.scrollTo) { try { wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' }); } catch(e) { wrap.scrollTop = wrap.scrollHeight; } }
+  /* throttle 200ms: typewriter manggil tiap 50ms, scroll smooth tiap tick = jank */
+  var now = Date.now();
+  if (window._followAt && now - window._followAt < 200) return;
+  window._followAt = now;
+  if (wrap.scrollTo) { try { wrap.scrollTo({ top: wrap.scrollHeight }); } catch(e) { wrap.scrollTop = wrap.scrollHeight; } }
   else wrap.scrollTop = wrap.scrollHeight;
-  requestAnimationFrame(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; });
-  setTimeout(function() { if (!userHold) wrap.scrollTop = wrap.scrollHeight; }, 250);
 }
 function scrollEnd() { userHold = false; follow(); }
 /* keyboard dismiss saat user scroll ke atas */

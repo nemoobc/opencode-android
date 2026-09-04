@@ -2,7 +2,7 @@
 var Media = (function() {
   var IMG_WORDS = ['gambar', 'lukisan', 'foto', 'ilustrasi', 'image', 'picture', 'visual', 'sketsa', 'poster', 'wallpaper'];
   var IMG_ACT = ['buatkan', 'bikin', 'buat', 'tolong', 'generate', 'create', 'lukis', 'lukiskan', 'draw', 'gambarkan', 'desain', 'design'];
-  var FILE_ACT = ['buatkan file', 'buatin file', 'buat file', 'kirim file', 'kirim sebagai file', 'simpan sebagai file', 'simpan ke file', 'buatkan kode', 'buatin kode', 'download'];
+  var FILE_ACT = ['buatkan file', 'buatin file', 'buat file', 'kirim file', 'kirim sebagai file', 'simpan sebagai file', 'simpan ke file', 'buatkan kode', 'buatin kode', 'buat kode', 'buatkan skrip', 'buatin skrip', 'buat skrip', 'bikinkan skrip', 'buatkan script', 'buatkan program', 'bikinkan program', 'buatin program', 'buat program', 'download'];
   var EXT = { python: 'py', py: 'py', javascript: 'js', js: 'js', html: 'html', css: 'css', json: 'json', java: 'java', c: 'c', cpp: 'cpp', 'c++': 'cpp', go: 'go', rust: 'rs', rs: 'rs', php: 'php', ruby: 'rb', rb: 'rb', bash: 'sh', sh: 'sh', shell: 'sh', sql: 'sql', xml: 'xml', yaml: 'yml', yml: 'yml', markdown: 'md', md: 'md', text: 'txt', txt: 'txt' };
 
   function hasAny(t, arr) {
@@ -30,10 +30,133 @@ var Media = (function() {
     s = s.replace(/\s+/g, ' ').trim();
     return s || 'random art';
   }
-  function imgUrl(prompt, seed, size) {
-    var s = size || 512; /* 512 = jauh lebih cepat dari 768 */
-    return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) +
-      '?width=' + s + '&height=' + s + '&nologo=true&seed=' + (seed === undefined ? Math.floor(Math.random() * 100000) : seed);
+  /* ===== auto prompt: deteksi kategori + bilingual + guard, tanpa patch manual ===== */
+  var AUTO_DICT = { sertifikat: 'certificate award', penghargaan: 'award', kucing: 'cat', anjing: 'dog', 'anjing laut': 'seal', pemandangan: 'landscape', pantai: 'beach', gunung: 'mountain', kota: 'city', mobil: 'car', motor: 'motorcycle', rumah: 'house', gedung: 'building', bunga: 'flower', makanan: 'food', rendang: 'rendang', anak: 'kid', keluarga: 'family', potret: 'portrait', logo: 'logo', poster: 'poster', undangan: 'invitation', masjid: 'mosque', sawah: 'rice field' };
+  function autoEN(p) {
+    var low = ' ' + String(p || '').toLowerCase() + ' ';
+    var add = [];
+    for (var k in AUTO_DICT) {
+      if (low.indexOf(k) >= 0 && low.indexOf(AUTO_DICT[k].toLowerCase()) < 0) add.push(AUTO_DICT[k]);
+    }
+    return add.length ? p + ' (' + add.slice(0, 3).join(', ') + ')' : p;
+  }
+  function autoGuard(p) {
+    var low = String(p || '').toLowerCase();
+    var wantDark = /(horor|horror|hantu|ghost|dark|gore|seram|menakutkan|zombie|skull|tengkorak|vampire|dracula)/.test(low);
+    var isDoc = /(sertifikat|certificate|ijazah|piagam|surat|dokumen|document|kartu|card|undangan|invitation|poster|brosur|logo|kop surat)/.test(low);
+    var isPeople = /(orang|anak|keluarga|potret|portrait|wajah|face|man|woman|kid|family|pengantin|wisuda)/.test(low);
+    var isFood = /(makanan|food|rendang|nasi|sate|bakso|kue|cake|kopi|coffee)/.test(low);
+    var isPlace = /(pantai|beach|gunung|mountain|kota|city|desa|rumah|house|gedung|building|masjid|sawah|taman|jalan|jembatan)/.test(low);
+    var g = ', masterpiece, sharp focus, correct anatomy, clean, high quality, detailed';
+    if (isDoc) return ', official document on table, paper, flat lay, studio photo' + g + ', no building, no architecture, no people' + (wantDark ? '' : ', no horror');
+    if (isPeople) return ', natural skin, sharp focus, studio light' + g + (wantDark ? '' : ', no horror, no gore, no disfigurement');
+    if (isFood) return ', appetizing, studio food photo' + g + (wantDark ? '' : ', no horror');
+    if (isPlace) return ', daylight, vibrant' + g + (wantDark ? '' : ', no horror, no gore');
+    if (wantDark) return g;
+    return ', bright daylight, cheerful' + g + ', no horror, no gore, no darkness';
+  }
+  /* ===== gaya + rasio otomatis (GACOR): tanpa setting manual =====
+     gaya: tulis "gaya anime: kucing" / "style foto: ..." / "ala sinematik: ..."
+     rasio: dokumen/poster -> portrait, wallpaper/landscape -> landscape, hd -> 1024 */
+  var STYLE_MAP = {
+    anime: 'anime style, vibrant, clean lineart',
+    kartun: 'cartoon style, cute, bold colors',
+    foto: 'ultra realistic photo, 85mm, natural light',
+    realistik: 'ultra realistic photo, 85mm, natural light',
+    lukisan: 'oil painting, textured brushstrokes',
+    '3d': '3d render, octane, soft studio light',
+    sinematik: 'cinematic still, dramatic light, film grain',
+    poster: 'poster design, bold typography space, clean layout',
+  };
+  function parseStyle(q) {
+    var s = String(q || '');
+    var m = s.match(/^(?:gaya|style|ala)\s+([a-z0-9]+)\s*:\s*(.+)$/i);
+    if (m && STYLE_MAP[m[1].toLowerCase()]) return { q: m[2].trim(), extra: STYLE_MAP[m[1].toLowerCase()] };
+    var low = s.toLowerCase();
+    for (var k in STYLE_MAP) {
+      if (low.indexOf(k) >= 0) return { q: s, extra: STYLE_MAP[k] };
+    }
+    return { q: s, extra: '' };
+  }
+  function autoDims(q, size) {
+    if (typeof size === 'string') {
+      if (size === 'portrait') return [768, 1024];
+      if (size === 'landscape') return [1024, 768];
+      if (size === 'hd') return [1024, 1024];
+    }
+    if (typeof size === 'number') return [size, size];
+    var low = String(q || '').toLowerCase();
+    if (/(sertifikat|certificate|poster|dokumen|document|undangan|portrait|potret|full body|poster)/.test(low)) return [768, 1024];
+    if (/(wallpaper|landscape|pemandangan|pantai|kota|city|wide)/.test(low)) return [1024, 768];
+    if (/(hd|4k|detail|bagus|tajam|jernih)/.test(low)) return [1024, 1024];
+    return [768, 768];
+  }
+  function imgUrl(prompt, seed, size, enhance, ref) {
+    var raw = String(prompt || '').trim() || 'random art';
+    /* ref = prompt asli user: gaya + rasio ikut kemauan user walau teks
+       sudah diracik ulang AI (isian EN tidak bawa kata kunci ID). */
+    var det = String(ref || raw);
+    var st = parseStyle(det);
+    var p = autoEN(raw) + (st.extra ? ', ' + st.extra : '') + autoGuard(raw);
+    var d = autoDims(st.q, size);
+    var w = d[0], h = d[1];
+    var en = (enhance === false) ? 'false' : 'true';
+    return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(p) +
+      '?width=' + w + '&height=' + h + '&nologo=true&private=true&enhance=' + en + '&model=flux&seed=' + (seed === undefined ? Math.floor(Math.random() * 100000) : seed);
+  }
+  /* Bersihkan ocehan AI jadi prompt murni 1 paragraf (tanpa "Ini promptnya:"). */
+  function cleanExpanded(t) {
+    var s = String(t || '');
+    s = s.replace(/```\w*\n?([\s\S]*?)```/g, '$1');
+    s = s.replace(/^\s*(here(’|'|s)?[^:]*|prompt\s*\d*\s*|image prompt\s*|hasil\s*|berikut[^:]*)\s*:\s*/i, '');
+    s = s.replace(/^["'“”\s]+|["'“”\s]+$/g, '');
+    s = s.replace(/\s+/g, ' ').trim();
+    return s.slice(0, 500) || 'random art';
+  }
+  /* "jangan ada X / tanpa X / tidak ada X" user -> "no X" (EN + asli). */
+  var NEG_DICT = { teks: 'text', tulisan: 'text', watermark: 'watermark', orang: 'people', manusia: 'people', anak: 'children', bangunan: 'buildings', gedung: 'buildings', mobil: 'cars', pohon: 'trees', air: 'water', langit: 'sky', hewan: 'animals', darah: 'blood' };
+  function userNegatives(q) {
+    var out = [];
+    try {
+      var re = /(?:jangan(?: ada)?|tanpa|tidak ada|tidak pakai|no|without)\s+([^,.;]+)/gi;
+      var m;
+      while ((m = re.exec(String(q || ''))) && out.length < 3) {
+        var x = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!x || x.length > 40) continue;
+        var en = NEG_DICT[x] || x;
+        out.push('no ' + (en === x ? x : en + ' (' + x + ')'));
+      }
+    } catch (e) {}
+    return out.length ? ', ' + out.join(', ') : '';
+  }
+  /* Otak dulu: minta AI tulis prompt gambar EN detail (1 paragraf).
+     Web: POST /api/chat. Android/file://: fetch gagal -> fallback statik.
+     Selalu resolve string (tak pernah reject) biar gambar tetap jalan offline. */
+  function expandPrompt(q) {
+    return new Promise(function (resolve) {
+      var fallback = String(q || '').trim() || 'random art';
+      var timer = setTimeout(function () { resolve(fallback); }, 25000);
+      try {
+        var model = 'opencode/mimo-v2.5-free';
+        try { if (typeof window.curModel === 'string' && window.curModel) model = window.curModel; } catch (e) {}
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: 'Tulis prompt gambar bahasa Inggris, 1 paragraf padat (max 80 kata), fotogenik, objek sama persis jangan diganti. User: ' + fallback,
+            model: model,
+          }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            clearTimeout(timer);
+            var t = String((j && j.text) || '').trim();
+            if (t.length > 10) resolve(cleanExpanded(t) + userNegatives(fallback));
+            else resolve(fallback);
+          })
+          .catch(function () { clearTimeout(timer); resolve(fallback); });
+      } catch (e) { clearTimeout(timer); resolve(fallback); }
+    });
   }
 
   /* request file/kode? cth: "buatkan file kode python kalkulator" */
@@ -62,6 +185,10 @@ var Media = (function() {
     imgRequest: imgRequest,
     cleanImgPrompt: cleanImgPrompt,
     imgUrl: imgUrl,
+    expandPrompt: expandPrompt,
+    cleanExpanded: cleanExpanded,
+    userNegatives: userNegatives,
+    autoDims: autoDims,
     fileRequest: fileRequest,
     fileName: fileName,
     extractCode: extractCode,
@@ -69,8 +196,8 @@ var Media = (function() {
   };
 })();
 
-/* ===== alur gambar: thinking → skeleton+timer → img / timeout =====
-   Regen MENAMBAH (append), tidak menimpa. Timeout 45s anti-stuck. */
+/* ===== alur gambar: otak(expand) -> skeleton+timer -> img / timeout =====
+   Regen MENAMBAH (append), tidak menimpa. Timeout 60s anti-stuck. */
 var IMG_SVG_NEW = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>';
 var IMG_SVG_X = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
 var IMG_SVG_DL = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -95,11 +222,11 @@ function doImage(t, label) {
   document.getElementById('hint').textContent = '';
   setTimeout(function() { genImage(body, Media.cleanImgPrompt(t)); }, 650);
 }
-function genImage(body, q) {
+function genImage(body, q, size) {
   if (!body.isConnected || window._aborted) return;
   var sk = document.createElement('div');
   sk.className = 'imgjob';
-  sk.innerHTML = '<div class="imgskeleton"></div><span class="elapsed">Gambar "' + esc(q) + '"... <span class="imgt">0</span> dtk</span>';
+  sk.innerHTML = '<div class="imgskeleton"></div><span class="elapsed">Meracik prompt "' + esc(q) + '"... <span class="imgt">0</span> dtk</span>';
   body.appendChild(sk);
   var think = body.querySelector('.thinking-svg');
   if (think) think.remove();
@@ -115,42 +242,70 @@ function genImage(body, q) {
     if (done || !sk.isConnected) return;
     done = true;
     clearInterval(iv);
-    sk.innerHTML = '<span style="color:#E08A7B">Kelamaan (45 dtk). Cek internet, coba tombol Baru.</span>';
+    sk.innerHTML = '<span style="color:#E08A7B">Kelamaan (60 dtk). Cek internet, coba tombol Baru.</span>';
     imgFinish(body);
-  }, 45000);
-  var src = Media.imgUrl(q);
-  var img = new Image();
-  img.onload = function() {
-    if (done || !sk.isConnected) return;
-    done = true;
-    clearInterval(iv);
-    clearTimeout(to);
-    sk.innerHTML = '<img class="aimg" src="' + src + '" alt="' + escAttr(q) + '">';
-    ensureImgBar(body);
-    imgFinish(body);
-  };
-  img.onerror = function() {
-    if (done || window._aborted || !sk.isConnected) return;
-    done = true;
-    clearInterval(iv);
-    clearTimeout(to);
-    sk.innerHTML = '<span style="color:#E08A7B">Gagal bikin gambar. Cek internet, coba tombol Baru.</span>';
-    ensureImgBar(body);
-    imgFinish(body);
-  };
-  img.src = src;
+  }, 60000);
+  function loadFinal(finalQ, useEnhance) {
+    if (done || !sk.isConnected || window._aborted) return;
+    var lab = sk.querySelector('.elapsed');
+    if (lab) lab.innerHTML = 'Gambar "' + esc(q) + '"... <span class="imgt">' + Math.floor((Date.now() - t0) / 1000) + '</span> dtk';
+    var src = Media.imgUrl(finalQ, undefined, size, useEnhance, q);
+    window._lastImgSize = size || window._lastImgSize || null;
+    window._lastImgFinal = finalQ;
+    var img = new Image();
+    img.onload = function() {
+      if (done || !sk.isConnected) return;
+      done = true;
+      clearInterval(iv);
+      clearTimeout(to);
+      sk.innerHTML = '<img class="aimg" loading="lazy" decoding="async" src="' + src + '" alt="' + escAttr(q) + '">';
+      ensureImgBar(body);
+      imgFinish(body);
+    };
+    img.onerror = function() {
+      if (done || window._aborted || !sk.isConnected) return;
+      done = true;
+      clearInterval(iv);
+      clearTimeout(to);
+      sk.innerHTML = '<span style="color:#E08A7B">Gagal bikin gambar. Cek internet, coba tombol Baru.</span>';
+      ensureImgBar(body);
+      imgFinish(body);
+    };
+    img.src = src;
+  }
+  /* Tahap 1 otak (max 25s di dalam), tahap 2 gambar. Offline -> fallback cepat. */
+  try {
+    Media.expandPrompt(q).then(function (finalQ) {
+      if (done || !sk.isConnected || window._aborted) return;
+      var expanded = finalQ && finalQ !== q;
+      loadFinal(expanded ? finalQ : q, !expanded);
+    });
+  } catch (e) { loadFinal(q, true); }
 }
 function ensureImgBar(body) {
   if (body.querySelector('[data-imgnew]')) return;
   var d = document.createElement('div');
   d.className = 'mact';
-  d.innerHTML = '<button data-imgnew>' + IMG_SVG_NEW + ' Baru</button>';
+  d.innerHTML = '<button data-imgnew>' + IMG_SVG_NEW + ' Baru</button>' +
+    '<button data-imghd>HD</button>' +
+    '<button data-imgpot>Potret</button>' +
+    '<button data-imgland>Lanskap</button>' +
+    '<button data-imgsv>Simpan</button>';
   body.appendChild(d);
-  d.querySelector('[data-imgnew]').onclick = function() {
+  function regen(size) {
     if (busy && window._cur) return;
     busy = true; window._done = false; window._aborted = false;
     dot.className = 'work';
-    genImage(body, Media.cleanImgPrompt(window._lastImgPrompt || ''));
+    genImage(body, Media.cleanImgPrompt(window._lastImgPrompt || ''), size);
+  }
+  d.querySelector('[data-imgnew]').onclick = function() { regen(); };
+  d.querySelector('[data-imghd]').onclick = function() { regen('hd'); };
+  d.querySelector('[data-imgpot]').onclick = function() { regen('portrait'); };
+  d.querySelector('[data-imgland]').onclick = function() { regen('landscape'); };
+  d.querySelector('[data-imgsv]').onclick = function() {
+    var im = body.querySelector('.imgjob:last-of-type img.aimg') || body.querySelector('img.aimg');
+    if (im && im.src) saveImg(im.src);
+    else if (typeof toast === 'function') toast('Belum ada gambar');
   };
 }
 function imgFinish(body) {

@@ -1,5 +1,5 @@
 /* ===== utils.js — esc, toast, mdRender, AVA_SVG, addMsg, addNote, addActions, encrypt/decrypt ===== */
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(t) {
   var el = document.getElementById('toast');
@@ -102,6 +102,17 @@ function addMsg(kind) {
   chat.appendChild(m);
   scrollEnd();
   return m.querySelector('.body');
+}
+/* cap DOM chat biar HP kentang ga ngelag (150 bubble). Riwayat server tetap utuh. */
+function trimChat(max) {
+  try {
+    var lim = max || 150;
+    var els = chat.querySelectorAll('.msg');
+    var drop = els.length - lim;
+    for (var i = 0; i < drop; i++) {
+      if (els[i] && els[i].parentNode) els[i].parentNode.removeChild(els[i]);
+    }
+  } catch (e) {}
 }
 function addNote(txt, isErr, canRetry) {
   killHello();

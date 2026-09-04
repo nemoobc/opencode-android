@@ -2,8 +2,15 @@
 #chatwrap { flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; background:radial-gradient(600px 400px at 50% -10%, var(--surface) 0%, transparent 60%), var(--bg); }
 #chat { max-width:760px; margin:0 auto; padding:20px 18px 10px; overflow-x:hidden; display:flex; flex-direction:column; }
 #chat .msg { width:100%; }
-.msg { margin:9px 0; animation:rise .3s ease-out; }
+.msg { margin:9px 0; animation:rise .3s ease-out; content-visibility:auto; contain-intrinsic-size:auto 120px; }
 @keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+/* restore riwayat: pesan masuk berurutan (cascade), bukan pop bareng */
+#chat.restoring .msg { animation:rise .35s ease-out backwards; }
+#chat.restoring .msg:nth-child(1) { animation-delay:.02s; } #chat.restoring .msg:nth-child(2) { animation-delay:.06s; }
+#chat.restoring .msg:nth-child(3) { animation-delay:.10s; } #chat.restoring .msg:nth-child(4) { animation-delay:.14s; }
+#chat.restoring .msg:nth-child(5) { animation-delay:.18s; } #chat.restoring .msg:nth-child(6) { animation-delay:.22s; }
+#chat.restoring .msg:nth-child(7) { animation-delay:.26s; } #chat.restoring .msg:nth-child(8) { animation-delay:.30s; }
+#chat.restoring .msg:nth-child(9) { animation-delay:.34s; } #chat.restoring .msg:nth-child(n+10) { animation-delay:.38s; }
 .msg.user { display:flex; flex-direction:column; align-items:flex-end; }
 .msg.user .body {
   max-width:85%; background:linear-gradient(135deg,var(--item-bg),var(--surface)); border-radius:20px 20px 6px 20px;

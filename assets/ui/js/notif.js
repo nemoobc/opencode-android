@@ -93,7 +93,49 @@ var Notif = (function() {
     document.getElementById('mnotif').classList.add('show');
     markRead(list);
   }
-  return { init: init, open: open, parseList: parseList, unread: unread, URL: URL_ };
+  /* ===== composer (dev): buat + preview + tes lokal + export ===== */
+  function today() {
+    try { return new Date().toISOString().slice(0, 10); } catch (e) { return ''; }
+  }
+  function slug(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'notif';
+  }
+  function makeEntry(o) {
+    o = o || {};
+    var t = String(o.title || '').trim();
+    var b = String(o.body || '').trim();
+    return {
+      id: String(o.id || '').trim() || (slug(t) + '-' + today()),
+      date: String(o.date || '').trim() || today(),
+      title: t,
+      body: b,
+      link: String(o.link || '').trim(),
+    };
+  }
+  function validateEntry(e) {
+    if (!e) return 'kosong';
+    if (!e.title) return 'judul wajib';
+    if (!e.body) return 'isi wajib';
+    if (e.title.length > 120) return 'judul max 120';
+    if (e.body.length > 500) return 'isi max 500';
+    if (e.link && !/^https?:\/\//i.test(e.link)) return 'link harus https?://';
+    return '';
+  }
+  function buildFile(list) {
+    return JSON.stringify({ v: 1, announcements: list || [] }, null, 2);
+  }
+  function testLocal(entry) {
+    var list = [];
+    try { list = window._notifList || cached() || []; } catch (e) { list = []; }
+    list = [entry].concat(list);
+    window._notifList = list;
+    try { localStorage.setItem(CACHE, JSON.stringify(list)); } catch (e) {}
+    badge(unread(list));
+    return list;
+  }
+  return { init: init, open: open, parseList: parseList, unread: unread, URL: URL_,
+    makeEntry: makeEntry, validateEntry: validateEntry, buildFile: buildFile,
+    testLocal: testLocal, renderList: render, today: today, slug: slug };
 })();
 
 function notifBind(id, fn) {

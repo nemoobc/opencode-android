@@ -114,5 +114,19 @@ test('plain text fallback', () => {
   assert.equal(r.code, 'hello world');
 });
 
+// --- cleanExpanded + userNegatives + ref (nurut user) ---
+console.log('\nauto nurut:');
+test('strips AI chatter label', () => {
+  assert.equal(Media.cleanExpanded('Here is your prompt: a cute cat'), 'a cute cat');
+});
+test('jangan/tanpa jadi no-X', () => {
+  assert.equal(Media.userNegatives('kucing tanpa teks'), ', no text (teks)');
+  assert.equal(Media.userNegatives('kucing lucu'), '');
+});
+test('ref jaga rasio + gaya', () => {
+  assert.ok(/768.*1024/.test(Media.imgUrl('EN certificate paper', 7, null, true, 'poster sertifikat')));
+  assert.ok(/anime/i.test(Media.imgUrl('EN cat samurai', 7, null, true, 'gaya anime: kucing')));
+});
+
 console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed\n`);
 process.exit(failed > 0 ? 1 : 0);

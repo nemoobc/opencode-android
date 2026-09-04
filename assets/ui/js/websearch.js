@@ -157,6 +157,8 @@ var WebSearch = (function() {
     for (var i = 0; i < keywords.length; i++) {
       if (t.indexOf(keywords[i]) >= 0) return true;
     }
+    /* auto definisi/tanya: "apa itu X", "siapa X", "kapan/di mana/kenapa/bagaimana/berapa" */
+    if (/^(apa itu|apa arti|apa yang|apakah|siapa|kapan|dimana|di mana|kenapa|mengapa|bagaimana|gimana|berapa|jelaskan|definisi|arti dari)\b/.test(t.trim())) return true;
     return false;
   }
 

@@ -282,9 +282,16 @@
   function diceFaces(n, bounce) {
     var d = document.getElementById('ludice');
     if (!d) return;
+    if (!PIPMAP[n]) n = 1;
     var h = '<span class="pips">';
     for (var i = 0; i < 9; i++) h += '<i class="' + (PIPMAP[n].indexOf(i) >= 0 ? 'on' : '') + '"></i>';
     d.innerHTML = h + '</span>';
+    try {
+      d.setAttribute('data-v', n);
+      d.setAttribute('aria-label', 'Dadu ' + n);
+      if (n === 6) d.classList.add('six');
+      else d.classList.remove('six');
+    } catch (e) {}
     if (bounce) {
       d.classList.remove('bounce');
       void d.offsetWidth;
@@ -294,26 +301,48 @@
   function diceBlank() {
     var d = document.getElementById('ludice');
     if (!d) return;
-    var h = '<span class="pips">';
-    for (var i = 0; i < 9; i++) h += '<i></i>';
-    d.innerHTML = h + '</span>';
+    d.innerHTML = '<span class="pips hint"><i></i><i></i><i></i><i></i><i class="dot">•</i><i></i><i></i><i></i><i></i></span>';
+    try { d.setAttribute('data-v', '0'); d.setAttribute('aria-label', 'Kocok dadu'); d.classList.remove('six'); } catch (e) {}
   }
   function diceShow(n) { diceFaces(n, true); }
   function diceAnim(id, done) {
     var d = document.getElementById('ludice');
-    if (d) { d.disabled = true; d.classList.add('rolling'); }
+    if (d) { d.disabled = true; d.classList.add('rolling'); d.classList.remove('ready'); d.classList.remove('six'); }
+    /* kocok fisika: tiap frame transformasi langsung (bukan loop CSS kaku).
+       Putaran + goyang MENGECIL seiring(`/n`) = ngerem kayak dadu asli. ~1.2s. */
+    var steps = [55, 60, 65, 75, 85, 95, 105, 120, 130, 140, 150, 160];
     var n = 0;
-    var iv = setInterval(function() {
-      if (id !== gest) { clearInterval(iv); return; }
-      diceFaces(1 + Math.floor(Math.random() * 6), false);
-      if (++n >= 8) {
-        clearInterval(iv);
-        var dd = document.getElementById('ludice');
-        if (dd) dd.classList.remove('rolling');
-        done();
+    var last = 0;
+    function tick() {
+      if (id !== gest) return;
+      var v = 1 + Math.floor(Math.random() * 6);
+      if (v === last) v = (v % 6) + 1;
+      last = v;
+      diceFaces(v, false);
+      var k = n / steps.length; /* 0 kencang -> 1 berhenti */
+      var dd = document.getElementById('ludice');
+      if (dd) {
+        var rot = ((Math.random() * 80) - 40) * (1 - k * 0.85);
+        var tx = ((Math.random() * 10) - 5) * (1 - k * 0.8);
+        var ty = ((Math.random() * 8) - 4) * (1 - k * 0.8);
+        var sc = 1 + 0.08 * (1 - k);
+        dd.style.transitionDuration = steps[n] + 'ms';
+        dd.style.transform = 'rotate(' + rot.toFixed(1) + 'deg) translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
       }
-    }, 80);
-    timers.push(iv);
+      if (++n >= steps.length) {
+        var fin = document.getElementById('ludice');
+        if (fin) {
+          fin.classList.remove('rolling');
+          fin.style.transform = '';
+          fin.style.transitionDuration = '';
+        }
+        done();
+        return;
+      }
+      var to = setTimeout(function () { if (id === gest) tick(); }, steps[n]);
+      timers.push(to);
+    }
+    tick();
   }
   function humanRoll(id) {
     if (id !== gest || !L || L.winner || ORDER[L.turn] !== 'G' || L.phase !== 'roll') return;
@@ -570,15 +599,18 @@
     document.getElementById('lu-menu').onclick = function() { showGMenu(); };
   }
   function crownRain() {
+    var id = gest;
     for (var i = 0; i < 18; i++) {
       (function() {
+        if (id !== gest) return;
         var c = document.createElement('div');
         c.className = 'crownfall';
         c.textContent = '👑';
         c.style.left = (Math.random() * 96) + 'vw';
         c.style.animationDelay = (Math.random() * 0.8) + 's';
         document.body.appendChild(c);
-        setTimeout(function() { if (c.parentNode) c.parentNode.removeChild(c); }, 3400);
+        var t = setTimeout(function() { if (c.parentNode) c.parentNode.removeChild(c); }, 3400);
+        timers.push(t);
       })();
     }
   }
@@ -589,6 +621,7 @@
     }
     timers = [];
     L = null;
+    try { document.querySelectorAll('.crownfall').forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); }); } catch (e) {}
   }
   window.Games.reg('ludo', { start: start, stop: stop });
   window.Games.LUDO = { PATH: PATH, START: START, cellFor: cellFor, newState: newState, legalMoves: legalMoves, applyMove: applyMove };

@@ -156,10 +156,12 @@
   }
   var CONF_C = ['#3DDC84', '#E8D9A0', '#6EC6FF', '#E08A7B', '#C9A227'];
   function spawnConfetti() {
+    var id = gest;
     var board = document.getElementById('pzboard');
     var r = board ? board.getBoundingClientRect() : null;
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < 20; i++) {
       (function() {
+        if (id !== gest) return;
         var c = document.createElement('div');
         c.className = 'confetti';
         if (r) {
@@ -202,6 +204,7 @@
     gest++;
     if (timer) { clearInterval(timer); timer = null; }
     P = null;
+    try { document.querySelectorAll('.confetti').forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); }); } catch (e) {}
   }
   window.Games.reg('puzzle', { start: start, stop: stop });
   window.Games.PUZZLE = { solved: solved, isSolved: isSolved, canMove: canMove };

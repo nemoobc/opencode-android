@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>OpenCode</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://image.pollinations.ai">
+<link rel="preconnect" href="https://opencode.ai">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/drawer.css">
 <link rel="stylesheet" href="css/header.css">
@@ -113,6 +116,7 @@
 </header>
 
 <div id="ubanner"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#E8D9A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Update Tersedia: <b id="utag"></b><button id="ubtn">LIHAT</button></div>
+<div id="mban" style="display:none;text-align:center;font-size:13px;padding:8px 12px;background:#3A2E12;border-bottom:1px solid #E8D9A0;color:#E8D9A0"></div>
 
 <div id="chatwrap">
 <div id="chat">
@@ -236,10 +240,37 @@
       <h3>DEVELOPER</h3>
       <label>App</label>
       <p class="hint" id="dev-info"></p>
+      <div class="acts"><button class="bb ghost on" id="dev-tab-notif">Notifikasi</button><button class="bb ghost" id="dev-tab-maint">Maintenance</button><button class="bb ghost" id="dev-tab-sec">Keamanan</button><button class="bb ghost" id="dev-close2">Tutup</button></div>
+      <div id="dev-pane-notif">
       <label>Notifikasi remote</label>
       <p class="hint" id="dev-notif"></p>
-      <div class="acts"><button class="bb ghost" id="dev-refresh">Refresh notif</button><button class="bb ghost" id="dev-close2">Tutup</button></div>
-      <p class="hint">Kirim pengumuman: edit <b>notifications.json</b> di repo → push. App fetch saat dibuka.</p>
+      <div class="acts"><button class="bb ghost" id="dev-refresh">Refresh notif</button><button class="bb ghost" id="dev-nreset">Reset badge</button><button class="bb ghost" id="dev-nclear">Bersihkan</button></div>
+      <label>List termuat</label>
+      <div id="dev-nlist" class="hint">Belum ada.</div>
+      <label>Buat pengumuman</label>
+      <input id="dev-ntitle" placeholder="Judul (wajib, max 120)" style="width:100%;margin:4px 0;padding:10px;border-radius:10px;border:1px solid var(--surface-border);background:var(--bg);color:var(--text)">
+      <textarea id="dev-nbody" placeholder="Isi (wajib, max 500)" rows="3" style="width:100%;margin:4px 0;padding:10px;border-radius:10px;border:1px solid var(--surface-border);background:var(--bg);color:var(--text)"></textarea>
+      <div class="acts"><input id="dev-nid" placeholder="id (otomatis kalau kosong)" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px"><input id="dev-ndate" placeholder="YYYY-MM-DD" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px"></div>
+      <div class="acts"><input id="dev-nlink" placeholder="https://... (opsional)" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px"></div>
+      <div class="acts"><button class="bb ghost" id="dev-nprev">Preview</button><button class="bb ghost" id="dev-ntest">Tes lokal</button></div>
+      <div class="acts"><button class="bb ghost" id="dev-ncopy">Salin JSON</button><button class="bb ghost" id="dev-ndl">Unduh file</button></div>
+      <div id="dev-nprevbox" class="hint"></div>
+      <p class="hint" id="dev-nmsg"></p>
+      <p class="hint">Remote: Salin/Unduh → paste ke <b>notifications.json</b> di repo → push. App fetch saat dibuka.</p>
+      </div>
+      <div id="dev-pane-maint" style="display:none">
+      <label>Maintenance</label>
+      <div class="acts"><input id="dev-nmaintmsg" placeholder="Pesan maintenance" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px"><button class="bb ghost" id="dev-nmaint">Maintenance: Mati</button></div>
+      <div class="acts"><input id="dev-nmaindur" inputmode="numeric" placeholder="Auto-mati menit (0=manual)" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px"><button class="bb ghost" id="dev-nscope">Scope: semua</button><button class="bb ghost" id="dev-nannounce">Umumkan</button></div>
+      <p class="hint" id="dev-nmaintlog">Belum ada log.</p>
+      <p class="hint">Scope teks = chat diblokir, gambar/file/game tetap jalan. Dev PIN-buka = bypass.</p>
+      </div>
+      <div id="dev-pane-sec" style="display:none">
+      <label>Keamanan</label>
+      <p class="hint" id="dev-nsec"></p>
+      <div class="acts"><input id="dev-npin2" inputmode="numeric" placeholder="PIN baru 4-32" style="flex:1;background:var(--bg);border:1px solid var(--surface-border);color:var(--text);border-radius:10px;padding:10px;text-align:center;letter-spacing:4px"><button class="bb ghost" id="dev-npinsave">Ganti PIN</button></div>
+      <div class="acts"><button class="bb ghost" id="dev-npinreset">Reset PIN</button><button class="bb ghost" id="dev-nautolock">Kunci otomatis: Mati</button><button class="bb ghost" id="dev-nkeyguide">Panduan key</button></div>
+      </div>
     </div>
   </div>
 </div>

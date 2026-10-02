@@ -11,6 +11,7 @@ document.getElementById('scrim').onclick = closeDrawer;
 var MODELS = [
   {id:'opencode/mimo-v2.5-free',  nm:'Mimo 2.5 Free',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/deepseek-v4-flash-free',  nm:'DeepSeek V4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/fledge-alpha-free',  nm:'Fledge Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/ling-3.0-flash-fin-free',  nm:'Ling 3.0 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-preview-free',  nm:'Longcat 2.5 Preview',  ds:'Katalog Resmi Relay', tag:'GRATIS'},

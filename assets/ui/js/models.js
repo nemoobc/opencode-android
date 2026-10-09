@@ -10,7 +10,6 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* AUTO-MODELS-START */
 var MODELS = [
   {id:'opencode/exo-free',  nm:'Exo',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/fledge-alpha-free',  nm:'Fledge Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/ling-3.0-flash-fin-free',  nm:'Ling 3.0 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/ling-3.1-flash-free',  nm:'Ling 3.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
@@ -21,6 +20,7 @@ var MODELS = [
   {id:'opencode/nemotron-3-ultra-free',  nm:'Nemotron 3 Ultra',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/space-bunny-free',  nm:'Space Bunny',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/step-5-preview-free',  nm:'Step 5 Preview',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'Butuh API Key OpenAI',    tag:'PRO'}
 ];

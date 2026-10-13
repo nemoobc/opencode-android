@@ -9,6 +9,7 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* ===== model switcher ===== */
 /* AUTO-MODELS-START */
 var MODELS = [
+  {id:'opencode/cat-jam-free',  nm:'Cat Jam',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/ling-3.1-flash-free',  nm:'Ling 3.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-preview-free',  nm:'Longcat 2.5 Preview',  ds:'Katalog Resmi Relay', tag:'GRATIS'},

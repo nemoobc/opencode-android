@@ -9,15 +9,12 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* ===== model switcher ===== */
 /* AUTO-MODELS-START */
 var MODELS = [
-  {id:'opencode/cat-jam-free',  nm:'Cat Jam',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/beam-free',  nm:'Beam',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/deepseek-v4.1-flash-free',  nm:'Deepseek V4.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/glm-5.3-flash-free',  nm:'Glm 5.3 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/ll-alpha-free',  nm:'Ll Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-preview-free',  nm:'Longcat 2.5 Preview',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.6-flash-free',  nm:'Mimo V2.6 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/muse-spark-1.2-contributor-free',  nm:'Muse Spark 1.2',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/muse-spark-1.3-contributor-free',  nm:'Muse Spark 1.3',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-super-vl-free',  nm:'Nemotron 3.5 Super Vl',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/space-bunny-free',  nm:'Space Bunny',  ds:'Katalog Resmi Relay', tag:'GRATIS'},

@@ -16,6 +16,7 @@ var MODELS = [
   {id:'opencode/mimo-v2.6-flash-free',  nm:'Mimo V2.6 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-super-vl-free',  nm:'Nemotron 3.5 Super Vl',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/pulse-alpha-free',  nm:'Pulse Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'Butuh API Key OpenAI',    tag:'PRO'}
 ];

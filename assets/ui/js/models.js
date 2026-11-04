@@ -10,6 +10,7 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* AUTO-MODELS-START */
 var MODELS = [
   {id:'opencode/beam-free',  nm:'Beam',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/crouton-alpha-free',  nm:'Crouton Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/deepseek-v4.1-flash-free',  nm:'Deepseek V4.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/flint-40b-free',  nm:'Flint 40b',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/glm-5.3-flash-free',  nm:'Glm 5.3 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},

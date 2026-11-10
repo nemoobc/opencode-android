@@ -10,13 +10,14 @@ document.getElementById('scrim').onclick = closeDrawer;
 /* AUTO-MODELS-START */
 var MODELS = [
   {id:'opencode/beam-free',  nm:'Beam',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/crouton-alpha-free',  nm:'Crouton Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/deepseek-v4.1-flash-free',  nm:'Deepseek V4.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/flint-40b-free',  nm:'Flint 40b',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/glm-5.3-flash-free',  nm:'Glm 5.3 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/iceman-free',  nm:'Iceman',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/inkling-2-small-free',  nm:'Inkling 2 Small',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/longcat-2.5-free',  nm:'Longcat 2.5',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.6-flash-free',  nm:'Mimo V2.6 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/minimax-m3.1-flash-free',  nm:'Minimax M3.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-super-vl-free',  nm:'Nemotron 3.5 Super Vl',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},

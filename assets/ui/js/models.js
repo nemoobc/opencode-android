@@ -13,6 +13,7 @@ var MODELS = [
   {id:'opencode/deepseek-v4.1-flash-free',  nm:'Deepseek V4.1 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/flint-40b-free',  nm:'Flint 40b',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/glm-5.3-flash-free',  nm:'Glm 5.3 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/hy4-flash-free',  nm:'Hy4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/iceman-free',  nm:'Iceman',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/inkling-2-small-free',  nm:'Inkling 2 Small',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-free',  nm:'Longcat 2.5',  ds:'Katalog Resmi Relay', tag:'GRATIS'},

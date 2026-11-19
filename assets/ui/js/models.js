@@ -15,10 +15,12 @@ var MODELS = [
   {id:'opencode/hy4-flash-free',  nm:'Hy4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/iceman-free',  nm:'Iceman',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/inkling-2-small-free',  nm:'Inkling 2 Small',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-free',  nm:'Longcat 2.5',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.6-flash-free',  nm:'Mimo V2.6 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-lightning-free',  nm:'Nemotron Lightning',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/nemotron-3.5-super-vl-free',  nm:'Nemotron 3.5 Super Vl',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
+  {id:'opencode/tidepool-alpha-free',  nm:'Tidepool Alpha',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'anthropic/claude-sonnet-4', nm:'Claude Sonnet 4', ds:'Butuh API Key Anthropic', tag:'PRO'},
   {id:'openai/gpt-4.1',            nm:'GPT-4.1',         ds:'Butuh API Key OpenAI',    tag:'PRO'}
 ];

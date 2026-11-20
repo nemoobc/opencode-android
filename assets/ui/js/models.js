@@ -14,7 +14,6 @@ var MODELS = [
   {id:'opencode/flint-40b-free',  nm:'Flint 40b',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/hy4-flash-free',  nm:'Hy4 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/iceman-free',  nm:'Iceman',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
-  {id:'opencode/inkling-2-small-free',  nm:'Inkling 2 Small',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/jev-1.13-free',  nm:'Jev 1.13',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/longcat-2.5-free',  nm:'Longcat 2.5',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
   {id:'opencode/mimo-v2.6-flash-free',  nm:'Mimo V2.6 Flash',  ds:'Katalog Resmi Relay', tag:'GRATIS'},
